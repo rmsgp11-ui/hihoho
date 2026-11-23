@@ -59,7 +59,7 @@ export default {
     const cors = { "Access-Control-Allow-Origin": ORIGIN, "Access-Control-Allow-Headers": "authorization, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Max-Age": "86400", "Vary": "Origin" };
     const J = (o, st = 200) => new Response(JSON.stringify(o), { status: st, headers: { ...cors, "content-type": "application/json; charset=utf-8" } });
     if (req.method === "OPTIONS") return new Response(null, { headers: cors });
-    if (req.method !== "POST") return J({ error: "hello", ok: true });
+    if (req.method !== "POST") return J({ ok: true, v: "2-image" });
     if (req.headers.get("origin") !== ORIGIN) return J({ error: "origin" }, 403);
     let em;
     try { em = await verify((req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "")); } catch (e) { return J({ error: "auth" }, 401); }
