@@ -191,7 +191,7 @@ function gate(msg,denied){$('#full').innerHTML=`<div class="full"><div class="ca
 async function boot(){
   const cfg=window.firebaseConfig;if(!window.__MOCK_FB&&(!cfg||!cfg.apiKey)){$('#app').innerHTML='<div class="card"><p>Firebase 설정(config.js)이 없어요.</p></div>';return}
   try{let A,AU,FS;if(window.__MOCK_FB)({A,AU,FS}=window.__MOCK_FB);else{A=await import(FV+'firebase-app.js');AU=await import(FV+'firebase-auth.js');FS=await import(FV+'firebase-firestore.js')}
-    const app=A.initializeApp(cfg||{});F={AU,FS,auth:AU.getAuth(app),db:FS.getFirestore(app)};gate('');
+    const app=A.initializeApp(cfg||{});F={AU,FS,auth:AU.getAuth(app),db:FS.getFirestore(app)};$('#full').innerHTML='<div class="full"><div class="card"><h1>우리가족</h1><p class="mute" style="margin:0">로그인 확인 중…</p></div></div>';
     AU.onAuthStateChanged(F.auth,u=>{for(const k in SUBS){SUBS[k]();delete SUBS[k]}Object.assign(ST,{me:'',role:'',ready:false,members:{},tpl:{},plan:{},done:{},sched:{},lettersTo:[],lettersFrom:[],lettersAll:[],food:[],redeem:[],bonus:[],selKid:'',selDate:'',selMember:'',justSent:null,openLetter:'',showAll:false,schedDays:null});unlocked=false;PIN.mode='';
       if(!u){gate('');return}
       ST.me=(u.email||'').toLowerCase();$('#full').innerHTML='';
@@ -336,7 +336,7 @@ async function writeDone(K,date,mut){const d=JSON.parse(JSON.stringify(doneDoc(K
 function share(text){const url=location.href.split('#')[0];if(navigator.share){navigator.share({title:'우리가족',text,url}).catch(()=>{})}else if(navigator.clipboard){navigator.clipboard.writeText(text+' '+url).then(()=>toast('메시지를 복사했어요. 카톡에 붙여 넣어 주세요')).catch(()=>toast('공유를 지원하지 않는 브라우저예요'))}}
 function openModal(h){$('#modal').innerHTML=`<div class="modal" data-a="closeM"><div class="card" data-stop="1">${h}</div></div>`}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;if(b.classList.contains('modal')&&e.target.closest('[data-stop]'))return;const a=b.dataset.a,k=b.dataset.k,id=b.dataset.id;
-  if(a==='login'){try{await F.AU.signInWithPopup(F.auth,new F.AU.GoogleAuthProvider())}catch(er){if(er&&er.code==='auth/popup-blocked')return F.AU.signInWithRedirect(F.auth,new F.AU.GoogleAuthProvider());gate(er&&er.code==='auth/unauthorized-domain'?'이 주소가 Firebase 승인된 도메인에 없어요.':er&&er.code==='auth/popup-closed-by-user'?'':'로그인이 안 됐어요 ('+(er&&er.code)+')')}return}
+  if(a==='login'){try{await F.AU.signInWithPopup(F.auth,new F.AU.GoogleAuthProvider())}catch(er){if(er&&er.code==='auth/popup-blocked')return gate('로그인 창이 막혔어요. 버튼을 한 번 더 눌러 주세요.');gate(er&&er.code==='auth/unauthorized-domain'?'이 주소가 Firebase 승인된 도메인에 없어요.':er&&er.code==='auth/popup-closed-by-user'?'':'로그인이 안 됐어요 ('+(er&&er.code)+')')}return}
   if(a==='logout'){$('#modal').innerHTML='';unlocked=false;PIN.mode='';return F.AU.signOut(F.auth)}
   if(a==='go'){if(location.hash==='#'+b.dataset.v)render(true);else location.hash=b.dataset.v;return}
   if(a==='pickColor'){ST.color=b.dataset.c;document.querySelectorAll('.colors button').forEach(x=>x.classList.toggle('on',x===b));return}
