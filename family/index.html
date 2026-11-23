@@ -115,6 +115,17 @@ main{max-width:960px;margin:0 auto;padding:20px max(4vw,14px) 80px;display:grid;
 .colors{display:flex;gap:10px;flex-wrap:wrap}.colors button{width:44px;height:44px;border-radius:50%;border:3px solid transparent}.colors button.on{border-color:var(--ink)}
 .empty{color:var(--mute);text-align:center;padding:14px;border:2px dashed var(--line);border-radius:16px}
 .sec{font-family:'Jua';font-size:16px;color:var(--mute);display:flex;align-items:center;gap:6px}
+input[type=time],input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;width:100%;text-align:left}
+input[type=time]::-webkit-date-and-time-value,input[type=date]::-webkit-date-and-time-value{text-align:left}
+label{display:grid;gap:4px;min-width:0}
+.clock{width:100%;max-width:360px;height:auto;display:block;margin:0 auto}
+.cface{fill:var(--bg);stroke:var(--line);stroke-width:3}
+.wedge{stroke:var(--card);stroke-width:2}
+.wl{font-family:'Jua',system-ui,sans-serif;font-size:14px;fill:#3a2a1c;text-anchor:middle;dominant-baseline:middle;paint-order:stroke;stroke:rgba(255,255,255,.55);stroke-width:3px}
+.hl{font-size:12px;fill:var(--mute);text-anchor:middle;dominant-baseline:middle}.hl.mj{font-family:'Jua';font-size:15px;fill:var(--ink)}
+.ht{stroke:var(--mute);stroke-width:1}.ht.mj{stroke-width:2.5;stroke:var(--ink)}
+.hand{stroke:var(--p);stroke-width:3;stroke-linecap:round}
+.sw{width:14px;height:14px;border-radius:4px;flex:none;display:inline-block;vertical-align:-2px;margin-right:6px}
 @media(max-width:600px){.hero{grid-template-columns:minmax(0,1fr);justify-items:center;text-align:center}.hero .row{justify-content:center}.g2{grid-template-columns:minmax(0,1fr)}.slot{grid-template-columns:6.2em minmax(0,1fr) auto}.tabs button{padding:10px 9px 12px;font-size:17px}}
 @media(prefers-reduced-motion:reduce){.ring .fg{transition:none}.btn:active{transform:none}}
 </style>
@@ -150,7 +161,7 @@ const LOCK='<svg class="lock" viewBox="0 0 16 16" aria-label="부모님이 정�
 function toast(m){$('#toastbox').innerHTML=`<div class="toast">${esc(m)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>$('#toastbox').innerHTML='',2600)}
 
 /* ---------- 상태 ---------- */
-const ST={me:'',role:'',ready:false,members:{},cfg:{rewards:[],ownPt:2,ownMax:3,pin:''},tpl:{},plan:{},done:{},sched:{},lettersTo:[],lettersFrom:[],lettersAll:[],food:[],redeem:[],bonus:[],
+const ST={me:'',role:'',ready:false,members:{},cfg:{rewards:[],ownPt:2,ownMax:3,pin:''},tpl:{},plan:{},done:{},sched:{},lettersTo:[],lettersFrom:[],lettersAll:[],food:[],redeem:[],bonus:[],wish:[],justWish:false,
   selKid:'',selDate:'',selMember:'',selDay:wdOf(today()),letterTo:'',justSent:null,openLetter:'',showAll:false,newDays:[1,2,3,4,5],schedDays:null,color:''};
 const name=e=>(ST.members[e]&&ST.members[e].name)||e.split('@')[0];
 const color=e=>(ST.members[e]&&ST.members[e].color)||'#999';
@@ -192,7 +203,7 @@ async function boot(){
   const cfg=window.firebaseConfig;if(!window.__MOCK_FB&&(!cfg||!cfg.apiKey)){$('#app').innerHTML='<div class="card"><p>Firebase 설정(config.js)이 없어요.</p></div>';return}
   try{let A,AU,FS;if(window.__MOCK_FB)({A,AU,FS}=window.__MOCK_FB);else{A=await import(FV+'firebase-app.js');AU=await import(FV+'firebase-auth.js');FS=await import(FV+'firebase-firestore.js')}
     const app=A.initializeApp(cfg||{});F={AU,FS,auth:AU.getAuth(app),db:FS.getFirestore(app)};$('#full').innerHTML='<div class="full"><div class="card"><h1>우리가족</h1><p class="mute" style="margin:0">로그인 확인 중…</p></div></div>';
-    AU.onAuthStateChanged(F.auth,u=>{for(const k in SUBS){SUBS[k]();delete SUBS[k]}Object.assign(ST,{me:'',role:'',ready:false,members:{},tpl:{},plan:{},done:{},sched:{},lettersTo:[],lettersFrom:[],lettersAll:[],food:[],redeem:[],bonus:[],selKid:'',selDate:'',selMember:'',justSent:null,openLetter:'',showAll:false,schedDays:null});unlocked=false;PIN.mode='';
+    AU.onAuthStateChanged(F.auth,u=>{for(const k in SUBS){SUBS[k]();delete SUBS[k]}Object.assign(ST,{me:'',role:'',ready:false,members:{},tpl:{},plan:{},done:{},sched:{},lettersTo:[],lettersFrom:[],lettersAll:[],food:[],redeem:[],bonus:[],wish:[],justWish:false,selKid:'',selDate:'',selMember:'',justSent:null,openLetter:'',showAll:false,schedDays:null});unlocked=false;PIN.mode='';
       if(!u){gate('');return}
       ST.me=(u.email||'').toLowerCase();$('#full').innerHTML='';
       sub('members',C('members'),s=>{ST.members={};s.forEach(d=>ST.members[d.id]=d.data());ST.ready=true;const m=ST.members[ST.me];if(m){if(ST.role&&ST.role!==m.role){for(const k in SUBS)if(k!=='members'&&k!=='cfg'){SUBS[k]();delete SUBS[k]}}ST.role=m.role;startRole()}else{ST.role='';checkLock()}});
@@ -207,11 +218,13 @@ function startRole(){const t=today();
     sub('lfrom',Q(C('letters'),['from','==',K]),s=>ST.lettersFrom=arr(s));
     sub('redeem',Q(C('redeem'),['by','==',K]),s=>ST.redeem=arr(s));
     sub('bonus',Q(C('bonus'),['who','==',K]),s=>ST.bonus=arr(s));
+    sub('wish',Q(C('wish'),['by','==',K]),s=>ST.wish=arr(s));
   }else{kids().forEach(K=>subKid(K,t));
     sub('schedAll',C('sched'),s=>{s.forEach(d=>ST.sched[d.id]=d.data())});
     sub('letters',C('letters'),s=>ST.lettersAll=arr(s));
     sub('redeem',C('redeem'),s=>ST.redeem=arr(s));
-    sub('bonus',C('bonus'),s=>ST.bonus=arr(s));}
+    sub('bonus',C('bonus'),s=>ST.bonus=arr(s));
+    sub('wish',C('wish'),s=>ST.wish=arr(s));}
   sub('food',C('food'),s=>ST.food=arr(s));checkLock()}
 function subKid(K,t){sub('tpl:'+K,D('tpl',K),s=>{ST.tpl[K]=s.exists()?s.data():{items:[]}});subPlan(K,t);
   sub('done:'+K,C('done',K,'days'),s=>{const o={};s.forEach(d=>o[d.id]=d.data());ST.done[K]=o})}
@@ -244,7 +257,7 @@ function render(force){const a=document.activeElement;if(!force&&a&&a.closest&&a
   if(!ST.members[ST.me]){$('#tabs').innerHTML='';$('#mebox').innerHTML='';$('#app').innerHTML=vJoin();return}
   const v=view(),u=unread();
   $('#mebox').innerHTML=`<button class="me" data-a="profile">${av(ST.me)}${esc(name(ST.me))}</button>`;
-  $('#tabs').innerHTML=(TABS[ST.role]||[]).map(([k,n])=>`<button class="${k===v?'on':''}" data-a="go" data-v="${k}">${n}${k==='letter'&&u?`<span class="badge">${u}</span>`:''}${k==='reward'&&ST.redeem.some(r=>r.status==='wait')?`<span class="badge">${ST.redeem.filter(r=>r.status==='wait').length}</span>`:''}</button>`).join('');
+  $('#tabs').innerHTML=(TABS[ST.role]||[]).map(([k,n])=>`<button class="${k===v?'on':''}" data-a="go" data-v="${k}">${n}${k==='letter'&&u?`<span class="badge">${u}</span>`:''}${k==='reward'&&(ST.redeem.some(r=>r.status==='wait')||ST.wish.some(w=>w.status==='wait'))?`<span class="badge">${ST.redeem.filter(r=>r.status==='wait').length+ST.wish.filter(w=>w.status==='wait').length}</span>`:''}</button>`).join('');
   const V={today:vToday,sched:vSched,letter:vLetter,food:vFood,point:vPoint,home:vHome,tasks:vTasks,reward:vReward}[v];
   $('#app').innerHTML=V?V():'';}
 document.addEventListener('focusout',()=>{if(pending)setTimeout(()=>{if(pending)render()},0)});
@@ -279,6 +292,9 @@ function vPoint(){const K=ST.me,p=points(K),rw=(ST.cfg.rewards||[]).slice().sort
   <section class="card"><h3>보상 고르기</h3>${rw.length?`<div class="list">${rw.map(r=>`<div class="rw"><span class="nm">${esc(r.name)}</span><span class="pill">${COIN}${r.cost}</span><button class="btn sm" data-a="redeem" data-id="${esc(r.id)}" ${p.bal>=r.cost?'':'disabled'}>바꾸기</button></div>`).join('')}</div>`:'<div class="empty">부모님이 아직 보상을 안 정했어요</div>'}</section>
   ${mine.length?`<section class="card"><h3>내 신청</h3><div class="list">${mine.map(r=>`<div class="rw"><span class="nm">${esc(r.name)}</span><span class="small mute">${ago(r.at)}</span><span class="st ${r.status}">${{wait:'기다리는 중',ok:'받았어요',no:'안 됐어요'}[r.status]}</span>${r.status==='wait'?`<button class="x" data-a="redeemCancel" data-id="${esc(r.id)}" aria-label="취소">×</button>`:''}</div>`).join('')}</div></section>`:''}
   ${bon.length?`<section class="card"><h3>칭찬 포인트</h3><div class="list">${bon.map(b=>`<div class="rw"><span class="nm" style="font-size:17px">${esc(b.why||'칭찬')}</span><span class="pill">+${b.pt}</span></div>`).join('')}</div></section>`:''}
+  <section class="card"><h3>보상 요청함</h3><p class="small mute" style="margin:0">받고 싶은 보상이 목록에 없으면 부모님께 요청해 봐! 부모님이 포인트를 정해서 목록에 넣어 줄 거야.</p>
+   ${ST.justWish?`<div class="done-msg"><b>부모님께 요청을 보냈어요!</b><div class="row" style="margin-top:8px"><button class="btn sm" data-a="wishNotify">카톡으로 알리기</button><button class="btn sm ghost" data-a="wishOk">괜찮아요</button></div></div>`:`<input id="wsN" maxlength="30" placeholder="받고 싶은 보상 (예: 레고 사기, 놀이공원 가기)"><input id="wsM" maxlength="60" placeholder="이유나 하고 싶은 말 (안 적어도 돼요)"><button class="btn sm" data-a="wishAdd">요청 보내기</button>`}
+   ${ST.wish.filter(w=>w.by===ST.me).length?`<div class="list">${ST.wish.filter(w=>w.by===ST.me).sort((a,b)=>b.at-a.at).map(w=>`<div class="rw"><span class="nm" style="font-size:17px">${esc(w.name)}${w.status==='ok'?`<br><span class="small mute" style="font-family:'Gowun Dodum'">보상 목록에 ${w.cost}P로 들어갔어요</span>`:''}${w.status==='no'&&w.reply?`<br><span class="small mute" style="font-family:'Gowun Dodum'">${esc(w.reply)}</span>`:''}</span><span class="st ${w.status}">${{wait:'기다리는 중',ok:'목록에 추가됨',no:'이번엔 안 돼요'}[w.status]}</span>${w.status==='wait'?`<button class="x" data-a="wishCancel" data-id="${esc(w.id)}" aria-label="취소">×</button>`:''}</div>`).join('')}</div>`:''}</section>
   <section class="card"><h3>이번 주 vs 지난주</h3>${weekBars(K)}</section>`}
 
 function vHome(){const ks=kids(),wait=ST.redeem.filter(r=>r.status==='wait'),u=unread(),fd=ST.food.filter(f=>!f.done).sort((a,b)=>b.at-a.at).slice(0,4);
@@ -305,12 +321,23 @@ function vTasks(){const ks=kids();if(!ks.length)return'<div class="card"><p styl
    <div class="list">${allLinks(K).map(l=>`<div class="rw"><span class="nm" style="font-size:17px">${esc(l.n)}<br><span class="small mute" style="font-family:'Gowun Dodum';overflow-wrap:anywhere">${esc(l.u)}</span></span>${l.fixed?'<span class="st ok">기본</span>':`<button class="x" data-a="linkDel" data-id="${esc(l.id)}" aria-label="지우기">×</button>`}</div>`).join('')||'<div class="empty">예: 학교 알림장, 학원 숙제 사이트</div>'}</div>
    <input id="lkN" maxlength="20" placeholder="버튼 이름 (예: 알림장)"><input id="lkU" type="url" placeholder="https:// 로 시작하는 주소"><button class="btn sm" data-a="linkAdd">링크 추가</button></section>`}
 
+const PAST=['#ffd2c4','#cfe0ff','#cdeed9','#e5d6fb','#ffe2b3','#c7eef3','#ffd0e2','#eee0c2'];
+const toMin=t=>{const[h,m]=String(t||'0:0').split(':').map(Number);return(h||0)*60+(m||0)};
+function clockSVG(items,showNow){const S=360,c=S/2,R=130;const ang=m=>m/1440*2*Math.PI-Math.PI/2,pt=(m,r)=>[c+r*Math.cos(ang(m)),c+r*Math.sin(ang(m))],f=n=>n.toFixed(1);
+  let s=`<svg class="clock" viewBox="0 0 ${S} ${S}" role="img" aria-label="하루 생활계획표 시계"><circle class="cface" cx="${c}" cy="${c}" r="${R}"/>`;
+  items.forEach((x,i)=>{let a=toMin(x.s),b=x.e?toMin(x.e):a+60;if(b<=a)b+=1440;const span=Math.min(b-a,1439);const col=PAST[i%PAST.length];x._c=col;
+    const[x1,y1]=pt(a,R),[x2,y2]=pt(a+span,R);s+=`<path class="wedge" fill="${col}" d="M${c} ${c} L${f(x1)} ${f(y1)} A${R} ${R} 0 ${span>720?1:0} 1 ${f(x2)} ${f(y2)} Z"/>`});
+  items.forEach(x=>{let a=toMin(x.s),b=x.e?toMin(x.e):a+60;if(b<=a)b+=1440;const span=b-a;if(span<45)return;const[lx,ly]=pt(a+span/2,R*(span<120?0.72:0.6));const t=x.t.length>6?x.t.slice(0,6)+'…':x.t;s+=`<text class="wl" x="${f(lx)}" y="${f(ly)}">${esc(t)}</text>`});
+  for(let h=0;h<24;h++){const mj=h%6===0;const[a1,b1]=pt(h*60,R),[a2,b2]=pt(h*60,R-(mj?12:7)),[tx,ty]=pt(h*60,R+17);s+=`<line class="ht ${mj?'mj':''}" x1="${f(a1)}" y1="${f(b1)}" x2="${f(a2)}" y2="${f(b2)}"/><text class="hl ${mj?'mj':''}" x="${f(tx)}" y="${f(ty)}">${h}</text>`}
+  if(showNow){const n=new Date(),m=n.getHours()*60+n.getMinutes(),[hx,hy]=pt(m,R-8);s+=`<line class="hand" x1="${c}" y1="${c}" x2="${f(hx)}" y2="${f(hy)}"/>`}
+  return s+`<circle cx="${c}" cy="${c}" r="6" fill="var(--p)"/></svg>`}
 function vSched(){const list=isAdmin()?fam():[ST.me];if(!list.includes(ST.selMember))ST.selMember=isAdmin()?ST.me:ST.me;const M=ST.selMember;if(isAdmin()&&!ST.sched[M])ST.sched[M]={items:[]};
   const items=((ST.sched[M]&&ST.sched[M].items)||[]);const day=ST.selDay;const di=items.filter(x=>(x.days||[]).includes(day)).sort((a,b)=>(a.s||'').localeCompare(b.s||''));const can=isAdmin()||M===ST.me;
   const nd=ST.schedDays||[day];
   return`${isAdmin()?`<div class="chips">${list.map(k=>`<button class="chip ${k===M?'on':''}" data-a="selMember" data-k="${esc(k)}"><span class="dot" style="background:${color(k)}"></span>${esc(name(k))}</button>`).join('')}</div><p class="small mute" style="margin:0">아이들은 자기 시간표만 보고, 보호자는 모두의 시간표를 볼 수 있어요.</p>`:''}
   <section class="card"><h3>${esc(name(M))}의 시간표</h3><div class="chips">${MON.map(wd=>{const n=items.filter(x=>(x.days||[]).includes(wd)).length;return`<button class="chip ${wd===day?'on':''}" data-a="selDay" data-wd="${wd}">${WD[wd]}${n?`<span class="small">${n}</span>`:''}</button>`}).join('')}</div>
-   <div class="list">${di.map(x=>`<div class="slot" style="border-color:${color(M)}"><span class="tm">${esc(x.s||'')}${x.e?'–'+esc(x.e):''}</span><span class="ti">${esc(x.t)}</span>${can?`<button class="x" data-a="schDel" data-id="${esc(x.id)}" aria-label="지우기">×</button>`:'<span></span>'}</div>`).join('')||`<div class="empty">${WD[day]}요일 일정이 없어요</div>`}</div></section>
+   ${clockSVG(di,day===wdOf(today()))}<p class="small mute" style="margin:0;text-align:center">${WD[day]}요일 생활계획표${day===wdOf(today())?' · 빨간 바늘이 지금 시각':''}. 빈 곳은 자유 시간이에요.</p>
+   <div class="list">${di.map(x=>`<div class="slot" style="border-color:${x._c||color(M)}"><span class="tm"><span class="sw" style="background:${x._c||'#eee'}"></span>${esc(x.s||'')}${x.e?'–'+esc(x.e):''}</span><span class="ti">${esc(x.t)}</span>${can?`<button class="x" data-a="schDel" data-id="${esc(x.id)}" aria-label="지우기">×</button>`:'<span></span>'}</div>`).join('')||`<div class="empty">${WD[day]}요일 일정이 없어요</div>`}</div></section>
   ${can?`<section class="card"><h3>일정 추가</h3><input id="schT" maxlength="30" placeholder="예: 영어학원, 태권도, 피아노"><div class="g2"><label>시작<input id="schS" type="time" value="15:00"></label><label>끝<input id="schE" type="time" value="16:00"></label></div><div class="chips">${MON.map(wd=>`<button class="chip ${nd.includes(wd)?'on':''}" data-a="schDay" data-wd="${wd}">${WD[wd]}</button>`).join('')}</div><button class="btn sm" data-a="schAdd">시간표에 넣기</button></section>`:''}`}
 
 function vLetter(){const others=fam().filter(e=>e!==ST.me);if(!others.includes(ST.letterTo))ST.letterTo=others[0]||'';
@@ -333,6 +360,9 @@ function vFood(){const list=ST.food.slice().sort((a,b)=>(a.done-b.done)||((b.lik
 function vReward(){const rw=(ST.cfg.rewards||[]).slice().sort((a,b)=>a.cost-b.cost),req=ST.redeem.slice().sort((a,b)=>(a.status==='wait'?0:1)-(b.status==='wait'?0:1)||b.at-a.at).slice(0,20),ks=kids();
   return`<section class="card"><h3>보상 목록</h3><p class="small mute" style="margin:0">아이가 포인트로 바꿀 수 있는 것들이에요. 신청이 오면 "주기"를 눌러요.</p><div class="list">${rw.map(r=>`<div class="rw"><span class="nm">${esc(r.name)}</span><span class="pill">${COIN}${r.cost}</span><button class="x" data-a="rwDel" data-id="${esc(r.id)}" aria-label="지우기">×</button></div>`).join('')||'<div class="empty">예: 게임 30분 (50P), 주말 영화 고르기 (80P), 갖고 싶은 책 (200P)</div>'}</div>
    <div class="g3"><input id="rwN" maxlength="30" placeholder="보상 이름"><input id="rwC" type="number" min="1" value="50" aria-label="필요 포인트"></div><button class="btn sm" data-a="rwAdd">보상 추가</button></section>
+  <section class="card"><h3>보상 요청함 ${ST.wish.some(w=>w.status==='wait')?`<span class="pill" style="background:var(--p);color:#fff;font-size:15px">${ST.wish.filter(w=>w.status==='wait').length}</span>`:''}</h3><p class="small mute" style="margin:0">아이들이 받고 싶다고 보낸 보상이에요. 포인트를 정해서 목록에 넣거나, 이번엔 거절할 수 있어요.</p>
+   <div class="list">${ST.wish.slice().sort((a,b)=>(a.status==='wait'?0:1)-(b.status==='wait'?0:1)||b.at-a.at).slice(0,20).map(w=>`<div class="env"><div class="hd">${av(w.by,30)}${esc(w.name)}<span class="small mute" style="margin-left:auto">${esc(name(w.by))} · ${ago(w.at)}</span></div>${w.note?`<span class="bd" style="font-size:16px">${esc(w.note)}</span>`:''}
+     ${w.status==='wait'?`<div class="g3"><input id="wc_${esc(w.id)}" type="number" min="1" value="50" aria-label="필요 포인트"><button class="btn sm ok" data-a="wishAccept" data-id="${esc(w.id)}">목록에 넣기</button></div><div class="addrow"><input id="wr_${esc(w.id)}" maxlength="40" placeholder="거절 이유 (아이에게 보여요)"><button class="btn sm ghost" data-a="wishReject" data-id="${esc(w.id)}">거절</button></div>`:`<span class="st ${w.status}">${w.status==='ok'?`목록에 넣음 · ${w.cost}P`:'거절함'}</span>`}</div>`).join('')||'<div class="empty">아직 요청이 없어요</div>'}</div></section>
   <section class="card"><h3>교환 신청</h3><div class="list">${req.map(r=>`<div class="rw">${av(r.by)}<span class="nm" style="font-size:17px">${esc(r.name)} <span class="small mute">${r.cost}P · ${ago(r.at)}</span></span>${r.status==='wait'?`<button class="btn sm ok" data-a="rOk" data-id="${esc(r.id)}">주기</button><button class="btn sm ghost" data-a="rNo" data-id="${esc(r.id)}">거절</button>`:`<span class="st ${r.status}">${r.status==='ok'?'줬어요':'거절'}</span>`}</div>`).join('')||'<div class="empty">신청이 없어요</div>'}</div></section>
   <section class="card"><h3>칭찬 포인트 주기</h3><div class="chips">${ks.map(k=>`<button class="chip ${k===ST.selKid?'on':''}" data-a="selKid" data-k="${esc(k)}"><span class="dot" style="background:${color(k)}"></span>${esc(name(k))} · ${points(k).bal}P</button>`).join('')}</div><div class="g3"><input id="bnW" maxlength="30" placeholder="칭찬 이유 (예: 동생 숙제 도와줌)"><input id="bnP" type="number" value="10" aria-label="포인트"></div><button class="btn sm" data-a="bonusAdd" ${ST.selKid?'':'disabled'}>포인트 주기</button></section>
   <section class="card"><h3>포인트 규칙</h3><div class="g2"><label>스스로 정한 일 1개당<input id="cOwn" type="number" min="0" value="${ST.cfg.ownPt??2}"></label><label>하루 최대 개수<input id="cMax" type="number" min="0" value="${ST.cfg.ownMax??3}"></label></div><button class="btn sm ghost" data-a="cfgSave">규칙 저장</button>
@@ -386,6 +416,12 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='redeem'){const r=(ST.cfg.rewards||[]).find(x=>x.id===id);if(!r)return;if(points(ST.me).bal<r.cost)return toast('포인트가 조금 모자라요');return openModal(`<h3>「${esc(r.name)}」로 바꿀까요?</h3><p style="margin:0">${r.cost} 포인트를 써요. 부모님이 확인하면 받을 수 있어요.</p><div class="row"><button class="btn" data-a="redeemGo" data-id="${esc(r.id)}">바꿀래요</button><button class="btn ghost" data-a="closeM">다음에</button></div>`)}
   if(a==='redeemGo'){const r=(ST.cfg.rewards||[]).find(x=>x.id===id);$('#modal').innerHTML='';if(!r)return;await F.FS.addDoc(C('redeem'),{by:ST.me,rid:r.id,name:r.name,cost:r.cost,status:'wait',at:Date.now()}).catch(()=>toast('신청이 안 됐어요'));return toast('신청했어요! 부모님이 확인할 거예요')}
   if(a==='redeemCancel'){return F.FS.deleteDoc(D('redeem',id)).catch(()=>toast('취소가 안 됐어요'))}
+  if(a==='wishAdd'){const n=val('wsN');if(!n)return toast('받고 싶은 보상을 적어 주세요');try{await F.FS.addDoc(C('wish'),{by:ST.me,name:n,note:val('wsM'),status:'wait',at:Date.now()});ST.justWish=true;render(true)}catch(er){toast('보내기가 안 됐어요')}return}
+  if(a==='wishNotify'){share(`[우리가족] ${name(ST.me)}가 보상 요청함에 갖고 싶은 보상을 보냈어요! 앱에서 확인해 주세요.`);return}
+  if(a==='wishOk'){ST.justWish=false;return render(true)}
+  if(a==='wishCancel'){return F.FS.deleteDoc(D('wish',id)).catch(()=>toast('취소가 안 됐어요'))}
+  if(a==='wishAccept'){const w=ST.wish.find(x=>x.id===id);const c=+val('wc_'+id)||0;if(!w||!c)return toast('포인트를 적어 주세요');await save('',D('fam','cfg'),{rewards:[...(ST.cfg.rewards||[]),{id:'r'+uid(),name:w.name,cost:c}]},true);await F.FS.updateDoc(D('wish',id),{status:'ok',cost:c,doneAt:Date.now()}).catch(()=>{});return toast(`「${w.name}」을 ${c}P 보상으로 넣었어요`)}
+  if(a==='wishReject'){return F.FS.updateDoc(D('wish',id),{status:'no',reply:val('wr_'+id),doneAt:Date.now()}).catch(()=>toast('저장이 안 됐어요'))}
   /* 시간표 */
   if(a==='selMember'){ST.selMember=k;return render(true)}
   if(a==='selDay'){ST.selDay=+b.dataset.wd;ST.schedDays=null;return render(true)}
