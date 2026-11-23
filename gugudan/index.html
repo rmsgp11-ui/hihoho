@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f3a33">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="구구단">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAD+UlEQVR4Xu3csXHcRhiGYUijPqxcoTN14HEZrktlaFQJc5XiADOcM+mF9gP23z2Mnicnjgt994oXHD788fXPDf7PR7eFFuPAOMgpB8pBTjlQDnLKgXKQUw6Ug5xyoBzklAPlIKccKAc55UA5yCkHykFOOVAOcsqBcpBTDpSDnHKgHOQ+5T9y3s9vX87/8H99/uclvdTLj+/pj7R8+evv9FJrz37OhzmPYBh4ax51TmTgLB51TmTt2a+Y8TdH0d3Ztq4rFy1j27quvPbsF5WPo+7u7I6vX7eM3fH11579utpxVN+d431UL+N4H2vPPkTtOLi1wnHMeeu04jEnG614rD37KIXj4O6MgybjwDjIKQfKQU45UA5yyoFykFMOlIOccqAc5JQD5SCnHCgHOeVAOcgpB8pBTjlQDnKF5ej8CvwQ71+r8yvwQ7x/rbVnH6VwHNxd7TjmvIFarzInHq1XWXv2IWrHsW3l9+j436B6H8fXr95H9fXLx1G6j567U7ePniv3/Ibn1F351aTHPu0Gfvf8xK0Z+L37nlm8sfbs50wdB/cy478Vbso4aDIOjIPc1CcY/86fF9ae/ZxJn1YG3ppHnR8pB36MfNT5cXrt2a+Y8TdH0d355TNid0XL6Lzy2rNfVD6Ouruze+ZnCK89+3W146i+O8f7qGvGo9arrD37ELXj4NYKxzHnrdOKx5xstP6sWXv2UQrHwd0ZB03GgXGQUw6Ug5xyoBzklAPlIKccKAc55UA5yCkHykFOOVAOcsqBcpBTDpSDnHKgHOQKy9H5Ffghnu0ZwmvPPkrhOLi72nHMeQM95zOE1559iNpxbFv5PXrmZwhX76P6+uXjKN1Hz93pfP7OCT1X7vkNz6m78qtJj33aDfzu+YlbM/B79z2zeGPt2c+ZOg7uZcZ/K9yUcdBkHBgHualPMP6dPy+sPfs5kz6tDLw1jzo/Ug78GPmo8+P02rNfMeNvjqK7c4tnCK89+0Xl46i7O7vj6xc149UzPz/5utpxVC/jeB/Vy9i1XmXt2YeoHQe3VjiOOW+dVjzmZKMVj7VnH6VwHNydcdBkHBgHOeVAOcgpB8pBTjlQDnLKgXKQUw6Ug5xyoBzklAPlIKccKAc55UA5yCkHykGusBydX4Ef4v1rdX4Ffohne37yKIXj4O5qxzEnHq1XmROP53x+8hC149i28n0c7696H8/8/OTrysdRuo+eMtXto+fKPb/hOXVXfjXpsU+7gd89P3FrBn7vvmcWb6w9+zlTx8G9zPhvhZsyDpqMA+MgpxwoBznlQDnIKQfKQU45UA5yyoFykFMOlIOccqAc5JQD5SCnHCgHOeVAOcgpB8pBTjlQDnL/AoM7L+wSTueEAAAAAElFTkSuQmCC">
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAD+UlEQVR4Xu3csXHcRhiGYUijPqxcoTN14HEZrktlaFQJc5XiADOcM+mF9gP23z2Mnicnjgt994oXHD788fXPDf7PR7eFFuPAOMgpB8pBTjlQDnLKgXKQUw6Ug5xyoBzklAPlIKccKAc55UA5yCkHykFOOVAOcsqBcpBTDpSDnHKgHOQ+5T9y3s9vX87/8H99/uclvdTLj+/pj7R8+evv9FJrz37OhzmPYBh4ax51TmTgLB51TmTt2a+Y8TdH0d3Ztq4rFy1j27quvPbsF5WPo+7u7I6vX7eM3fH11579utpxVN+d431UL+N4H2vPPkTtOLi1wnHMeeu04jEnG614rD37KIXj4O6MgybjwDjIKQfKQU45UA5yyoFykFMOlIOccqAc5JQD5SCnHCgHOeVAOcgpB8pBTjlQDnKF5ej8CvwQ71+r8yvwQ7x/rbVnH6VwHNxd7TjmvIFarzInHq1XWXv2IWrHsW3l9+j436B6H8fXr95H9fXLx1G6j567U7ePniv3/Ibn1F351aTHPu0Gfvf8xK0Z+L37nlm8sfbs50wdB/cy478Vbso4aDIOjIPc1CcY/86fF9ae/ZxJn1YG3ppHnR8pB36MfNT5cXrt2a+Y8TdH0d355TNid0XL6Lzy2rNfVD6Ouruze+ZnCK89+3W146i+O8f7qGvGo9arrD37ELXj4NYKxzHnrdOKx5xstP6sWXv2UQrHwd0ZB03GgXGQUw6Ug5xyoBzklAPlIKccKAc55UA5yCkHykFOOVAOcsqBcpBTDpSDnHKgHOQKy9H5Ffghnu0ZwmvPPkrhOLi72nHMeQM95zOE1559iNpxbFv5PXrmZwhX76P6+uXjKN1Hz93pfP7OCT1X7vkNz6m78qtJj33aDfzu+YlbM/B79z2zeGPt2c+ZOg7uZcZ/K9yUcdBkHBgHualPMP6dPy+sPfs5kz6tDLw1jzo/Ug78GPmo8+P02rNfMeNvjqK7c4tnCK89+0Xl46i7O7vj6xc149UzPz/5utpxVC/jeB/Vy9i1XmXt2YeoHQe3VjiOOW+dVjzmZKMVj7VnH6VwHNydcdBkHBgHOeVAOcgpB8pBTjlQDnLKgXKQUw6Ug5xyoBzklAPlIKccKAc55UA5yCkHykGusBydX4Ef4v1rdX4Ffohne37yKIXj4O5qxzEnHq1XmROP53x+8hC149i28n0c7696H8/8/OTrysdRuo+eMtXto+fKPb/hOXVXfjXpsU+7gd89P3FrBn7vvmcWb6w9+zlTx8G9zPhvhZsyDpqMA+MgpxwoBznlQDnIKQfKQU45UA5yyoFykFMOlIOccqAc5JQD5SCnHCgHOeVAOcgpB8pBTjlQDnL/AoM7L+wSTueEAAAAAElFTkSuQmCC">
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIuq1rOq1rOuLqCDrp4jsiqTthLAiLCAic2hvcnRfbmFtZSI6ICLqtazqtazri6giLCAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwgImJhY2tncm91bmRfY29sb3IiOiAiIzFmM2EzMyIsICJ0aGVtZV9jb2xvciI6ICIjMWYzYTMzIiwgInN0YXJ0X3VybCI6ICIuIiwgImljb25zIjogW3sic3JjIjogImRhdGE6aW1hZ2UvcG5nO2Jhc2U2NCxpVkJPUncwS0dnb0FBQUFOU1VoRVVnQUFBTFFBQUFDMENBSUFBQUN5cjVGbEFBQUQrVWxFUVZSNFh1M2NzWEhjUmhpR1lVaWpQcXhjb1ROMTRIRVpya3RsYUZRSmM1WGlBRE9jTSttRjlnUDIzejJNbmljbmpndDk5NG9YSEQ3ODhmWFBEZjdQUjdlRkZ1UEFPTWdwQjhwQlRqbFFEbkxLZ1hLUVV3NlVnNXh5b0J6a2xBUGxJS2NjS0FjNTVVQTV5Q2tIeWtGT09WQU9jc3FCY3BCVERwU0RuSEtnSE9RKzVUOXkzczl2WDg3LzhIOTkvdWNsdmRUTGorL3BqN1I4K2V2djlGSnJ6MzdPaHptUFlCaDRheDUxVG1UZ0xCNTFUbVR0MmErWThUZEgwZDNadHE0ckZ5MWoyN3F1dlBic0Y1V1BvKzd1N0k2dlg3ZU0zZkgxMTU3OXV0cHhWTitkNDMxVUwrTjRIMnZQUGtUdE9MaTF3bkhNZWV1MDRqRW5HNjE0ckQzN0tJWGo0TzZNZ3liandEaklLUWZLUVU0NVVBNXl5b0Z5a0ZNT2xJT2NjcUFjNUpRRDVTQ25IQ2dIT2VWQU9jZ3BCOHBCVGpsUURuS0Y1ZWo4Q3Z3UTcxK3I4eXZ3UTd4L3JiVm5INlZ3SE54ZDdUam12SUZhcnpJbkhxMVhXWHYySVdySHNXM2w5K2o0MzZCNkg4ZlhyOTVIOWZYTHgxRzZqNTY3VTdlUG5pdjMvSWJuMUYzNTFhVEhQdTBHZnZmOHhLMForTDM3bmxtOHNmYnM1MHdkQi9jeTQ3OFZic280YURJT2pJUGMxQ2NZLzg2ZkY5YWUvWnhKbjFZRzNwcEhuUjhwQjM2TWZOVDVjWHJ0MmErWThUZEgwZDM1NVROaWQwWEw2THp5MnJOZlZENk91cnV6ZStabkNLODkrM1cxNDZpK084ZjdxR3ZHbzlhcnJEMzdFTFhqNE5ZS3h6SG5yZE9LeDV4c3RQNnNXWHYyVVFySHdkMFpCMDNHZ1hHUVV3NlVnNXh5b0J6a2xBUGxJS2NjS0FjNTVVQTV5Q2tIeWtGT09WQU9jc3FCY3BCVERwU0RuSEtnSE9RS3k5SDVGZmdobnUwWndtdlBQa3JoT0xpNzJuSE1lUU05NXpPRTE1NTlpTnB4YkZ2NVBYcm1ad2hYNzZQNit1WGpLTjFIejkzcGZQN09DVDFYN3ZrTno2bTc4cXRKajMzYURmenUrWWxiTS9CNzl6MnplR1B0MmMrWk9nN3VaY1ovSzl5VWNkQmtIQmdIdWFsUE1QNmRQeStzUGZzNWt6NnRETHcxanpvL1VnNzhHUG1vOCtQMDJyTmZNZU52anFLN2M0dG5DSzg5KzBYbDQ2aTdPN3ZqNnhjMTQ5VXpQei81dXRweFZDL2plQi9WeTlpMVhtWHQyWWVvSFFlM1ZqaU9PVytkVmp6bVpLTVZqN1ZuSDZWd0hOeWRjZEJrSEJnSE9lVkFPY2dwQjhwQlRqbFFEbkxLZ1hLUVV3NlVnNXh5b0J6a2xBUGxJS2NjS0FjNTVVQTV5Q2tIeWtHdXNCeWRYNEVmNHYxcmRYNEZmb2huZTM3eUtJWGo0TzVxeHpFbkhxMVhtUk9QNTN4KzhoQzE0OWkyOG4wYzc2OTZIOC84L09UcnlzZFJ1bytlTXRYdG8rZktQYi9oT1hWWGZqWHBzVSs3Z2Q4OVAzRnJCbjd2dm1jV2I2dzkremxUeDhHOXpQaHZoWnN5RHBxTUErTWdweHdvQnpubFFEbklLUWZLUVU0NVVBNXl5b0Z5a0ZNT2xJT2NjcUFjNUpRRDVTQ25IQ2dIT2VWQU9jZ3BCOHBCVGpsUURuTC9Bb003TCt3U1R1ZUVBQUFBQUVsRlRrU3VRbUNDIiwgInNpemVzIjogIjE4MHgxODAiLCAidHlwZSI6ICJpbWFnZS9wbmcifV19">
+<title>구구단 마스터</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+/* VOICE: 다정하지만 단호한 선생님 — 짧고 칭찬하는 말, 목표는 분명하게
+   IDEA: 교실 칠판과 분필, 칸이 하나씩 채워지는 칭찬 스티커판
+   PICTURE: 64칸 구구단판, 3초 안에 맞힐수록 분필색에서 노란 별로 바뀜
+   COLOUR and TYPE: 칠판 초록 바탕, 분필 흰색, 노란 분필 강조, 산호색은 틀렸을 때만 / Jua + Gowun Dodum
+   LAYOUT: 위에 D-day와 판, 아래에 오늘 미션 버튼; 문제 화면은 큰 문제 + 엄지로 누르는 숫자판 */
+:root{color-scheme:dark;--bg:#1f3a33;--bg2:#264840;--line:#3b5f55;--ink:#f4f1e8;--dim:#a9c0b7;--y:#ffd75e;--c:#ff8a73;--ok:#9fe3a4}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 "Gowun Dodum",system-ui,sans-serif;overflow-x:clip;-webkit-tap-highlight-color:transparent}
+h1,h2,.num,button,.big{font-family:Jua,"Gowun Dodum",sans-serif;font-weight:400}
+.wrap{max-width:720px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top)) max(4vw,14px,env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom)) max(4vw,14px,env(safe-area-inset-left))}
+html,body{overscroll-behavior:none;touch-action:manipulation}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+h1{font-size:clamp(32px,8vw,44px);line-height:1.05;margin:0}
+h2{font-size:24px;margin:0 0 10px}
+.stat{display:flex;gap:10px}
+.pill{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:6px 12px;text-align:center;line-height:1.2}
+.pill b{display:block;font:24px Jua,sans-serif;color:var(--y)}.pill small{font-size:13px;color:var(--dim)}
+.board{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px;background:var(--bg2);border:2px solid var(--line);border-radius:18px;padding:10px}
+.board div{aspect-ratio:1;display:grid;place-items:center;border-radius:8px;font:clamp(13px,3.6vw,19px) Jua,sans-serif;color:var(--dim)}
+.board .h{color:var(--y)}
+.board button.h{background:#2f554b;border:0;color:var(--y);border-radius:8px;font-size:clamp(14px,3.8vw,20px);cursor:pointer;aspect-ratio:1}
+.board .l0{border:1px dashed var(--line)}
+.l1{background:#35574d;color:var(--ink)!important}.l2{background:#4f6f52;color:var(--ink)!important}
+.l3{background:#8f9a52;color:#1f2a20!important}.l4{background:#e0c45a;color:#2a2410!important}.l5{background:var(--y);color:#2a2410!important;box-shadow:0 0 0 2px #fff6 inset}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--dim);margin:8px 2px 0}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:4px}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:16px}
+.btn{display:block;width:100%;min-height:56px;border:0;border-radius:16px;background:var(--y);color:#2a2410;font-size:22px;cursor:pointer;margin-top:10px}
+.btn.alt{background:#2f554b;color:var(--ink);font-size:19px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.row .btn{margin-top:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{min-width:56px;min-height:48px;border-radius:14px;border:1px solid var(--line);background:#2f554b;color:var(--ink);font-size:20px;cursor:pointer}
+.chips button.cur{background:var(--y);color:#2a2410;border-color:var(--y)}
+button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.sub{color:var(--dim);font-size:15px;margin:4px 0 0}
+.days{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:4px;margin-top:8px}
+.days span{aspect-ratio:1;border-radius:50%;border:1px solid var(--line)}
+.days .half{background:#4f6f52}.days .full{background:var(--y);border-color:var(--y)}
+.plan{list-style:none;padding:0;margin:0}
+.plan li{display:grid;grid-template-columns:7.5em 1fr;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.plan li:first-child{border-top:0}.plan b{font:18px Jua,sans-serif;color:var(--y);white-space:nowrap}
+.plan li.now{background:#2f554b;border-radius:10px;padding-inline:8px}
+details summary{cursor:pointer;font:20px Jua,sans-serif;min-height:44px;display:flex;align-items:center}
+.weak{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.weak span{background:#4a2f2a;color:#ffd9d0;border-radius:10px;padding:4px 10px;font:18px Jua,sans-serif}
+/* play */
+#play,#done{display:none}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.x{width:48px;height:48px;border-radius:14px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);font-size:22px;cursor:pointer}
+.prog{font:20px Jua,sans-serif;color:var(--dim)}
+.bar{height:10px;background:var(--bg2);border-radius:6px;overflow:hidden;margin:12px 0 4px}
+.bar i{display:block;height:100%;width:100%;background:var(--y);transform-origin:left}
+.ladder{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px;margin:10px 0}
+.ladder span{aspect-ratio:1.1;display:grid;place-items:center;border-radius:8px;border:1px dashed var(--line);font:clamp(13px,3.6vw,18px) Jua,sans-serif}
+.ladder span.f{border-style:solid;background:#35574d}.ladder span.c{border-color:var(--y);color:var(--y)}
+.q{text-align:center;margin:18px 0 6px}
+.big{font-size:clamp(52px,16vw,84px);line-height:1}
+.ans{display:inline-block;min-width:1.6em;border-bottom:4px solid var(--y);color:var(--y)}
+.ans.bad{color:var(--c);border-color:var(--c)}.ans.good{color:var(--ok);border-color:var(--ok)}
+.fb{min-height:64px;text-align:center;font-size:18px;margin:6px 0}
+.fb .hint{display:block;color:var(--y);font-size:17px;margin-top:4px}
+.pad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-width:420px;margin:0 auto}
+.pad button{user-select:none;-webkit-user-select:none;min-height:64px;border-radius:16px;border:0;background:#f4f1e8;color:#1f3a33;font-size:30px;cursor:pointer;box-shadow:0 4px 0 #b9b5a8}
+.pad button:active{transform:translateY(3px);box-shadow:0 1px 0 #b9b5a8}
+.pad .k2{background:#2f554b;color:var(--ink);box-shadow:0 4px 0 #17302a}
+.flash{animation:pop .35s}
+@keyframes pop{50%{transform:scale(1.12)}}
+@media(prefers-reduced-motion:reduce){.flash{animation:none}.bar i{transition:none!important}}
+.score{font:clamp(56px,18vw,96px) Jua,sans-serif;color:var(--y);text-align:center;line-height:1;margin:10px 0}
+.miss{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:10px}
+.hot{border:2px solid var(--y)}
+.hot .row{grid-template-columns:repeat(4,minmax(0,1fr))}
+#lab{display:none}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0}
+.tabs button{min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);font-size:18px;cursor:pointer}
+.tabs button.on{background:var(--y);color:#2a2410;border-color:var(--y)}
+.lexp{font-size:18px;margin:6px 0 12px;min-height:3.2em}
+.lexp b{color:var(--y)}
+.dots{background:var(--bg2);border:2px solid var(--line);border-radius:18px;padding:14px 10px;display:flex;flex-direction:column;gap:6px;min-height:120px}
+.drow{display:flex;align-items:center;gap:8px;animation:in .35s both}
+.dset{display:flex;gap:clamp(2px,1vw,6px);flex:1}
+.dset i{width:clamp(14px,6vw,26px);aspect-ratio:1;border-radius:50%;background:var(--ink);flex:none}
+.dset i.p{background:var(--y)}.dset i.q{background:#8fd3ff}.dset i.gap{margin-left:clamp(4px,2vw,10px)}
+.dset i.x{background:transparent;border:2px dashed var(--c)}
+.drow em{font:clamp(15px,4.4vw,20px) Jua,sans-serif;font-style:normal;color:var(--y);white-space:nowrap;min-width:3.4em;text-align:right}
+@keyframes in{from{opacity:0;transform:translateX(-10px)}}
+@media(prefers-reduced-motion:reduce){.drow{animation:none}}
+.eq{font:clamp(22px,6.4vw,32px) Jua,sans-serif;text-align:center;margin:14px 0 4px;line-height:1.3}
+.eq b{color:var(--y);font-weight:400}
+.secret{background:#2f554b;border-radius:14px;padding:10px 14px;margin-top:10px;font-size:16px}
+.ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-top:12px}
+.step{display:flex;align-items:center;gap:8px;font:20px Jua,sans-serif}
+.step button{width:48px;height:48px;border-radius:14px;border:1px solid var(--line);background:#2f554b;color:var(--ink);font-size:24px;cursor:pointer}
+.linkb{background:none;border:1px solid var(--y);color:var(--y);border-radius:12px;min-height:44px;padding:0 14px;font-size:17px;cursor:pointer;margin-top:8px}
+.miss span{background:#4a2f2a;color:#ffd9d0;border-radius:12px;padding:8px;text-align:center;font:20px Jua,sans-serif}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<section id="home">
+  <header>
+    <div><h1>구구단 마스터</h1><p class="sub">64칸을 전부 노란 별로 채우면 졸업!</p></div>
+    <div class="stat">
+      <div class="pill"><b id="dday">D-40</b><small>12월 31일까지</small></div>
+      <div class="pill"><b id="mcount">0/64</b><small>마스터</small></div>
+    </div>
+  </header>
+
+  <div class="board" id="board" aria-label="구구단 마스터 판"></div>
+  <div class="legend">
+    <span><i style="border:1px dashed var(--line)"></i>아직</span>
+    <span><i class="l2"></i>맞히는 중</span>
+    <span><i class="l3"></i>빨라지는 중</span>
+    <span><i class="l5"></i>3초 안에 척척 = 마스터</span>
+  </div>
+  <p class="sub">왼쪽 노란 숫자(단)를 누르면 그 단을 차근차근 익혀요.</p>
+
+  <div class="card hot">
+    <h2>6단부터는 원리로 정복!</h2>
+    <p class="sub">5단까지 잘하니까, 모르는 단은 <b style="color:var(--y)">5단 + 나머지</b>로 쪼개면 돼요. 9단은 10단에서 빼기!</p>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" data-lab="6">6단</button><button class="btn" data-lab="7">7단</button><button class="btn" data-lab="8">8단</button><button class="btn" data-lab="9">9단</button>
+    </div>
+    <button class="btn alt" data-lab="0">곱셈 기본 원리부터 보기</button>
+  </div>
+
+  <div class="card">
+    <h2 id="mtitle">오늘의 미션</h2>
+    <p class="sub" id="mdesc"></p>
+    <button class="btn" id="goMission">미션 시작 (15문제)</button>
+    <div class="days" id="days" aria-label="최근 14일 기록"></div>
+    <p class="sub">최근 14일: 노랑 = 미션 완료, 초록 = 조금 했어요</p>
+  </div>
+
+  <div class="card">
+    <h2>단 익히기</h2>
+    <p class="sub">순서대로 → 거꾸로 → 섞어서. 앞의 답에 더하면 다음 답이 나와요.</p>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="card">
+    <h2>도전</h2>
+    <div class="row">
+      <button class="btn" id="goSpeed">60초 스피드</button>
+      <button class="btn alt" id="goWeak">약점만 연습</button>
+    </div>
+    <p class="sub" id="bestTxt"></p>
+    <div id="weakBox"></div>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>부모님용 · 12월 완성 로드맵</summary>
+      <ol class="plan" id="plan"></ol>
+      <p class="sub" style="margin-top:12px">하루 10분이면 충분합니다. 길게 한 번보다 짧게 매일이 훨씬 효과적이에요. 틀린 문제는 몇 문제 뒤에 자동으로 다시 나오고, 마스터 칸은 3초 안에 여러 번 맞혀야 노랗게 됩니다. 아이가 손가락으로 세고 있다면 아직 외운 게 아니니, 칸 색이 노래질 때까지 반복해 주세요.</p>
+    </details>
+  </div>
+</section>
+
+<section id="play">
+  <div class="top">
+    <button class="x" id="quit" aria-label="그만하기">×</button>
+    <div class="prog" id="prog">1 / 15</div>
+    <div class="prog" id="score">⭐ 0</div>
+  </div>
+  <div class="bar"><i id="tbar"></i></div>
+  <div class="ladder" id="ladder"></div>
+  <div class="q"><div class="big"><span id="qa">7</span> × <span id="qb">8</span> = <span class="ans" id="ans">&nbsp;</span></div></div>
+  <div class="fb" id="fb"></div>
+  <div class="pad" id="pad"></div>
+</section>
+
+<section id="lab">
+  <div class="top">
+    <button class="x" id="labBack" aria-label="돌아가기">←</button>
+    <div class="prog">원리 실험실</div>
+    <div style="width:48px"></div>
+  </div>
+  <div class="tabs" id="tabs">
+    <button data-m="group">① 묶어 세기</button>
+    <button data-m="swap">② 돌려 보기</button>
+    <button data-m="split">③ 쪼개 보기</button>
+  </div>
+  <p class="lexp" id="lexp"></p>
+  <div class="dots" id="dots"></div>
+  <div class="eq" id="eq"></div>
+  <div id="secret"></div>
+  <div class="ctl">
+    <div class="chips" id="lchips"></div>
+  </div>
+  <div class="ctl">
+    <div class="step"><button id="bm" aria-label="묶음 빼기">−</button><span id="bn">4묶음</span><button id="bp" aria-label="묶음 더하기">+</button></div>
+    <button class="linkb" id="rotBtn">↻ 돌리기</button>
+  </div>
+  <button class="btn" id="labGo">이 단 연습하러 가기</button>
+</section>
+
+<section id="done">
+  <h1 id="dtitle">잘했어요!</h1>
+  <div class="score" id="dscore"></div>
+  <p class="sub" id="dsub" style="text-align:center"></p>
+  <div id="dmiss"></div>
+  <div class="row" style="margin-top:16px">
+    <button class="btn" id="again">틀린 것 다시</button>
+    <button class="btn alt" id="home2">처음으로</button>
+  </div>
+</section>
+
+</div>
+<script>
+{
+const KEY='gugu-v1';
+let S=null;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S||!S.lv)S={lv:{},wr:{},days:{},best:0};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const $=id=>document.getElementById(id);
+const D=[2,3,4,5,6,7,8,9];
+const k=(a,b)=>a+'x'+b;
+const lv=(a,b)=>S.lv[k(a,b)]||0;
+const ALL=D.flatMap(a=>D.map(b=>[a,b]));
+const STAGES=[{d:[2,5],n:'2단 · 5단'},{d:[3,4],n:'3단 · 4단'},{d:[9],n:'9단'},{d:[6],n:'6단'},{d:[7],n:'7단'},{d:[8],n:'8단'}];
+const factsOf=ds=>{const m=new Map();ds.forEach(a=>D.forEach(b=>{m.set(k(a,b),[a,b]);m.set(k(b,a),[b,a])}));return[...m.values()]};
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today=()=>ymd(new Date());
+function stageIdx(){for(let i=0;i<STAGES.length;i++){const f=STAGES[i].d.flatMap(a=>D.map(b=>[a,b]));if(f.filter(([a,b])=>lv(a,b)>=3).length/f.length<.8)return i}return STAGES.length}
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+function weighted(pool,n){const out=[];let prev='';for(let t=0;t<n;t++){const w=pool.map(([a,b])=>k(a,b)===prev?0:(6-lv(a,b))**2+(S.wr[k(a,b)]||0)*2+1);let r=Math.random()*w.reduce((s,x)=>s+x,0),i=0;while(r>w[i]){r-=w[i];i++}i=Math.min(i,pool.length-1);out.push(pool[i]);prev=k(...pool[i])}return out}
+function weakList(n){return ALL.filter(([a,b])=>(S.wr[k(a,b)]||0)>0&&lv(a,b)<4).sort((x,y)=>(S.wr[k(...y)]||0)-(S.wr[k(...x)]||0)||lv(...x)-lv(...y)).slice(0,n)}
+
+function hint(a,b){
+  const p=a*b;let h='';
+  if(a===7&&b===8||a===8&&b===7)return '5, 6, 7, 8 → 56 = 7 × 8 (숫자가 차례대로!)';
+  if(a===b)h=`같은 수 곱하기! ${a}×${a}=${p}`;
+  else if(a===2)h=`${b}를 두 번 더하기: ${b}+${b}=${p}`;
+  else if(a===3)h=`2×${b}=${2*b}에 ${b} 더 → ${p}`;
+  else if(a===4)h=`2×${b}=${2*b}의 두 배 → ${p}`;
+  else if(a===5)h=`5단은 끝이 0 아니면 5! 10×${b}의 절반 = ${p}`;
+  else if(a===6)h=`5×${b}=${5*b}에 ${b} 더 → ${p}`;
+  else if(a===7)h=`5×${b}=${5*b} + 2×${b}=${2*b} → ${p}`;
+  else if(a===8)h=`5×${b}=${5*b} + 3×${b}=${3*b} → ${p}`;
+  else if(a===9)h=`10×${b}=${10*b}에서 ${b} 빼기 → ${p}`;
+  if(a!==b&&lv(b,a)>=3)h+=` · ${b}×${a}랑 같아요`;
+  return h;
+}
+
+/* 홈 */
+function renderHome(){
+  let h='<div></div>'+D.map(b=>`<div class="h">×${b}</div>`).join('');
+  D.forEach(a=>{h+=`<button class="h" data-dan="${a}" aria-label="${a}단 익히기">${a}</button>`;D.forEach(b=>{const l=lv(a,b);h+=`<div class="l${l}" title="${a}×${b}">${l>=1?a*b:''}</div>`})});
+  $('board').innerHTML=h;
+  const m=ALL.filter(([a,b])=>lv(a,b)>=4).length;$('mcount').textContent=m+'/64';
+  const now=new Date();now.setHours(0,0,0,0);const dd=Math.round((new Date(now.getFullYear(),11,31)-now)/864e5);
+  $('dday').textContent=dd>0?'D-'+dd:dd===0?'D-DAY':'완료';
+  const si=stageIdx(),done=(S.days[today()]||0)>=15;
+  $('mtitle').textContent=done?'오늘 미션 완료! 🎉':'오늘의 미션';
+  $('mdesc').textContent=si<STAGES.length?`지금 단계: ${si+1}단계 ${STAGES[si].n} (+ 앞에서 배운 것 복습)`:'모든 단계 통과! 이제 전체를 섞어서 3초 안에 맞혀요.';
+  $('goMission').textContent=done?'한 번 더 (15문제)':'미션 시작 (15문제)';
+  let ds='';for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const c=S.days[ymd(d)]||0;ds+=`<span class="${c>=15?'full':c>0?'half':''}" title="${ymd(d)} ${c}문제"></span>`}
+  $('days').innerHTML=ds;
+  $('chips').innerHTML=D.map(d=>`<button data-dan="${d}" class="${si<STAGES.length&&STAGES[si].d.includes(d)?'cur':''}">${d}단</button>`).join('');
+  $('bestTxt').textContent=S.best?`스피드 최고 기록: ${S.best}개 (12월 목표 30개 이상)`:'60초 동안 몇 개 맞힐 수 있을까? 12월 목표는 30개 이상!';
+  const w=weakList(8);
+  $('weakBox').innerHTML=w.length?'<p class="sub">자주 틀리는 문제</p><div class="weak">'+w.map(([a,b])=>`<span>${a}×${b}</span>`).join('')+'</div>':'';
+  $('goWeak').disabled=!w.length;$('goWeak').style.opacity=w.length?1:.5;
+  const plan=[['11/22–11/28','2·5단, 3·4단','이미 아는 단을 3초 안으로 빠르게'],['11/29–12/5','9단, 6단','9단은 10배 빼기, 6단은 5단 더하기'],['12/6–12/12','7단','가장 어려운 단. 거꾸로 문제까지'],['12/13–12/19','8단','4단의 두 배. 7×8=56 꼭 기억'],['12/20–12/26','전체 섞기 + 약점','약점만 연습으로 빨간 칸 없애기'],['12/27–12/31','스피드 60초','30개 이상, 64칸 전부 노랑']];
+  const td=new Date(),md=(td.getMonth()+1)*100+td.getDate();
+  $('plan').innerHTML=plan.map(([d,t,x])=>{const [s,e]=d.split('–').map(v=>{const [mm,dd]=v.split('/');return +mm*100+ +dd});return`<li class="${md>=s&&md<=e?'now':''}"><b>${d}</b><span><strong>${t}</strong> · ${x}</span></li>`}).join('');
+}
+
+/* 문제 풀기 */
+let Q=null,timer=null,actx=null;
+function beep(ok){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=ok?880:220;g.gain.setValueAtTime(.08,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+.25);o.connect(g).connect(actx.destination);o.start();o.stop(actx.currentTime+.25)}catch(e){}}
+function start(mode,opt){
+  let list=[];
+  if(mode==='learn'){const d=opt,f=[1,2,3,4,5,6,7,8,9].map(b=>[d,b]);list=f.concat(f.slice(1).reverse(),shuffle(D.map(b=>[b,d])))}
+  else if(mode==='mission'){const si=stageIdx();if(si>=STAGES.length)list=weighted(ALL,15);else{const cur=factsOf(STAGES[si].d),old=si?factsOf(STAGES.slice(0,si).flatMap(s=>s.d)):[];list=old.length?shuffle(weighted(cur,11).concat(weighted(old,4))):weighted(cur,15)}}
+  else if(mode==='weak')list=weighted(weakList(8),12);
+  else if(mode==='retry')list=shuffle(opt.concat(opt));
+  else if(mode==='speed'){const si=stageIdx(),pool=si>=STAGES.length?ALL:factsOf(STAGES.slice(0,si+1).flatMap(s=>s.d));list=weighted(pool,300)}
+  Q={mode,list,i:0,ok:0,fast:0,miss:[],dan:mode==='learn'?opt:0,end:mode==='speed'?Date.now()+60000:0};
+  show('play');
+  $('ladder').style.display=mode==='learn'?'grid':'none';
+  if(mode==='speed'){clearInterval(timer);timer=setInterval(()=>{const r=Q.end-Date.now();$('prog').textContent=Math.max(0,Math.ceil(r/1000))+'초';if(r<=0){clearInterval(timer);finish()}},200)}
+  ask();
+}
+function ask(){
+  const [a,b]=Q.list[Q.i];Q.inp='';Q.lock=false;Q.t0=performance.now();
+  $('qa').textContent=a;$('qb').textContent=b;$('ans').innerHTML='&nbsp;';$('ans').className='ans';
+  if(Q.mode!=='speed')$('prog').textContent=(Q.i+1)+' / '+Q.list.length;
+  $('score').textContent='⭐ '+Q.ok;
+  const fwd=Q.mode==='learn'&&Q.i<9&&Q.i>0;
+  $('fb').innerHTML=fwd?`<span class="hint">앞의 답 ${a*(b-1)}에 ${a}를 더하면?</span>`:'';
+  if(Q.mode==='learn'){const d=Q.dan;$('ladder').innerHTML=[1,2,3,4,5,6,7,8,9].map(n=>{const seen=Q.i>=9||n<b&&Q.i<9;return`<span class="${seen?'f':''} ${n===b&&a===d?'c':''}">${seen?d*n:'?'}</span>`}).join('')}
+  const t=$('tbar');t.style.transition='none';t.style.transform='scaleX(1)';t.style.background='var(--y)';void t.offsetWidth;
+  if(Q.mode!=='speed'){t.style.transition='transform 3s linear';t.style.transform='scaleX(0)'}else t.style.transform='scaleX(0)';
+}
+function press(d){
+  if(!Q||Q.lock)return;
+  if(d==='⌫'){Q.inp=Q.inp.slice(0,-1)}else if(d==='확인'){if(Q.inp)check();return}else if(Q.inp.length<3)Q.inp+=d;
+  $('ans').innerHTML=Q.inp||'&nbsp;';
+  const [a,b]=Q.list[Q.i];if(Q.inp.length>=String(a*b).length)check();
+}
+function check(){
+  const [a,b]=Q.list[Q.i],key=k(a,b),dt=(performance.now()-Q.t0)/1000,good=+Q.inp===a*b,l=lv(a,b);
+  Q.lock=true;S.days[today()]=(S.days[today()]||0)+1;
+  if(a===1||b===1){}
+  else if(good){S.lv[key]=dt<3?Math.min(5,l+1):Math.max(l,1)}
+  else{S.lv[key]=0;S.wr[key]=(S.wr[key]||0)+1}
+  save();
+  const an=$('ans');
+  if(good){Q.ok++;if(dt<3)Q.fast++;an.className='ans good flash';beep(true);
+    $('fb').innerHTML=dt<3?'정답! ⚡ 번개처럼 빨라요':'정답! 다음엔 3초 안에 도전';
+    setTimeout(next,Q.mode==='speed'?250:dt<3?450:800)}
+  else{beep(false);an.className='ans bad flash';an.textContent=a*b;
+    if(!Q.miss.some(([x,y])=>x===a&&y===b))Q.miss.push([a,b]);
+    $('fb').innerHTML=`${a} × ${b} = <b style="color:var(--y)">${a*b}</b> 이에요<span class="hint">${hint(a,b)}</span>`+(Q.mode!=='speed'?`<button class="linkb" id="seeDots">점으로 원리 보기</button>`:'');
+    const sd=$('seeDots');if(sd)sd.onclick=()=>{const big=Math.max(a,b),sm=Math.min(a,b);openLab(big>=6?big:a,big>=6?sm:b,big>=6?'split':'group','play')};
+    if(Q.mode!=='speed'){Q.list.splice(Math.min(Q.i+3,Q.list.length),0,[a,b]);
+      Q.waitNext=true;padNext(true)}
+    else setTimeout(next,1100)}
+}
+function next(){
+  Q.waitNext=false;padNext(false);Q.i++;
+  if(Q.mode==='speed'&&Date.now()>=Q.end)return finish();
+  if(Q.i>=Q.list.length)return finish();ask();
+}
+function finish(){
+  clearInterval(timer);if(!Q)return;
+  const sp=Q.mode==='speed';
+  if(sp&&Q.ok>S.best){S.best=Q.ok;save()}
+  const asked=sp?Q.i:Q.list.length;
+  show('done');
+  $('dtitle').textContent=sp?(Q.ok>=30?'구구단 달인!':'좋아요, 더 빨라질 거예요!'):Q.miss.length===0?'완벽해요! 🎉':'잘했어요!';
+  $('dscore').textContent=sp?Q.ok+'개':Q.ok+' / '+asked;
+  $('dsub').textContent=sp?`최고 기록 ${S.best}개 · 목표 30개`:`3초 안에 맞힌 문제 ${Q.fast}개`;
+  $('dmiss').innerHTML=Q.miss.length?'<div class="card"><h2>다시 볼 문제</h2><div class="miss">'+Q.miss.map(([a,b])=>`<span>${a}×${b}=${a*b}</span>`).join('')+'</div></div>':'';
+  $('again').style.display=Q.miss.length?'block':'none';
+}
+function padNext(on){
+  const keys=on?[]:['1','2','3','4','5','6','7','8','9','⌫','0','확인'];
+  $('pad').innerHTML=on?'<button class="k2" data-k="다음" style="grid-column:1/-1;font-size:26px">알았어요, 다음 →</button>':keys.map(x=>`<button data-k="${x}" class="${x.length>1?'k2':''}" ${x==='확인'?'style="font-size:22px"':''}>${x}</button>`).join('');
+}
+/* 원리 실험실: a×b = a개씩 b묶음 (한 줄 = 한 묶음) */
+const L={a:7,b:4,m:'group',rot:false,from:'home'};
+const SPLIT={6:[5,1],7:[5,2],8:[5,3],4:[2,2],3:[2,1]};
+function openLab(a,b,m,from){L.a=a||6;L.b=b||4;L.m=m;L.rot=false;L.from=from||'home';show('lab');renderLab()}
+function renderLab(){
+  const {a,b,m}=L,p=a*b;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x.dataset.m===m));
+  $('lchips').innerHTML=D.map(d=>`<button data-ld="${d}" class="${d===a?'cur':''}">${d}단</button>`).join('');
+  $('bn').textContent=b+'묶음';
+  $('rotBtn').style.display=m==='swap'?'inline-block':'none';
+  let rows=[],exp='',eq='',sec='';
+  if(m==='group'){
+    for(let r=1;r<=b;r++)rows.push({dots:Array(a).fill(''),lab:a*r});
+    exp=`<b>${a} × ${b}</b>는 <b>${a}개씩 ${b}묶음</b>이에요. 한 줄이 한 묶음! 묶음이 하나 늘 때마다 <b>${a}씩</b> 커져요. <b>+</b>를 눌러 보세요.`;
+    eq=`${a} × ${b} = ${Array(b).fill(a).join(' + ')} = <b>${p}</b>`;
+    if(b>5)eq=`${a} × ${b} = ${a}를 ${b}번 더하기 = <b>${p}</b>`;
+  }else if(m==='swap'){
+    const [x,y]=L.rot?[b,a]:[a,b];
+    for(let r=1;r<=y;r++)rows.push({dots:Array(x).fill(L.rot?'q':''),lab:x*r});
+    exp=`점을 옆으로 <b>돌려도 개수는 그대로</b>예요. 그래서 <b>${a}×${b} = ${b}×${a}</b>. ${Math.min(a,b)}단을 알면 ${Math.max(a,b)}×${Math.min(a,b)}는 공짜! <b>↻ 돌리기</b>를 눌러 보세요.`;
+    eq=`${x}개씩 ${y}묶음 = <b>${p}</b>`;
+    sec=`<div class="secret">외워야 할 게 줄어들어요: 6단부터 새로 외울 것은 6×6, 6×7, 6×8, 6×9, 7×7, 7×8, 7×9, 8×8, 8×9, 9×9 — <b style="color:var(--y)">딱 10개</b>! 나머지는 앞 단을 돌린 거예요.</div>`;
+  }else{
+    if(a===9){
+      for(let r=1;r<=b;r++)rows.push({dots:[...Array(9).fill('p'),'x'],lab:9*r});
+      exp=`한 줄에 <b>10개</b>가 있다고 생각하고, 빈 자리 <b>1개씩</b>을 빼요. 10단은 쉬우니까 <b>10×${b}에서 ${b}만 빼면</b> 끝!`;
+      eq=`9 × ${b} = 10×${b} − ${b} = ${10*b} − ${b} = <b>${p}</b>`;
+      sec=`<div class="secret">9단의 비밀: ${[1,2,3,4,5,6,7,8,9].map(n=>9*n).join(', ')}<br>십의 자리는 1씩 커지고, 일의 자리는 1씩 작아져요. 두 숫자를 더하면 <b style="color:var(--y)">언제나 9</b>! (${p<10?'0'+p:p} → ${Math.floor(p/10)}+${p%10}=9)</div>`;
+    }else if(SPLIT[a]){
+      const [s,t]=SPLIT[a];
+      for(let r=1;r<=b;r++)rows.push({dots:[...Array(s).fill('p'),...Array(t).fill('q')],lab:`${s*r}+${t*r}`,split:s});
+      exp=a>=6?`한 줄 ${a}개를 <b>5개(노랑) + ${t}개(파랑)</b>로 나눠요. 5단은 이미 잘하니까 <b>5단 답 + ${t}단 답</b>이면 끝!`:`한 줄 ${a}개를 <b>${s}개 + ${t}개</b>로 나눠요. 아는 단 두 개를 더하면 돼요.`;
+      eq=`${a} × ${b} = ${s}×${b} + ${t}×${b} = ${s*b} + ${t*b} = <b>${p}</b>`;
+      if(a===8)sec=`<div class="secret">8단 다른 방법: 4단의 두 배! 4×${b}=${4*b} → ${4*b}+${4*b}=<b style="color:var(--y)">${p}</b><br>특급 암기: <b style="color:var(--y)">5, 6, 7, 8</b> → 56 = 7 × 8</div>`;
+      if(a===7)sec=`<div class="secret">7단에서 가장 많이 틀리는 것: 7×6=42, 7×7=49, 7×8=56. 쪼개서 3번 풀어 보면 머리에 남아요.</div>`;
+      if(a===6)sec=`<div class="secret">6단 짝수 비밀: 6×2=12, 6×4=24, 6×6=36, 6×8=48 — 일의 자리가 곱한 수와 같아요!</div>`;
+    }else{
+      for(let r=1;r<=b;r++)rows.push({dots:Array(a).fill('p'),lab:a*r});
+      exp=`${a}단은 이미 잘 알아요! 쪼개기는 <b>6·7·8·9단</b>에서 진짜 힘을 발휘해요. 위에서 6단부터 골라 보세요.`;
+      eq=`${a} × ${b} = <b>${p}</b>`;
+    }
+  }
+  $('lexp').innerHTML=exp;$('eq').innerHTML=eq;$('secret').innerHTML=sec;
+  $('dots').innerHTML=rows.map((r,i)=>`<div class="drow" style="animation-delay:${i*40}ms"><span class="dset">${r.dots.map((c,j)=>`<i class="${c}${r.split&&j===r.split?' gap':''}"></i>`).join('')}</span><em>${r.lab}</em></div>`).join('');
+}
+document.addEventListener('click',e=>{
+  const lb=e.target.closest('[data-lab]');if(lb){const d=+lb.dataset.lab;d?openLab(d,4,'split','home'):openLab(7,4,'group','home');return}
+  const ld=e.target.closest('[data-ld]');if(ld){L.a=+ld.dataset.ld;L.rot=false;renderLab();return}
+  const tm=e.target.closest('#tabs [data-m]');if(tm){L.m=tm.dataset.m;L.rot=false;renderLab()}
+});
+$('bp').onclick=()=>{if(L.b<9){L.b++;renderLab()}};
+$('bm').onclick=()=>{if(L.b>1){L.b--;renderLab()}};
+$('rotBtn').onclick=()=>{L.rot=!L.rot;renderLab()};
+$('labBack').onclick=()=>show(L.from==='play'&&Q?'play':'home');
+$('labGo').onclick=()=>start('learn',L.a);
+
+function show(id){['home','play','done','lab'].forEach(s=>$(s).style.display=s===id?'block':'none');if(id==='home')renderHome();window.scrollTo(0,0)}
+
+$('pad').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.k==='다음')next();else press(b.dataset.k)});
+document.addEventListener('keydown',e=>{if($('play').style.display!=='block')return;if(Q&&Q.waitNext&&(e.key==='Enter'||e.key===' ')){e.preventDefault();next();return}if(/^[0-9]$/.test(e.key))press(e.key);else if(e.key==='Backspace')press('⌫');else if(e.key==='Enter')press('확인')});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-dan]');if(b&&$('home').style.display!=='none')start('learn',+b.dataset.dan)});
+$('goMission').onclick=()=>start('mission');
+$('goSpeed').onclick=()=>start('speed');
+$('goWeak').onclick=()=>{if(weakList(8).length)start('weak')};
+$('quit').onclick=()=>{clearInterval(timer);Q=null;show('home')};
+$('again').onclick=()=>start('retry',Q.miss);
+$('home2').onclick=()=>show('home');
+padNext(false);renderHome();
+}
+</script>
+</body>
+</html>
