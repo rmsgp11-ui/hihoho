@@ -235,7 +235,7 @@ function weekBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw,...w.lw);co
 function miniBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw);return`<div class="mini">${w.tw.map(v=>`<i style="height:${(v/mx*100).toFixed(0)}%"></i>`).join('')}</div>`}
 
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='52';
+const APPV='53';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -324,7 +324,7 @@ function vJoin(){const c=ST.color||COLORS[Object.keys(ST.members).length%COLORS.
 const linkOpts=(K,v)=>`<option value="">확인 방법에 맞춰 자동 (앱 약속은 그 앱)</option>${[...new Map(kids().flatMap(k=>allLinks(k)).map(l=>[l.u,l])).values()].map(l=>`<option value="${esc(l.u)}" ${v===l.u?'selected':''}>${esc(l.n)}</option>`).join('')}`;
 const modeOf=i=>i.proof?'proof':i.timer?'timer':(i.auto||'');
 const applyMode=(it,v)=>{it.proof=v==='proof';it.timer=v==='timer';it.auto=v==='proof'||v==='timer'?'':v;if((it.proof||it.timer)&&!it.dur)it.dur=30};
-const autoOpts=v=>`<option value="">직접 체크</option><option value="timer" ${v==='timer'?'selected':''}>타이머로 시간 재기 (책 읽기 등, 끝내면 체크)</option>${Object.entries(AUTO).map(([k,t])=>`<option value="${k}" ${v===k?'selected':''}>앱 자동: ${t}</option>`).join('')}<option value="proof" ${v==='proof'?'selected':''}>타이머 + 인증 사진 (리딩게이트·책 읽기 등)</option>`;
+const autoOpts=v=>`<option value="timer" ${v==='timer'||v===undefined?'selected':''}>타이머로 시간 재기 (끝내면 체크, 포인트 한 번에)</option>${Object.entries(AUTO).map(([k,t])=>`<option value="${k}" ${v===k?'selected':''}>앱 자동: ${t}</option>`).join('')}<option value="proof" ${v==='proof'?'selected':''}>리딩게이트: 타이머 + 시작·결과 사진 (포인트 1권·2권 반씩)</option><option value="" ${v===''?'selected':''}>직접 체크 (타이머 없이)</option>`;
 function taskBtn(K,i,d,canTick){const on=isDone(d,i),au=autoOn(d,i)&&!(d.p&&d.p[i.id]);return`<button class="task ${on?'on':''}" data-a="tick" data-k="${esc(K)}" data-id="${esc(i.id)}" ${canTick?'':'disabled'}><span class="bx"></span><span class="tt">${esc(i.t)}${au?'<br><span class="small" style="color:var(--ok)">앱에서 끝내서 자동 체크</span>':i.auto&&!on?`<br><span class="small mute">${AUTO[i.auto]||''} 자동 체크</span>`:''}</span>${LOCK}<span class="pt">+${+i.pt||0}</span></button>`}
 /* ---------- 약속 시간 · 타이머 · 미루기 · 인증 ---------- */
 const addMin=(hm,m)=>{const t=toMin(hm)+m;return pad(Math.floor(t/60)%24)+':'+pad(t%60)};
@@ -502,7 +502,10 @@ function vHome(){const ks=kids(),wait=ST.redeem.filter(r=>r.status==='wait'),u=u
   ${fd.length?`<section class="card"><h3>요즘 먹고 싶은 것</h3><div class="chips">${fd.map(f=>`<span class="chip"><span class="dot" style="background:${color(f.by)}"></span>${esc(f.name)}</span>`).join('')}</div></section>`:''}
 `}
 
-function vTasks(){const ks=kids();if(!ks.length)return'<div class="card"><p style="margin:0">아이가 아직 등록되지 않았어요.</p></div>';
+async function migrateTimer(){if(ST.migDone||ST.cfg.migTimer)return;ST.migDone=1;let n=0;for(const K of kids()){const items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));let ch=false;
+    items.forEach(it=>{if(it.auto)return;if(it.proof&&/리딩\s*게이트/i.test(it.t))return;if(it.proof||!it.timer){applyMode(it,'timer');ch=true;n++}});if(ch)await save('',D('tpl',K),{items},true)}
+  await save('',D('fam','cfg'),{migTimer:true},true);if(n)toast(`리딩게이트 말고 약속 ${n}개를 타이머 방식(포인트 한 번에)으로 바꿨어요`)}
+function vTasks(){const ks=kids();if(ST.ready&&Object.keys(ST.tpl).length)setTimeout(migrateTimer,300);if(!ks.length)return'<div class="card"><p style="margin:0">아이가 아직 등록되지 않았어요.</p></div>';
   if(!ks.includes(ST.selKid))ST.selKid=ks[0];const K=ST.selKid,date=ST.selDate||today();subPlan(K,date);
   const tpl=(ST.tpl[K]&&ST.tpl[K].items)||[],plan=(ST.plan[K]&&ST.plan[K][date]&&ST.plan[K][date].items)||[],t=today(),ti=itemsFor(K,t),d=doneDoc(K,t);
   const dayChips=(sel,act,id)=>MON.map(wd=>`<button class="chip ${sel.includes(wd)?'on':''}" data-a="${act}" data-wd="${wd}" ${id?`data-id="${esc(id)}"`:''}>${WD[wd]}</button>`).join('');
@@ -513,7 +516,7 @@ function vTasks(){const ks=kids();if(!ks.length)return'<div class="card"><p styl
   <section class="card"><h3>반복 약속 추가</h3><p class="small mute" style="margin:0">고른 요일마다 자동으로 들어가요. 아이는 고치거나 지울 수 없어요.</p>
 <div class="sec" style="margin-top:6px">누가 할까요? (여러 명 고를 수 있어요)</div><div class="chips">${ks.map(k=>`<button class="chip ${(ST.addKids||[K]).includes(k)?'on':''}" data-a="addKid" data-k="${esc(k)}"><span class="dot" style="background:${color(k)}"></span>${esc(name(k))}</button>`).join('')}</div><div class="g3"><input id="tplT" maxlength="40" placeholder="약속 내용 (예: 리딩게이트 책 읽기)"><input id="tplP" type="number" min="0" max="500" value="10" aria-label="포인트"></div><div class="chips">${dayChips(ST.newDays,'newDay')}</div>
    <div class="g2"><label class="small mute">시작 시각 (안 정해도 돼요)<input id="tplAt" type="time"></label><label class="small mute">걸리는 시간(분)<input id="tplDur" type="number" min="5" max="300" step="5" placeholder="30"></label></div>
-   <label class="small mute">확인 방법<select id="tplAuto">${autoOpts('')}</select></label><label class="small mute">누르면 열 링크<select id="tplLu">${linkOpts(K,'')}</select></label><button class="btn sm" data-a="tplAdd">반복 약속 추가</button></section>
+   <label class="small mute">확인 방법<select id="tplAuto">${autoOpts('timer')}</select></label><label class="small mute">누르면 열 링크<select id="tplLu">${linkOpts(K,'')}</select></label><button class="btn sm" data-a="tplAdd">반복 약속 추가</button></section>
   <section class="card"><h3>특정 날짜에만 하는 약속</h3><input id="planDate" type="date" value="${date}" aria-label="날짜"><div class="list">${plan.map(i=>`<div class="rw"><span class="nm" style="font-size:17px">${esc(i.t)}${i.at?` <span class="small mute">${esc(i.at)}${i.dur?' · '+i.dur+'분':''}</span>`:''}</span><span class="pt jua" style="color:var(--p)">+${+i.pt||0}</span><button class="x" data-a="planDel" data-id="${esc(i.id)}" aria-label="지우기">×</button></div>`).join('')||`<div class="empty">${fmtD(date)}에만 하는 약속이 없어요</div>`}</div>
    <div class="sec" style="margin-top:6px">누가 할까요? (여러 명 고를 수 있어요)</div><div class="chips">${ks.map(k=>`<button class="chip ${(ST.addKids||[K]).includes(k)?'on':''}" data-a="addKid" data-k="${esc(k)}"><span class="dot" style="background:${color(k)}"></span>${esc(name(k))}</button>`).join('')}</div><div class="g3"><input id="planT" maxlength="40" placeholder="이날만 할 약속"><input id="planP" type="number" min="0" max="500" value="10" aria-label="포인트"></div><div class="g2"><label class="small mute">시작 시각<input id="planAt" type="time"></label><label class="small mute">걸리는 시간(분)<input id="planDur" type="number" min="5" max="300" step="5" placeholder="30"></label></div><button class="btn sm" data-a="planAdd">이날 약속 추가</button></section>
   <section class="card"><h3>${esc(name(K))}의 바로가기 링크</h3><p class="small mute" style="margin:0">${esc(name(K))}의 오늘 화면 맨 아래에 이 순서대로 보여요. 다른 가족에게는 안 보여요.</p>
