@@ -7,3 +7,5 @@ window.firebaseConfig = {
   messagingSenderId: "535637659184",
   appId: "1:535637659184:web:8f26bf8d8b0d1e187027f5"
 };
+
+window.AI_URL="https://hihoho-ai.rmsgp11.workers.dev";
