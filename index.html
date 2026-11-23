@@ -243,16 +243,19 @@ const unread=()=>myLetters().filter(l=>!l.read).length;
 /* ---------- 관리자 잠금 ---------- */
 let unlocked=false,hiddenAt=0,PIN={buf:'',mode:'',first:'',msg:''};
 async function hashPin(x){const t='family:'+x;try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return[...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('')}catch(e){let h=0;for(const c of t)h=(h*31+c.charCodeAt(0))|0;return'h'+h}}
-function checkLock(){if(!isAdmin()){PIN.mode='';PIN.buf=''}else if(ST.cfg.pin&&!unlocked&&!PIN.mode)PIN.mode='enter';paintPin()}
+const TKEY=()=>'fam-trust-'+ST.me;
+function trusted(){try{return!!ST.cfg.pin&&localStorage.getItem(TKEY())===ST.cfg.pin}catch(e){return false}}
+function trust(on){try{on?localStorage.setItem(TKEY(),ST.cfg.pin||''):localStorage.removeItem(TKEY())}catch(e){}}
+function checkLock(){if(!isAdmin()){PIN.mode='';PIN.buf=''}else if(trusted()){unlocked=true;if(PIN.mode==='enter')PIN.mode=''}else if(ST.cfg.pin&&!unlocked&&!PIN.mode)PIN.mode='enter';paintPin()}
 function paintPin(){if(!PIN.mode){if($('#full').dataset.pin){$('#full').innerHTML='';delete $('#full').dataset.pin}return}
   const m=PIN.mode,t=m==='enter'?'관리자 비밀번호':m==='create'?'관리자 비밀번호 만들기':'한 번 더 눌러 주세요';
   $('#full').dataset.pin='1';$('#full').innerHTML=`<div class="full"><div class="card"><h2>${t}</h2><p class="mute" style="margin:0">${m==='enter'?'부모님만 들어갈 수 있어요.':'숫자 4자리. 아이들이 모르는 번호로!'}</p><div class="pdots">${[0,1,2,3].map(i=>`<i class="${i<PIN.buf.length?'f':''}"></i>`).join('')}</div><div style="min-height:24px;color:var(--p)">${PIN.msg}</div><div class="pkeys">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-a="pk" data-k="${n}">${n}</button>`).join('')}<button data-a="pkx" style="font-size:16px">${m==='enter'?'':'취소'}</button><button data-a="pk" data-k="0">0</button><button data-a="pkdel" aria-label="지우기">⌫</button></div></div></div>`}
 async function pinKey(k){if(PIN.buf.length>=4)return;PIN.buf+=k;PIN.msg='';paintPin();if(PIN.buf.length<4)return;const v=PIN.buf;PIN.buf='';
   if(PIN.mode==='create'){PIN.first=v;PIN.mode='confirm'}
-  else if(PIN.mode==='confirm'){if(v===PIN.first){unlocked=true;PIN.mode='';await save('',D('fam','cfg'),{pin:await hashPin(v)},true);toast('관리자 비밀번호를 만들었어요')}else{PIN.mode='create';PIN.msg='두 번 누른 번호가 달라요'}}
-  else{if(await hashPin(v)===ST.cfg.pin){unlocked=true;PIN.mode=''}else PIN.msg='번호가 틀렸어요'}
+  else if(PIN.mode==='confirm'){if(v===PIN.first){unlocked=true;PIN.mode='';const h=await hashPin(v);await save('',D('fam','cfg'),{pin:h,pinOff:false},true);ST.cfg.pin=h;trust(true);toast('관리자 비밀번호를 만들었어요. 이 기기에서는 다시 묻지 않아요')}else{PIN.mode='create';PIN.msg='두 번 누른 번호가 달라요'}}
+  else{if(await hashPin(v)===ST.cfg.pin){unlocked=true;PIN.mode='';trust(true);toast('이 기기에서는 다시 묻지 않아요')}else PIN.msg='번호가 틀렸어요'}
   paintPin();render()}
-document.addEventListener('visibilitychange',()=>{if(document.hidden)hiddenAt=Date.now();else if(hiddenAt&&Date.now()-hiddenAt>10*60*1000){unlocked=false;checkLock()}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)hiddenAt=Date.now();else if(hiddenAt&&Date.now()-hiddenAt>10*60*1000&&!trusted()){unlocked=false;checkLock()}});
 
 /* ---------- 화면 ---------- */
 const TABS={kid:[['today','오늘'],['sched','시간표'],['letter','편지'],['food','먹고 싶은 것'],['point','포인트']],admin:[['home','가족'],['tasks','할 일'],['sched','시간표'],['letter','편지'],['food','음식'],['reward','보상'],['learn','학습']]};
@@ -309,7 +312,7 @@ function vPoint(){const K=ST.me,p=points(K),rw=(ST.cfg.rewards||[]).slice().sort
   <section class="card"><h3>이번 주 vs 지난주</h3>${weekBars(K)}</section>`}
 
 function vHome(){const ks=kids(),wait=ST.redeem.filter(r=>r.status==='wait'),u=unread(),fd=ST.food.filter(f=>!f.done).sort((a,b)=>b.at-a.at).slice(0,4);
-  return`${!ST.cfg.pin?`<div class="card" style="border-color:var(--p)"><b>관리자 비밀번호를 만들어 주세요.</b><span class="small mute">부모님 휴대폰을 아이가 잡아도 관리 화면에 못 들어가게 막아요.</span><button class="btn sm" data-a="pinCreate">비밀번호 만들기</button></div>`:''}
+  return`${!ST.cfg.pin&&!ST.cfg.pinOff?`<div class="card" style="border-color:var(--p)"><b>관리자 비밀번호를 만들어 주세요.</b><span class="small mute">부모님 휴대폰을 아이가 잡아도 관리 화면에 못 들어가게 막아요.</span><button class="btn sm" data-a="pinCreate">비밀번호 만들기</button></div>`:''}
   ${ks.length?ks.map(K=>{const t=today(),items=itemsFor(K,t),c=dayCount(K,t),p=points(K),w=weekData(K);return`<section class="card"><div class="kid">${ring(c.pd,items.length,28)}<div style="display:grid;gap:6px"><div class="row">${av(K)}<h2>${esc(name(K))}</h2></div>
    <span>약속 <b>${c.pd}/${items.length}</b> · 도전 <b>${c.od}개</b></span><div class="row"><span class="pill">${COIN}${p.bal}</span><span class="small mute">이번 주 ${w.ts}개 (지난주 ${w.ls}개)</span></div></div></div>${miniBars(K)}
    <div class="row"><button class="btn sm ghost" data-a="goTasks" data-k="${esc(K)}">할 일 관리</button><button class="btn sm ghost" data-a="bonusQuick" data-k="${esc(K)}">칭찬 포인트 주기</button></div></section>`}).join(''):`<div class="card"><p style="margin:0">아직 아이가 등록되지 않았어요. 아이 계정으로 한 번 로그인하면 여기에 나타나요.</p></div>`}
@@ -394,7 +397,7 @@ function vReward(){const rw=(ST.cfg.rewards||[]).slice().sort((a,b)=>a.cost-b.co
   <section class="card"><h3>교환 신청</h3><div class="list">${req.map(r=>`<div class="rw">${av(r.by)}<span class="nm" style="font-size:17px">${esc(r.name)} <span class="small mute">${r.cost}P · ${ago(r.at)}</span></span>${r.status==='wait'?`<button class="btn sm ok" data-a="rOk" data-id="${esc(r.id)}">주기</button><button class="btn sm ghost" data-a="rNo" data-id="${esc(r.id)}">거절</button>`:`<span class="st ${r.status}">${r.status==='ok'?'줬어요':'거절'}</span>`}</div>`).join('')||'<div class="empty">신청이 없어요</div>'}</div></section>
   <section class="card"><h3>칭찬 포인트 주기</h3><div class="chips">${ks.map(k=>`<button class="chip ${k===ST.selKid?'on':''}" data-a="selKid" data-k="${esc(k)}"><span class="dot" style="background:${color(k)}"></span>${esc(name(k))} · ${points(k).bal}P</button>`).join('')}</div><div class="g3"><input id="bnW" maxlength="30" placeholder="칭찬 이유 (예: 동생 숙제 도와줌)"><input id="bnP" type="number" value="10" aria-label="포인트"></div><button class="btn sm" data-a="bonusAdd" ${ST.selKid?'':'disabled'}>포인트 주기</button></section>
   <section class="card"><h3>포인트 규칙</h3><div class="g2"><label>내가 정한 도전 1개당<input id="cOwn" type="number" min="0" value="${ST.cfg.ownPt??2}"></label><label>하루 최대 개수<input id="cMax" type="number" min="0" value="${ST.cfg.ownMax??3}"></label></div><button class="btn sm ghost" data-a="cfgSave">규칙 저장</button>
-   <div class="row"><button class="btn sm ghost" data-a="pinCreate">${ST.cfg.pin?'관리자 비밀번호 바꾸기':'관리자 비밀번호 만들기'}</button>${ST.cfg.pin?'<button class="btn sm ghost" data-a="lockNow">지금 잠그기</button>':''}</div></section>`}
+   <div class="row"><button class="btn sm ghost" data-a="pinCreate">${ST.cfg.pin?'관리자 비밀번호 바꾸기':'관리자 비밀번호 만들기'}</button>${ST.cfg.pin?'<button class="btn sm ghost" data-a="lockNow">이 기기 잠그기</button><button class="btn sm ghost" data-a="pinOff">비밀번호 끄기</button>':''}</div><p class="small mute" style="margin:0">비밀번호는 기기마다 처음 한 번만 물어요. 아이도 쓰는 태블릿이라면 「이 기기 잠그기」를 누르면 다음부터 다시 물어요. 아이 계정은 비밀번호와 상관없이 관리 화면에 들어올 수 없어요.</p></section>`}
 
 /* ---------- 학습 피드백 (보호자 전용) ---------- */
 const KNAME={lineName:'선분·반직선·직선',rightFind:'직각 찾기',circle:'원의 반지름·지름',protractor:'각도기 눈금 읽기',angleClass:'예각·직각·둔각',angleSum:'각도의 합과 차',straight:'직선 위의 각',tri3rd:'삼각형 세 각의 합',quad4th:'사각형 네 각의 합',slideShape:'밀기',slideCount:'밀기 칸 세기',flip:'뒤집기',rot90:'90° 돌리기',rotAll:'180°·270°·360° 돌리기',rotFact:'돌리기 규칙',whichOp:'움직인 방법 찾기',combo:'뒤집고 돌리기',triSide:'변으로 삼각형 분류',isoAngle:'이등변·정삼각형의 각',triAngleClass:'각으로 삼각형 분류',perpPar:'수직·평행',parDist:'평행선 사이 거리',quadName:'사각형 이름',paraAngle:'평행사변형의 각',rhombus:'사각형 둘레',quadOX:'사각형 포함 관계',polyName:'다각형 이름',regular:'정다각형 판단',diag:'대각선 개수',regPerim:'정다각형 둘레'};
@@ -505,7 +508,8 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='pk')return pinKey(k);if(a==='pkdel'){PIN.buf=PIN.buf.slice(0,-1);return paintPin()}
   if(a==='pkx'){if(PIN.mode==='enter')return;PIN.mode=ST.cfg.pin&&!unlocked?'enter':'';PIN.buf='';return paintPin()}
   if(a==='pinCreate'){PIN.mode='create';PIN.buf='';PIN.msg='';return paintPin()}
-  if(a==='lockNow'){unlocked=false;PIN.mode='enter';return paintPin()}
+  if(a==='lockNow'){trust(false);unlocked=false;PIN.mode='enter';return paintPin()}
+  if(a==='pinOff'){await save('',D('fam','cfg'),{pin:'',pinOff:true},true);trust(false);unlocked=true;PIN.mode='';paintPin();toast('관리자 비밀번호를 껐어요');return render(true)}
   /* 오늘 */
   if(a==='tick'){const K=k,t=today(),it=itemsFor(K,t).find(i=>i.id===id);if(!it)return;if(autoOn(doneDoc(K,t),it)&&!(doneDoc(K,t).p||{})[id])return toast('앱에서 끝내서 자동으로 체크됐어요');let nowDone=false;await writeDone(K,t,d=>{if(d.p[id])delete d.p[id];else{d.p[id]={pt:+it.pt||0,at:Date.now()};nowDone=true}});
     if(nowDone&&K===ST.me){const c=dayCount(K,t);toast(c.pd===c.pt?'오늘 약속 다 지켰어! 정말 멋져!':`+${+it.pt||0} 포인트! 잘했어`)}return}
