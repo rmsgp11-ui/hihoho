@@ -2,7 +2,7 @@
 // - 가족 구글 계정(Firebase 로그인)만 사용 가능
 // - 우리 주소(rmsgp11-ui.github.io)에서 온 요청만 받음
 // - Claude API 키는 Cloudflare 비밀 변수 ANTHROPIC_API_KEY 에만 저장 (코드에 없음)
-// - 학습 문제 만들기·피드백만 하고 JSON으로만 답함, 한 사람당 하루 횟수 제한
+// - 학습 문제 만들기·피드백만 (문제집 지문 사진 읽기 포함) 하고 JSON으로만 답함, 한 사람당 하루 횟수 제한
 
 const ORIGIN = "https://rmsgp11-ui.github.io";
 const PROJECT = "study-ho";
@@ -69,10 +69,16 @@ export default {
     let b; try { b = await req.json(); } catch (e) { return J({ error: "body" }, 400); }
     const prompt = String(b.prompt || "");
     if (!prompt || prompt.length > 24000) return J({ error: "prompt" }, 400);
+    let content = prompt;
+    if (b.image){
+      const im = b.image, mt = String(im.media_type || "");
+      if (!/^image\/(jpeg|png|webp)$/.test(mt) || typeof im.data !== "string" || im.data.length > 3000000) return J({ error: "image" }, 400);
+      content = [{ type: "image", source: { type: "base64", media_type: mt, data: im.data } }, { type: "text", text: prompt }];
+    }
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-      body: JSON.stringify({ model: MODEL, max_tokens: b.tier === "quick" ? 1000 : 6000, system: SYSTEM, messages: [{ role: "user", content: prompt }] }),
+      body: JSON.stringify({ model: MODEL, max_tokens: b.tier === "quick" ? 1000 : 6000, system: SYSTEM, messages: [{ role: "user", content }] }),
     });
     if (!r.ok) return J({ error: "upstream", status: r.status, detail: (await r.text()).slice(0, 300) }, 502);
     const d = await r.json();

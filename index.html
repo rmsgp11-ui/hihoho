@@ -177,7 +177,7 @@ const isAdmin=()=>ST.role==='admin';
 /* ---------- 할 일·포인트 계산 ---------- */
 function itemsFor(K,date){const wd=wdOf(date);const t=((ST.tpl[K]&&ST.tpl[K].items)||[]).filter(i=>(i.days||[]).includes(wd));const p=((ST.plan[K]&&ST.plan[K][date]&&ST.plan[K][date].items)||[]);return[...t,...p]}
 const doneDoc=(K,date)=>(ST.done[K]&&ST.done[K][date])||{p:{},own:[]};
-const AUTO={dohyung:'도형교실 수업 1개 끝내면',gugudan:'구구단 오늘의 미션 끝내면',korean:'국어 훈련 끝내면'};
+const AUTO={dohyung:'도형교실 수업 1개 끝내면',gugudan:'구구단 오늘의 미션 끝내면',korean:'국어 훈련 끝내면',kbook:'국어 문제집 한 문장 끝내면'};
 const autoOn=(d,i)=>!!(i.auto&&d.auto&&d.auto[i.auto]);
 const isDone=(d,i)=>!!((d.p&&d.p[i.id])||autoOn(d,i));
 function dayCount(K,date){const d=doneDoc(K,date);const items=itemsFor(K,date);const pd=items.filter(i=>isDone(d,i)).length;const od=(d.own||[]).filter(o=>o.done).length;return{pd,pt:items.length,od,all:pd+od}}
