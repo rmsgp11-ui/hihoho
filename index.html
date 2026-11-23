@@ -402,11 +402,11 @@ const GRADE={'7ec7b9f4de41bc54dca769f62327a55d27927fcc47b6e44b24e4b5aad5117e4d':
 ST.learn={};
 const pc=(a,b)=>b?Math.round(a/b*100):null;
 async function loadLearn(K,force){if(!force&&ST.learn[K]&&!ST.learn[K].err)return;const L=ST.learn[K]={loading:1,errs:[]};sched();
-  const pre='kor~'+K+'~',g=async ref=>{try{const s=await F.FS.getDoc(ref);return s.exists()?s.data():null}catch(e){L.errs.push(e&&e.code);return null}};
-  let ses=[];try{const s=await F.FS.getDocs(Q(C('progress'),['_k','==',pre+'sessions']));ses=s.docs.map(d=>d.data())}catch(e){L.errs.push(e&&e.code)}
-  const [quest,doh,gug,hist]=await Promise.all([g(D('progress',pre+'quest~state')),g(D('progress','dohyung_'+K)),g(D('progress','gugu_'+K)),g(D('progress','fb_'+K))]);
+  const pre='kor~'+K+'~',g=async(ref,tag)=>{try{const s=await F.FS.getDoc(ref);return s.exists()?s.data():null}catch(e){L.errs.push(e&&e.code);L.src[tag]=(e&&e.code)||'error';return null}};L.src={};
+  let ses=[];try{const s=await F.FS.getDocs(Q(C('progress'),['_k','==',pre+'sessions']));ses=s.docs.map(d=>d.data())}catch(e){L.errs.push(e&&e.code);L.src.ko=(e&&e.code)||'error'}
+  const [quest,doh,gug,hist]=await Promise.all([g(D('progress',pre+'quest~state'),'ko'),g(D('progress','dohyung_'+K),'doh'),g(D('progress','gugu_'+K),'gug'),g(D('progress','fb_'+K),'fb')]);
   Object.assign(L,{loading:0,ses:ses.filter(r=>r&&r.day).sort((a,b)=>a.day-b.day),kb:Object.entries((quest&&quest.days)||{}).map(([d,v])=>({d,k:v&&v.manual&&v.manual.kb})).filter(x=>x.k&&typeof x.k.sum==='string').sort((a,b)=>a.d<b.d?1:-1),
-    doh:doh&&doh.state,gug:gug&&gug.state,hist:(hist&&hist.items)||[],err:L.errs.includes('permission-denied')?'permission-denied':''});sched()}
+    doh:doh&&doh.state,gug:gug&&gug.state,hist:(hist&&hist.items)||[],err:''});sched()}
 function learnFacts(K){const L=ST.learn[K]||{},o={};
   const s=L.ses||[];if(s.length){const r=s.slice(-7),av=f=>{const v=r.map(f).filter(x=>x!==null&&!isNaN(x));return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):null};
     o.ko={n:s.length,last:s[s.length-1],rows:r.slice().reverse(),voc:av(x=>pc(x.voc,x.vocN)),detail:av(x=>pc(x.detail,x.detailN)),clue:av(x=>pc(x.clue,x.clueN)),keys:av(x=>pc(x.keys,x.keysN)),copy:av(x=>x.copyPct),
@@ -442,25 +442,32 @@ async function askLearnAI(K){const L=ST.learn[K];if(!L||L.ai)return;if(!window.A
 function fbCard(x,open){return`<div class="env" style="cursor:default"><div class="row sp"><b class="jua" style="font-size:19px">${esc(x.headline)}</b><span class="small mute">${fmtD(ds(new Date(x.at)))}</span></div>
   ${open?`${(x.subjects||[]).map(s=>`<div style="display:grid;gap:4px;border-left:4px solid var(--p);padding-left:10px"><span class="jua" style="font-size:18px">${esc(s.name)}</span><span>👍 ${esc(s.good)}</span><span>🔎 ${esc(s.worry)}</span><span>🏠 ${esc(s.todo)}</span></div>`).join('')}
   ${x.habit?`<span>📅 ${esc(x.habit)}</span>`:''}${x.toKid?`<div class="done-msg" style="text-align:left"><b>아이에게 전할 말</b><br>${esc(x.toKid)}</div>`:''}`:`<button class="btn sm ghost" data-a="fbOpen" data-id="${esc(x.id)}">자세히 보기</button>`}</div>`}
+function appKind(u){u=String(u||'');return/\/korean\//.test(u)?'ko':/\/dohyung\//.test(u)?'doh':/\/gugudan\//.test(u)?'gug':''}
+function appSections(K,f,L){const row=(t,v,goal,low)=>v===null||v===undefined?'':`<div class="rw" style="min-height:40px"><span class="nm" style="font-size:16px;font-family:'Gowun Dodum'">${t}</span><b class="jua" style="color:${goal===undefined?'var(--ink)':(low?v<=goal:v>=goal)?'var(--ok)':'var(--p)'}">${v}%</b>${goal!==undefined?`<span class="small mute">목표 ${low?goal+'% 이하':goal+'%'}</span>`:''}</div>`;
+  const links=allLinks(K),seen={},out=[],other=[];
+  const empty=(t,n,code)=>`<section class="card"><h3>${esc(t)}</h3><p class="small mute" style="margin:0">${code?`기록을 불러오지 못했어요 (${esc(code)}). 아래 「다시 불러오기」를 눌러 주세요.`:`아직 ${esc(name(K))}의 기록이 없어요. ${esc(name(K))} 계정으로 「${esc(n)}」을 하면 여기에 모여요.`}</p></section>`;
+  links.forEach(l=>{const k=appKind(l.u);if(!k){other.push(l.n);return}if(seen[k])return;seen[k]=1;
+    if(k==='ko')out.push(f.ko||f.kb?SEC_KO(f,row):empty('국어 훈련장',l.n,L.src&&L.src.ko));
+    if(k==='doh')out.push(f.doh?SEC_DOH(f):empty('수학 · 도형교실',l.n,L.src&&L.src.doh));
+    if(k==='gug')out.push(f.gug?SEC_GUG(f):empty('수학 · 구구단',l.n,L.src&&L.src.gug));});
+  if(!links.length)out.push(`<div class="card"><p style="margin:0">${esc(name(K))}에게 연결된 학습 링크가 없어요. 할 일 탭 → 바로가기 링크에서 추가해 주세요.</p></div>`);
+  if(other.length)out.push(`<p class="small mute" style="margin:0 4px">${other.map(esc).join(', ')}: 우리 앱이 아니라 기록을 가져올 수 없는 링크예요.</p>`);
+  out.push(`<button class="btn sm ghost" data-a="learnReload">기록 다시 불러오기</button>`);
+  return out.join('')}
+const SEC_KO=(f,row)=>`${f.ko?`<section class="card"><div class="row sp"><h3>국어 훈련</h3><span class="small mute">${f.ko.n}일 완료 · 최근 ${f.ko.last.date?f.ko.last.date.slice(5).replace('-','/'):''}</span></div><span class="small mute">최근 ${f.ko.rows.length}회 평균</span>   <div class="list">${row('어휘 첫 시도',f.ko.voc,85)}${row('세부 정보 첫 시도',f.ko.detail,90)}${row('단서 추론',f.ko.clue)}${row('요약 핵심 포함',f.ko.keys,80)}${row('글 베낀 비율',f.ko.copy,30,1)}</div>   ${f.ko.miss.length?`<span class="small">최근 틀린 낱말: ${f.ko.miss.map(esc).join(', ')}</span>`:''}   <div class="sec">최근 요약</div><div class="list">${f.ko.rows.slice(0,5).map(r=>`<div class="env" style="cursor:default"><span class="small mute">${r.day}일 · ${esc(r.title||'')} · ${'★'.repeat(r.stars||0)}</span><span>${esc(r.summary2||r.summary1||'')}</span></div>`).join('')}</div></section>`:''}  ${f.kb?`<section class="card"><h3>국어 문제집 한 문장</h3><div class="list">${f.kb.map(x=>`<div class="env" style="cursor:default"><span class="small mute">${x.d.slice(5).replace('-','/')}${x.k.title?' · 「'+esc(x.k.title)+'」':''}${x.k.stars?' · '+'★'.repeat(x.k.stars):''}</span><span>${esc(x.k.sum)}</span>${x.k.tip?`<span class="small mute">선생님: ${esc(x.k.tip)}</span>`:''}</div>`).join('')}</div></section>`:''}`;
+const SEC_DOH=f=>`${f.doh?`<section class="card"><h3>수학 · 도형교실</h3><span>수업 <b>${f.doh.done}/24</b> · 별 <b>${f.doh.stars}/72</b>${f.doh.last?` · 최근 ${f.doh.last.slice(5).replace('-','/')}`:''}</span>   ${f.doh.weak.length?`<span class="small">살펴볼 유형: ${f.doh.weak.map(x=>`${esc(x.k)} <b style="color:var(--p)">${x.p}%</b>`).join(', ')}</span>`:''}${f.doh.strong.length?`<span class="small">잘하는 유형: ${f.doh.strong.map(x=>`${esc(x.k)} ${x.p}%`).join(', ')}</span>`:''}</section>`:''}`;
+const SEC_GUG=f=>`${f.gug?`<section class="card"><h3>수학 · 구구단</h3><span>최근 7일 중 <b>${f.gug.days}일</b> · 문제 <b>${f.gug.week}개</b> · 스피드 최고 <b>${f.gug.best}개</b></span>${f.gug.weak.length?`<span class="small">자주 틀린 곱셈: ${f.gug.weak.map(esc).join(', ')}</span>`:''}</section>`:''}`;
 function vLearn(){const ks=kids();if(!ks.length)return'<div class="card"><p style="margin:0">아이가 아직 등록되지 않았어요.</p></div>';
   if(!ks.includes(ST.selKid))ST.selKid=ks[0];const K=ST.selKid;loadLearn(K);const L=ST.learn[K]||{loading:1};
   const chips=`<div class="chips">${ks.map(k=>`<button class="chip ${k===K?'on':''}" data-a="selKid" data-k="${esc(k)}"><span class="dot" style="background:${color(k)}"></span>${esc(name(k))}</button>`).join('')}</div>`;
   if(L.loading)return chips+'<div class="card"><p style="margin:0">학습 기록을 불러오는 중…</p></div>';
-  if(L.err)return chips+`<div class="card"><h3>학습 기록을 읽을 수 없어요</h3><p class="small" style="margin:0">Firestore 규칙에서 보호자가 아이의 학습 기록(progress)을 읽도록 허용해야 해요. Claude에게 "학습 기록 규칙"이라고 말해 주세요.</p><button class="btn sm ghost" data-a="learnReload">다시 불러오기</button></div>`;
-  const f=learnFacts(K),h=L.hist||[],any=f.ko||f.kb||f.doh||f.gug;const row=(t,v,goal,low)=>v===null||v===undefined?'':`<div class="rw" style="min-height:40px"><span class="nm" style="font-size:16px;font-family:'Gowun Dodum'">${t}</span><b class="jua" style="color:${goal===undefined?'var(--ink)':(low?v<=goal:v>=goal)?'var(--ok)':'var(--p)'}">${v}%</b>${goal!==undefined?`<span class="small mute">목표 ${low?goal+'% 이하':goal+'%'}</span>`:''}</div>`;
+  if(false)return chips+`<div class="card"><h3>학습 기록을 읽을 수 없어요</h3><p class="small" style="margin:0">Firestore 규칙에서 보호자가 아이의 학습 기록(progress)을 읽도록 허용해야 해요. Claude에게 "학습 기록 규칙"이라고 말해 주세요.</p><button class="btn sm ghost" data-a="learnReload">다시 불러오기</button></div>`;
+  const f=learnFacts(K),h=L.hist||[],any=f.ko||f.kb||f.doh||f.gug;const _row=(t,v,goal,low)=>v===null||v===undefined?'':`<div class="rw" style="min-height:40px"><span class="nm" style="font-size:16px;font-family:'Gowun Dodum'">${t}</span><b class="jua" style="color:${goal===undefined?'var(--ink)':(low?v<=goal:v>=goal)?'var(--ok)':'var(--p)'}">${v}%</b>${goal!==undefined?`<span class="small mute">목표 ${low?goal+'% 이하':goal+'%'}</span>`:''}</div>`;
   return chips+`<section class="card"><div class="row sp"><h3>Claude 선생님 학습 피드백</h3>${h[0]?`<span class="small mute">최근 ${fmtD(ds(new Date(h[0].at)))}</span>`:''}</div>
    <p class="small mute" style="margin:0">${esc(name(K))}의 국어·수학 기록을 모아 Claude가 보호자용 피드백을 써요. 받은 피드백은 아래에 쌓여요.</p>
    <button class="btn" data-a="learnAI" ${L.ai||!any?'disabled':''}>${L.ai?'Claude 선생님이 기록을 읽는 중…':'새 피드백 받기'}</button>${L.aiErr?`<span class="small" style="color:var(--p)">피드백을 못 받았어요 (${esc(L.aiErr)}). 잠시 뒤 다시 눌러 주세요.</span>`:''}
    ${h[0]?fbCard(h[0],true):''}</section>
-  ${f.ko?`<section class="card"><div class="row sp"><h3>국어 훈련</h3><span class="small mute">${f.ko.n}일 완료 · 최근 ${f.ko.last.date?f.ko.last.date.slice(5).replace('-','/'):''}</span></div><span class="small mute">최근 ${f.ko.rows.length}회 평균</span>
-   <div class="list">${row('어휘 첫 시도',f.ko.voc,85)}${row('세부 정보 첫 시도',f.ko.detail,90)}${row('단서 추론',f.ko.clue)}${row('요약 핵심 포함',f.ko.keys,80)}${row('글 베낀 비율',f.ko.copy,30,1)}</div>
-   ${f.ko.miss.length?`<span class="small">최근 틀린 낱말: ${f.ko.miss.map(esc).join(', ')}</span>`:''}
-   <div class="sec">최근 요약</div><div class="list">${f.ko.rows.slice(0,5).map(r=>`<div class="env" style="cursor:default"><span class="small mute">${r.day}일 · ${esc(r.title||'')} · ${'★'.repeat(r.stars||0)}</span><span>${esc(r.summary2||r.summary1||'')}</span></div>`).join('')}</div></section>`:''}
-  ${f.kb?`<section class="card"><h3>국어 문제집 한 문장</h3><div class="list">${f.kb.map(x=>`<div class="env" style="cursor:default"><span class="small mute">${x.d.slice(5).replace('-','/')}${x.k.title?' · 「'+esc(x.k.title)+'」':''}${x.k.stars?' · '+'★'.repeat(x.k.stars):''}</span><span>${esc(x.k.sum)}</span>${x.k.tip?`<span class="small mute">선생님: ${esc(x.k.tip)}</span>`:''}</div>`).join('')}</div></section>`:''}
-  ${f.doh?`<section class="card"><h3>수학 · 도형교실</h3><span>수업 <b>${f.doh.done}/24</b> · 별 <b>${f.doh.stars}/72</b>${f.doh.last?` · 최근 ${f.doh.last.slice(5).replace('-','/')}`:''}</span>
-   ${f.doh.weak.length?`<span class="small">살펴볼 유형: ${f.doh.weak.map(x=>`${esc(x.k)} <b style="color:var(--p)">${x.p}%</b>`).join(', ')}</span>`:''}${f.doh.strong.length?`<span class="small">잘하는 유형: ${f.doh.strong.map(x=>`${esc(x.k)} ${x.p}%`).join(', ')}</span>`:''}</section>`:''}
-  ${f.gug?`<section class="card"><h3>수학 · 구구단</h3><span>최근 7일 중 <b>${f.gug.days}일</b> · 문제 <b>${f.gug.week}개</b> · 스피드 최고 <b>${f.gug.best}개</b></span>${f.gug.weak.length?`<span class="small">자주 틀린 곱셈: ${f.gug.weak.map(esc).join(', ')}</span>`:''}</section>`:''}
-  ${!any?`<div class="card"><p style="margin:0">아직 ${esc(name(K))}의 학습 앱 기록이 없어요. 국어 훈련장·도형교실·구구단을 하면 여기에 모여요.</p></div>`:''}
+  ${appSections(K,f,L)}
   ${h.length>1?`<section class="card"><h3>지난 피드백</h3><div class="list">${h.slice(1).map(x=>fbCard(x,ST.fbOpen===x.id)).join('')}</div></section>`:''}`}
 /* ---------- 동작 ---------- */
 const val=id=>{const e=$('#'+id);return e?e.value.trim():''};
