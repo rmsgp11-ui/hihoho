@@ -216,6 +216,10 @@ function weekBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw,...w.lw);co
   <div class="row sp"><div class="legend"><span><i style="background:var(--line)"></i>지난주</span><span><i style="background:var(--p)"></i>이번 주</span></div><span class="small">이번 주 <b>${w.ts}개</b> · 지난주 ${w.ls}개 ${w.ts>w.ls?`<b style="color:var(--ok)">(+${w.ts-w.ls})</b>`:''}</span></div>`}
 function miniBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw);return`<div class="mini">${w.tw.map(v=>`<i style="height:${(v/mx*100).toFixed(0)}%"></i>`).join('')}</div>`}
 
+/* ---------- 새 버전 자동 받기 ---------- */
+const APPV='32';
+async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
+setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
 /* ---------- Firebase ---------- */
 const FV='https://www.gstatic.com/firebasejs/10.12.2/';
 let F=null;const SUBS={};let rq=0;
