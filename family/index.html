@@ -308,7 +308,10 @@ function vHome(){const ks=kids(),wait=ST.redeem.filter(r=>r.status==='wait'),u=u
    <div class="row"><button class="btn sm ghost" data-a="goTasks" data-k="${esc(K)}">할 일 관리</button><button class="btn sm ghost" data-a="bonusQuick" data-k="${esc(K)}">칭찬 포인트 주기</button></div></section>`}).join(''):`<div class="card"><p style="margin:0">아직 아이가 등록되지 않았어요. 아이 계정으로 한 번 로그인하면 여기에 나타나요.</p></div>`}
   ${wait.length?`<section class="card"><h3>보상 신청 ${wait.length}건</h3><div class="list">${wait.map(r=>`<div class="rw">${av(r.by)}<span class="nm">${esc(r.name)} <span class="small mute">${r.cost}P</span></span><button class="btn sm ok" data-a="rOk" data-id="${esc(r.id)}">주기</button><button class="btn sm ghost" data-a="rNo" data-id="${esc(r.id)}">거절</button></div>`).join('')}</div></section>`:''}
   <section class="card"><div class="row sp"><h3>편지함</h3>${u?`<span class="pill" style="background:var(--p);color:#fff">새 편지 ${u}통</span>`:'<span class="small mute">새 편지 없음</span>'}</div><button class="btn sm ghost" data-a="go" data-v="letter">편지 보러 가기</button></section>
-  ${fd.length?`<section class="card"><h3>요즘 먹고 싶은 것</h3><div class="chips">${fd.map(f=>`<span class="chip"><span class="dot" style="background:${color(f.by)}"></span>${esc(f.name)}</span>`).join('')}</div></section>`:''}`}
+  ${fd.length?`<section class="card"><h3>요즘 먹고 싶은 것</h3><div class="chips">${fd.map(f=>`<span class="chip"><span class="dot" style="background:${color(f.by)}"></span>${esc(f.name)}</span>`).join('')}</div></section>`:''}
+  <section class="card"><h3>알림 관리</h3><p class="small mute" style="margin:0">가족마다 휴대폰 알림을 켜고 끌 수 있어요. 아이 휴대폰에 ntfy 앱을 깔고 그 아이의 주제 이름으로 구독해 주면 알림이 가요.</p>
+   <div class="list">${fam().map(e=>{const m=ST.members[e]||{};return`<div class="env" style="cursor:default"><div class="row sp" style="flex-wrap:nowrap"><span class="hd">${av(e,30)}${esc(name(e))}</span><button class="chip ${m.mute?'':'on'}" data-a="muteT" data-k="${esc(e)}">${m.mute?'알림 꺼짐':'알림 켜짐'}</button></div>
+     ${m.nt?`<div class="addrow"><input readonly value="${esc(m.nt)}" aria-label="${esc(name(e))} 주제 이름" onclick="this.select()"><button class="btn sm ghost" data-a="copyT" data-k="${esc(e)}">복사</button></div><button class="btn sm ghost" data-a="testT" data-k="${esc(e)}" ${m.mute?'disabled':''}>${esc(name(e))}에게 테스트 알림</button>`:'<span class="small mute">아직 앱에 로그인하지 않아서 주제 이름이 없어요</span>'}</div>`}).join('')}</div></section>`}
 
 function vTasks(){const ks=kids();if(!ks.length)return'<div class="card"><p style="margin:0">아이가 아직 등록되지 않았어요.</p></div>';
   if(!ks.includes(ST.selKid))ST.selKid=ks[0];const K=ST.selKid,date=ST.selDate||today();subPlan(K,date);
@@ -327,13 +330,15 @@ function vTasks(){const ks=kids();if(!ks.length)return'<div class="card"><p styl
 
 const PAST=['#ffd2c4','#cfe0ff','#cdeed9','#e5d6fb','#ffe2b3','#c7eef3','#ffd0e2','#eee0c2'];
 const toMin=t=>{const[h,m]=String(t||'0:0').split(':').map(Number);return(h||0)*60+(m||0)};
-function clockSVG(items,showNow){const S=360,c=S/2,R=130;const ang=m=>m/1440*2*Math.PI-Math.PI/2,pt=(m,r)=>[c+r*Math.cos(ang(m)),c+r*Math.sin(ang(m))],f=n=>n.toFixed(1);
-  let s=`<svg class="clock" viewBox="0 0 ${S} ${S}" role="img" aria-label="하루 생활계획표 시계"><circle class="cface" cx="${c}" cy="${c}" r="${R}"/>`;
-  items.forEach((x,i)=>{let a=toMin(x.s),b=x.e?toMin(x.e):a+60;if(b<=a)b+=1440;const span=Math.min(b-a,1439);const col=PAST[i%PAST.length];x._c=col;
-    const[x1,y1]=pt(a,R),[x2,y2]=pt(a+span,R);s+=`<path class="wedge" fill="${col}" d="M${c} ${c} L${f(x1)} ${f(y1)} A${R} ${R} 0 ${span>720?1:0} 1 ${f(x2)} ${f(y2)} Z"/>`});
-  items.forEach(x=>{let a=toMin(x.s),b=x.e?toMin(x.e):a+60;if(b<=a)b+=1440;const span=b-a;if(span<45)return;const[lx,ly]=pt(a+span/2,R*(span<120?0.72:0.6));const t=x.t.length>6?x.t.slice(0,6)+'…':x.t;s+=`<text class="wl" x="${f(lx)}" y="${f(ly)}">${esc(t)}</text>`});
-  for(let h=0;h<24;h++){const mj=h%6===0;const[a1,b1]=pt(h*60,R),[a2,b2]=pt(h*60,R-(mj?12:7)),[tx,ty]=pt(h*60,R+17);s+=`<line class="ht ${mj?'mj':''}" x1="${f(a1)}" y1="${f(b1)}" x2="${f(a2)}" y2="${f(b2)}"/><text class="hl ${mj?'mj':''}" x="${f(tx)}" y="${f(ty)}">${h}</text>`}
-  if(showNow){const n=new Date(),m=n.getHours()*60+n.getMinutes(),[hx,hy]=pt(m,R-8);s+=`<line class="hand" x1="${c}" y1="${c}" x2="${f(hx)}" y2="${f(hy)}"/>`}
+function clockSVG(items,showNow,half){const S=360,c=S/2,R=130,ST0=half?720:0,LEN=half?720:1440,END=ST0+LEN;const ang=m=>(m-ST0)/LEN*2*Math.PI-Math.PI/2,pt=(m,r)=>[c+r*Math.cos(ang(m)),c+r*Math.sin(ang(m))],f=n=>n.toFixed(1);
+  let s=`<svg class="clock" viewBox="0 0 ${S} ${S}" role="img" aria-label="${half?'오후 12시부터 자정까지':'하루'} 생활계획표 시계"><circle class="cface" cx="${c}" cy="${c}" r="${R}"/>`;
+  const seg=x=>{let a=toMin(x.s),b=x.e?toMin(x.e):a+60;if(b<=a)b+=1440;if(!half)return[a,a+Math.min(b-a,1439)];const A=Math.max(a,ST0),B=Math.min(b,END);return B>A?[A,B]:null};
+  items.forEach((x,i)=>{const col=PAST[i%PAST.length];x._c=col;const g=seg(x);if(!g)return;const span=g[1]-g[0];
+    const[x1,y1]=pt(g[0],R),[x2,y2]=pt(g[1],R);s+=span>=LEN-1?`<circle class="wedge" fill="${col}" cx="${c}" cy="${c}" r="${R}"/>`:`<path class="wedge" fill="${col}" d="M${c} ${c} L${f(x1)} ${f(y1)} A${R} ${R} 0 ${span>LEN/2?1:0} 1 ${f(x2)} ${f(y2)} Z"/>`});
+  items.forEach(x=>{const g=seg(x);if(!g)return;const span=g[1]-g[0];if(span<(half?25:45))return;const[lx,ly]=pt(g[0]+span/2,R*(span<(half?60:120)?0.72:0.6));const t=x.t.length>6?x.t.slice(0,6)+'…':x.t;s+=`<text class="wl" x="${f(lx)}" y="${f(ly)}">${esc(t)}</text>`});
+  const H=half?12:24;for(let k=0;k<H;k++){const h=(half?12:0)+k,m=h*60,mj=half?k%3===0:h%6===0;const[a1,b1]=pt(m,R),[a2,b2]=pt(m,R-(mj?12:7)),[tx,ty]=pt(m,R+17);s+=`<line class="ht ${mj?'mj':''}" x1="${f(a1)}" y1="${f(b1)}" x2="${f(a2)}" y2="${f(b2)}"/><text class="hl ${mj?'mj':''}" x="${f(tx)}" y="${f(ty)}">${half&&k===0?'12·24':h}</text>`;
+    if(half){const[q1,w1]=pt(m+30,R),[q2,w2]=pt(m+30,R-4);s+=`<line class="ht" x1="${f(q1)}" y1="${f(w1)}" x2="${f(q2)}" y2="${f(w2)}"/>`}}
+  if(showNow){const n=new Date(),m=n.getHours()*60+n.getMinutes();if(m>=ST0&&m<END){const[hx,hy]=pt(m,R-8);s+=`<line class="hand" x1="${c}" y1="${c}" x2="${f(hx)}" y2="${f(hy)}"/>`}}
   return s+`<circle cx="${c}" cy="${c}" r="6" fill="var(--p)"/></svg>`}
 function todayStrip(sch){const A=6*60,B=23*60,now=new Date(),nm=now.getHours()*60+now.getMinutes(),pc=m=>((Math.min(B,Math.max(A,m))-A)/(B-A)*100).toFixed(2);
   const ev=sch.map((x,i)=>{const a=toMin(x.s),b=x.e?toMin(x.e):a+60;return{...x,a,b:b<=a?b+1440:b,col:PAST[i%PAST.length]}});
@@ -352,7 +357,7 @@ function vSched(){const list=isAdmin()?fam():[ST.me];if(!list.includes(ST.selMem
   const nd=ST.schedDays||[day];
   return`${isAdmin()?`<div class="chips">${list.map(k=>`<button class="chip ${k===M?'on':''}" data-a="selMember" data-k="${esc(k)}"><span class="dot" style="background:${color(k)}"></span>${esc(name(k))}</button>`).join('')}</div><p class="small mute" style="margin:0">아이들은 자기 시간표만 보고, 보호자는 모두의 시간표를 볼 수 있어요.</p>`:''}
   <section class="card"><h3>${esc(name(M))}의 시간표</h3><div class="chips">${MON.map(wd=>{const n=items.filter(x=>(x.days||[]).includes(wd)).length;return`<button class="chip ${wd===day?'on':''}" data-a="selDay" data-wd="${wd}">${WD[wd]}${n?`<span class="small">${n}</span>`:''}</button>`}).join('')}</div>
-   ${clockSVG(di,day===wdOf(today()))}<p class="small mute" style="margin:0;text-align:center">${WD[day]}요일 생활계획표${day===wdOf(today())?' · 빨간 바늘이 지금 시각':''}. 빈 곳은 자유 시간이에요.</p>
+   ${clockSVG(di,day===wdOf(today()),(ST.members[M]||{}).role==='kid')}<p class="small mute" style="margin:0;text-align:center">${WD[day]}요일 생활계획표${(ST.members[M]||{}).role==='kid'?' (오후 12시 ~ 자정)':''}${day===wdOf(today())?' · 빨간 바늘이 지금 시각':''}. 빈 곳은 자유 시간이에요.</p>
    <div class="list">${di.map(x=>`<div class="slot" style="border-color:${x._c||color(M)}"><span class="tm"><span class="sw" style="background:${x._c||'#eee'}"></span>${esc(x.s||'')}${x.e?'–'+esc(x.e):''}</span><span class="ti">${esc(x.t)}</span>${can?`<button class="x" data-a="schDel" data-id="${esc(x.id)}" aria-label="지우기">×</button>`:'<span></span>'}</div>`).join('')||`<div class="empty">${WD[day]}요일 일정이 없어요</div>`}</div></section>
   ${can?`<section class="card"><h3>일정 추가</h3><input id="schT" maxlength="30" placeholder="예: 영어학원, 태권도, 피아노"><div class="g2"><label>시작<input id="schS" type="time" value="15:00"></label><label>끝<input id="schE" type="time" value="16:00"></label></div><div class="chips">${MON.map(wd=>`<button class="chip ${nd.includes(wd)?'on':''}" data-a="schDay" data-wd="${wd}">${WD[wd]}</button>`).join('')}</div><button class="btn sm" data-a="schAdd">시간표에 넣기</button></section>`:''}`}
 
@@ -389,7 +394,7 @@ const val=id=>{const e=$('#'+id);return e?e.value.trim():''};
 async function writeDone(K,date,mut){const d=JSON.parse(JSON.stringify(doneDoc(K,date)));d.p=d.p||{};d.own=d.own||[];mut(d);d.date=date;d.who=K;await save('',D('done',K,'days',date),d)}
 const APPURL=()=>location.href.split('#')[0];
 function ensureTopic(){const m=ST.members[ST.me];if(m&&!m.nt&&!ensureTopic.busy){ensureTopic.busy=1;F.FS.setDoc(D('members',ST.me),{...m,nt:'wg-'+uid()+uid()}).catch(()=>{}).finally(()=>ensureTopic.busy=0)}}
-async function push(to,title,message,quiet){const list=(Array.isArray(to)?to:[to]).filter(e=>ST.members[e]&&ST.members[e].nt);
+async function push(to,title,message,quiet){const list=(Array.isArray(to)?to:[to]).filter(e=>ST.members[e]&&ST.members[e].nt&&!ST.members[e].mute);
   if(!list.length){if(!quiet)toast('받는 사람이 아직 알림 받기를 설정하지 않았어요');return 0}let ok=0;
   for(const e of list){try{const r=await fetch('https://ntfy.sh/',{method:'POST',body:JSON.stringify({topic:ST.members[e].nt,title,message,click:APPURL(),tags:['house_with_garden']})});if(r.ok)ok++}catch(er){}}
   if(!quiet)toast(ok?`알림을 보냈어요 (${list.map(name).join(', ')})`:'알림을 못 보냈어요. 인터넷을 확인해 주세요');return ok}
@@ -406,8 +411,12 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='profile'){const m=ST.members[ST.me]||{};ST.color=m.color;return openModal(`<h3>내 정보</h3><span class="small mute">${esc(ST.me)} · ${isAdmin()?'보호자':'아이'}</span><label for="pn">이름</label><input id="pn" maxlength="10" value="${esc(m.name||'')}"><div class="colors">${COLORS.map(x=>`<button style="background:${x}" class="${x===m.color?'on':''}" data-a="pickColor" data-c="${x}" aria-label="색 고르기"></button>`).join('')}</div><div class="row"><button class="btn sm" data-a="profSave">저장</button><button class="btn sm ghost" data-a="logout">로그아웃</button><button class="btn sm ghost" data-a="closeM">닫기</button></div>
    <div class="env" style="cursor:default"><span class="jua" style="font-size:18px">내 휴대폰으로 알림 받기</span>
    <span class="small">① 휴대폰에 <b>ntfy</b> 앱을 설치해요 (앱스토어·플레이스토어에서 "ntfy" 검색, 무료).<br>② 앱에서 <b>＋</b>를 누르고 아래 <b>주제 이름</b>을 그대로 넣고 구독해요.<br>③ 아래 「테스트 알림」을 눌러 알림이 오는지 확인해요.</span>
+   ${m.mute?'<span class="small" style="color:var(--p)">지금은 부모님이 알림을 꺼 두었어요.</span>':''}
    ${m.nt?`<div class="addrow"><input readonly value="${esc(m.nt)}" aria-label="주제 이름" onclick="this.select()"><button class="btn sm ghost" data-a="copyTopic">복사</button></div><button class="btn sm" data-a="testPush">테스트 알림 보내기</button>`:'<span class="small mute">주제 이름을 만드는 중이에요. 잠시 뒤 다시 열어 주세요.</span>'}
    <span class="small mute">주제 이름은 비밀번호처럼 가족 밖에 알려 주지 마세요. 알림에는 "편지가 왔어요"만 가고, 편지 내용은 가지 않아요.</span></div>`)}
+  if(a==='muteT'){const m=ST.members[k];if(!m)return;return F.FS.setDoc(D('members',k),{...m,mute:!m.mute}).then(()=>toast(`${name(k)} 알림을 ${m.mute?'켰어요':'껐어요'}`)).catch(()=>toast('저장이 안 됐어요'))}
+  if(a==='copyT'){const m=ST.members[k];if(m&&m.nt&&navigator.clipboard)navigator.clipboard.writeText(m.nt).then(()=>toast('복사했어요')).catch(()=>toast('길게 눌러 직접 복사해 주세요'));return}
+  if(a==='testT'){return push(k,'우리가족 알림 테스트',`${name(k)}에게 보내는 테스트 알림이에요`)}
   if(a==='copyTopic'){const m=ST.members[ST.me];if(m&&m.nt&&navigator.clipboard)navigator.clipboard.writeText(m.nt).then(()=>toast('복사했어요. ntfy 앱에 붙여 넣어 주세요')).catch(()=>toast('길게 눌러 직접 복사해 주세요'));return}
   if(a==='testPush'){return push(ST.me,'우리가족 알림 테스트','알림이 잘 와요!')}
   if(a==='profSave'){const n=$('#pn').value.trim();if(!n)return;const m=ST.members[ST.me];await save('',D('members',ST.me),{...m,name:n,color:ST.color||m.color});$('#modal').innerHTML='';return}
