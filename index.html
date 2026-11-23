@@ -614,7 +614,7 @@ const LESSONS=[
 {w:5,t:'돌리기 180°·270°·360°',u:'4-1 평면도형의 이동',k:['rotAll','rotAll','rotFact'],c:['<b>180°</b> 돌리면 위와 아래, 왼쪽과 오른쪽이 모두 바뀌어요.','시계 방향 270° = 시계 반대 방향 90°','<b>360°</b> 돌리면 처음 모양 그대로!'],
  f:()=>`<div class="twofig"><figure>${gsvg(sF)}<figcaption>처음</figcaption></figure><span class="arrowtxt">→</span><figure>${gsvg(tf(sF,'r180'))}<figcaption>180°</figcaption></figure></div>`,h:'필름을 180°, 270°, 360° 돌린 모양을 그리고, 같은 결과끼리 선으로 짝지어요.'},
 {w:6,t:'어떻게 움직였을까?',u:'4-1 평면도형의 이동',k:['whichOp'],c:['처음 모양과 움직인 모양을 비교해요.','왼쪽↔오른쪽만 바뀌었나? 위↔아래만? 둘 다?','둘 다 바뀌었으면 180° 돌리기!'],
- f:()=>`<div class="twofig"><figure>${gsvg(sF)}<figcaption>처음</figcaption></figure><span class="arrowtxt">→</span><figure>${gsvg(tf(sF,'fv'))}<figcaption>위아래만 바뀜 = 위쪽으로 뒤집기</figcaption></figure></div>`,h:'엄마가 몰래 필름을 움직이면 지호가 어떻게 움직였는지 맞히는 게임 5판!'},
+ f:()=>`<div class="twofig"><figure>${gsvg(sF)}<figcaption>처음</figcaption></figure><span class="arrowtxt">→</span><figure>${gsvg(tf(sF,'fv'))}<figcaption>위아래만 바뀜 = 위쪽으로 뒤집기</figcaption></figure></div>`,h:'엄마가 몰래 필름을 움직이면 어떻게 움직였는지 맞히는 게임 5판!'},
 {w:6,t:'뒤집고 돌리기',u:'4-1 평면도형의 이동',k:['combo','whichOp','combo'],c:['두 번 움직일 때는 <b>순서대로 하나씩</b>!','순서가 바뀌면 결과가 달라질 수 있어요.'],
  f:()=>`<div class="twofig"><figure>${gsvg(sF)}<figcaption>처음</figcaption></figure><span class="arrowtxt">→</span><figure>${gsvg(tf(sF,'fh'))}<figcaption>① 오른쪽 뒤집기</figcaption></figure><span class="arrowtxt">→</span><figure>${gsvg(tf(sF,'fh','r90'))}<figcaption>② 시계 90°</figcaption></figure></div>`,h:'필름으로 "오른쪽 뒤집기 → 시계 90°"와 "시계 90° → 오른쪽 뒤집기"를 둘 다 해 보고 비교해요.'},
 {w:7,t:'변으로 나누는 삼각형',u:'4-2 삼각형',k:['triSide'],c:['<b>이등변삼각형</b>: 두 변의 길이가 같은 삼각형','<b>정삼각형</b>: 세 변의 길이가 모두 같은 삼각형','정삼각형은 이등변삼각형이기도 해요!'],
@@ -706,7 +706,7 @@ function vToday(){const wk=weekNow(),L=recLesson();const d=S.daily[today()]||{};
   const items=[['warm','칠교 워밍업 5분 (누르면 시작!)'],['les','오늘의 수업 1개'],['hand','손으로 해보기 활동'],['rest','5분 쉬기']];
   return`<section class="hero">
   <div class="card"><div class="wk">${wk===0?'12월 1일 시작! 미리 해 봐도 좋아요':`${wk}주차 · ${wkRange(wk)}`}</div>
-   <h1>지호야, 오늘은<br>「${L.t}」</h1><p class="mute" style="margin:0">${L.u} · ${L.w}주차 수업</p>
+   <h1>오늘은<br>「${L.t}」</h1><p class="mute" style="margin:0">${L.u} · ${L.w}주차 수업</p>
    <div class="row"><button class="btn" data-a="start" data-id="${L.id}">시작하기</button>${stars(best(L.id))}</div>
    <div class="daily">${items.map(([k,t])=>`<button class="chk ${d[k]?'on':''}" data-a="${k==='warm'&&!d[k]?'warmStart':'daily'}" data-k="${k}"><span class="bx"></span><span>${t}</span></button>`).join('')}</div>
   </div>
@@ -724,7 +724,7 @@ function vLesson(){const c=cur,L=c.L;
   if(c.step==='concept')return`<div class="card concept q"><div><span class="tag">${L.u} · ${L.w}주차</span><h2>${L.t}</h2></div><div class="bigfig">${L.f()}</div><ul>${L.c.map(x=>`<li>${x}</li>`).join('')}</ul><div class="row"><button class="btn" data-a="toHands">알겠어! 다음</button><button class="btn ghost" data-a="exit">나가기</button></div></div>`;
   if(c.step==='hands')return`<div class="card q"><h2>손으로 해보기</h2><div class="hands">${L.h}</div><p class="mute" style="margin:0">공책·필름으로 해도 좋고, <b>아래 앱 도구</b>로 해도 좋아요. 도형은 눈보다 손이 먼저 기억해요.</p><div class="row"><button class="btn y" data-a="toQ">다 했어요! 문제 풀기</button><button class="btn ghost" data-a="toQ">건너뛰기</button></div></div><h3 style="margin:22px 4px 10px">앱에서 해보기</h3>${toolPanel(L.tool)}<div class="row" style="margin-top:14px"><button class="btn y" data-a="toQ">다 했어요! 문제 풀기</button></div>`;
   if(c.step==='done'){const fo=c.res.filter(r=>r.ok).length,st=fo>=5?3:fo>=4?2:fo>=3?1:0;const nx=LESSONS[L.id];
-    return`<div class="card q" style="text-align:center;justify-items:center"><h2>${st===3?'완벽해, 지호야!':st>0?'잘했어, 지호야!':'좋은 연습이었어!'}</h2><div class="big">${stars(st)}</div>
+    return`<div class="card q" style="text-align:center;justify-items:center"><h2>${st===3?'완벽해!':st>0?'잘했어!':'좋은 연습이었어!'}</h2><div class="big">${stars(st)}</div>
     <p style="margin:0;font-size:19px">처음에 바로 맞힌 문제: <b>${fo} / 5</b></p>
     <p class="mute" style="margin:0">${st===0?'별 1개를 받으려면 3문제를 한 번에 맞혀야 해. 한 번 더 해 볼까?':c.res.some(r=>r.quick&&!r.ok)?'틀린 문제 중에 너무 빨리 고른 게 있었어. 다음엔 손가락으로 짚어 보고 골라 보자!':'천천히 확인하면서 풀었구나. 그게 제일 멋진 거야!'}</p>
     <div class="hands" style="text-align:left">이제 <b>5분 쉬어요.</b> 물 마시고 스트레칭!</div>
@@ -773,7 +773,7 @@ function pMD(){const m=lab.md||(lab.md=mirrorPuzzle());const r=lab.mdRes;
   <div class="row">${r?`<button class="btn" data-a="mdnew">새 문제</button>${lab.mdOk?'':'<button class="btn ghost" data-a="mdretry">고쳐 보기</button>'}`:`<button class="btn" data-a="mdcheck" ${lab.mdCells.size?'':'disabled'}>확인!</button><button class="btn ghost" data-a="mdclear">다 지우기</button>`}</div></div>`}
 function pGeo(){const g=lab.geo,T=GT[g.task];let fb='';
   if(g.closed&&g.an){const a=g.an;if(a.bad)fb=`<div class="fb bad"><span class="jua">앗!</span>${a.bad}</div>`;
-    else fb=T.ok(a)?`<div class="fb good"><span class="jua">성공! ${T.t} 완성!</span>지호가 그린 도형: <b>${a.name}</b>. ${a.info}</div>`:`<div class="fb bad"><span class="jua">이건 ${a.name}이야.</span>${a.info} ${T.h}</div>`}
+    else fb=T.ok(a)?`<div class="fb good"><span class="jua">성공! ${T.t} 완성!</span>내가 그린 도형: <b>${a.name}</b>. ${a.info}</div>`:`<div class="fb bad"><span class="jua">이건 ${a.name}이야.</span>${a.info} ${T.h}</div>`}
   return`<div class="card q"><h3>점판 그리기</h3><div><label class="small mute" for="gtask">과제 고르기</label><select id="gtask">${GT.map((t,i)=>`<option value="${i}" ${i===g.task?'selected':''}>${t.t}</option>`).join('')}</select></div>
   <p class="qt" style="margin:0"><b>${T.t}</b>${eul(T.t)} 그려 봐요.</p><p class="small mute" style="margin:0">점을 차례대로 누르고, 마지막에 <b>노란 첫 점</b>을 다시 누르면 도형이 닫혀요. 닫히면 직각(ㄴ)과 같은 길이(눈금) 표시가 나와요.</p>
   <div class="figbox">${geoSVG()}</div><div class="toast">${lab.gmsg||''}</div>${fb}
@@ -797,7 +797,7 @@ let pinOK=false,pinT=0,PIN={mode:'',buf:'',first:'',msg:'',bad:0,until:0};
 async function hashPin(x){const t='jiho-geo:'+x;try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return[...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('')}catch(e){let h=0;for(const c of t)h=(h*31+c.charCodeAt(0))|0;return'h'+h}}
 function vPin(){const m=PIN.mode||(S.pin?'enter':'create');PIN.mode=m;const wait=PIN.until>Date.now();
   const title=m==='create'?'보호자 비밀번호 만들기':m==='confirm'?'한 번 더 입력해 주세요':'보호자 비밀번호';
-  const sub=m==='create'?'숫자 4자리를 정해 주세요. 지호가 모르는 번호로!':m==='confirm'?'같은 번호를 다시 눌러요.':'보호자 화면을 보려면 비밀번호를 눌러요.';
+  const sub=m==='create'?'숫자 4자리를 정해 주세요. 아이가 모르는 번호로!':m==='confirm'?'같은 번호를 다시 눌러요.':'보호자 화면을 보려면 비밀번호를 눌러요.';
   return`<div class="card"><div class="pinbox"><h2>${title}</h2><p class="mute" style="margin:0">${sub}</p>
   <div class="pdots">${[0,1,2,3].map(i=>`<i class="${i<PIN.buf.length?'f':''}"></i>`).join('')}</div>
   <div class="toast">${wait?'여러 번 틀려서 30초 동안 잠겼어요.':PIN.msg}</div>
