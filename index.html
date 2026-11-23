@@ -126,6 +126,8 @@ label{display:grid;gap:4px;min-width:0}
 .clock{width:100%;max-width:360px;height:auto;display:block;margin:0 auto}
 .cface{fill:var(--bg);stroke:var(--line);stroke-width:3}
 .wedge{stroke:var(--card);stroke-width:2}
+.wedge.running{stroke:var(--p);stroke-width:3;stroke-dasharray:5 4;animation:dash 1s linear infinite}@keyframes dash{to{stroke-dashoffset:-18}}
+.wedge.gdone{opacity:.45}
 .wl{font-family:'Jua',system-ui,sans-serif;font-size:14px;fill:#3a2a1c;text-anchor:middle;dominant-baseline:middle;paint-order:stroke;stroke:rgba(255,255,255,.55);stroke-width:3px}
 .hl{font-size:12px;fill:var(--mute);text-anchor:middle;dominant-baseline:middle}.hl.mj{font-family:'Jua';font-size:15px;fill:var(--ink)}
 .ht{stroke:var(--mute);stroke-width:1}.ht.mj{stroke-width:2.5;stroke:var(--ink)}
@@ -276,7 +278,7 @@ function render(force){const a=document.activeElement;if(!force&&a&&a.closest&&a
   if(!ST.me){$('#tabs').innerHTML='';$('#mebox').innerHTML='';return}
   if(!ST.ready){$('#app').innerHTML='<div class="card"><p>가족 정보를 불러오는 중…</p></div>';return}
   if(!ST.members[ST.me]){$('#tabs').innerHTML='';$('#mebox').innerHTML='';$('#app').innerHTML=vJoin();return}
-  const v=view(),u=unread();
+  const v=view(),u=unread();if(!render.pc){render.pc=1;setTimeout(checkPending,1500)}
   $('#mebox').innerHTML=`<button class="me" data-a="profile">${av(ST.me)}${esc(name(ST.me))}</button>`;
   $('#tabs').innerHTML=(TABS[ST.role]||[]).map(([k,n])=>`<button class="${k===v?'on':''}" data-a="go" data-v="${k}">${n}${k==='letter'&&u?`<span class="badge">${u}</span>`:''}${k==='reward'&&(ST.redeem.some(r=>r.status==='wait')||ST.wish.some(w=>w.status==='wait'))?`<span class="badge">${ST.redeem.filter(r=>r.status==='wait').length+ST.wish.filter(w=>w.status==='wait').length}</span>`:''}</button>`).join('');
   const V={today:vToday,sched:vSched,letter:vLetter,food:vFood,point:vPoint,home:vHome,tasks:vTasks,reward:vReward,learn:vLearn,set:vSettings}[v];
@@ -289,16 +291,36 @@ function vJoin(){const c=ST.color||COLORS[Object.keys(ST.members).length%COLORS.
   <div class="colors">${COLORS.map(x=>`<button style="background:${x}" class="${x===c?'on':''}" data-a="pickColor" data-c="${x}" aria-label="색 고르기"></button>`).join('')}</div>
   <button class="btn" data-a="join">시작하기</button></div>`}
 
+const linkOpts=(K,v)=>`<option value="">확인 방법에 맞춰 자동 (앱 약속은 그 앱)</option>${allLinks(K).map(l=>`<option value="${esc(l.u)}" ${v===l.u?'selected':''}>${esc(l.n)}</option>`).join('')}`;
 const autoOpts=v=>`<option value="">직접 체크</option>${Object.entries(AUTO).map(([k,t])=>`<option value="${k}" ${v===k?'selected':''}>앱 자동: ${t}</option>`).join('')}<option value="proof" ${v==='proof'?'selected':''}>타이머 + 인증 사진 (리딩게이트·책 읽기 등)</option>`;
 function taskBtn(K,i,d,canTick){const on=isDone(d,i),au=autoOn(d,i)&&!(d.p&&d.p[i.id]);return`<button class="task ${on?'on':''}" data-a="tick" data-k="${esc(K)}" data-id="${esc(i.id)}" ${canTick?'':'disabled'}><span class="bx"></span><span class="tt">${esc(i.t)}${au?'<br><span class="small" style="color:var(--ok)">앱에서 끝내서 자동 체크</span>':i.auto&&!on?`<br><span class="small mute">${AUTO[i.auto]||''} 자동 체크</span>`:''}</span>${LOCK}<span class="pt">+${+i.pt||0}</span></button>`}
 /* ---------- 약속 시간 · 타이머 · 미루기 · 인증 ---------- */
 const addMin=(hm,m)=>{const t=toMin(hm)+m;return pad(Math.floor(t/60)%24)+':'+pad(t%60)};
 function promiseBlocks(K,wd){const t=today(),isT=wd===wdOf(t),g=[],a=[];
-  if(isT){const d=doneDoc(K,t);countItems(K,t).forEach(i=>{const tm=tmOf(d,i);if(tm)g.push({t:i.t,s:tm,e:addMin(tm,+i.dur||30),ghost:1});
+  if(isT){const d=doneDoc(K,t);countItems(K,t).forEach(i=>{const tm=tmOf(d,i),rr=(d.run||{})[i.id];if(tm)g.push({t:i.t,s:tm,e:addMin(tm,+i.dur||30),ghost:1,id:i.id,run:!!(rr&&rr.cur),done:isDone(d,i)});
     const r=(d.run||{})[i.id];((r&&r.segs)||[]).forEach(x=>a.push({t:i.t,s:hmOf(x[0]),e:hmOf(Math.max(x[1],x[0]+60000)),act:1}));if(r&&r.cur)a.push({t:i.t,s:hmOf(r.cur),e:hmOf(Math.max(Date.now(),r.cur+60000)),act:1});
     if(autoOn(d,i)&&!(r&&r.segs&&r.segs.length)){const ts=d.auto[i.auto];if(ts)a.push({t:i.t,s:hmOf(ts-(+i.dur||20)*60000),e:hmOf(ts),act:1})}})}
   else((ST.tpl[K]&&ST.tpl[K].items)||[]).filter(i=>i.at&&(i.days||[]).includes(wd)).forEach(i=>g.push({t:i.t,s:i.at,e:addMin(i.at,+i.dur||30),ghost:1}));
   return{g,a}}
+function linkFor(K,i){if(i.lu)return i.lu;const m={dohyung:'/dohyung/',gugudan:'/gugudan/',korean:'/korean/',kbook:'/korean/'}[i.auto];if(!m)return'';const l=allLinks(K).find(x=>String(x.u).includes(m));return l?l.u:''}
+function startItem(K,id){const t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it)return;const url=linkFor(K,it);
+  if(url){try{window.open(url,'_blank','noopener')}catch(e){}try{localStorage.setItem('fam-pending',JSON.stringify({K,id,d:t,at:Date.now()}))}catch(e){}}
+  return writeDone(K,t,d=>{d.run=d.run||{};const r=d.run[id]=d.run[id]||{segs:[]};r.segs=r.segs||[];if(!r.cur)r.cur=Date.now()}).then(()=>toast(url?`시작! 「${it.t}」 끝나고 돌아오면 자동으로 멈춰요`:'시작! 끝나면 ■ 끝을 눌러 줘'))}
+async function endRun(K,id,quiet){const t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it)return;let mins=0,ok=false;
+  await writeDone(K,t,d=>{d.run=d.run||{};const r=d.run[id];if(!r||!r.cur)return;r.segs=r.segs||[];r.segs.push([r.cur,Date.now()]);r.cur=null;ok=true;mins=Math.round(runMs(r)/60000);if(!it.proof&&!it.auto&&!d.p[id])d.p[id]={pt:+it.pt||0,at:Date.now()}});
+  try{const pd=JSON.parse(localStorage.getItem('fam-pending')||'null');if(pd&&pd.id===id)localStorage.removeItem('fam-pending')}catch(e){}
+  if(!ok||quiet===2)return;toast(it.proof?(mins>=(+it.dur||30)*0.9?`${mins}분 했어! 📷 인증 사진을 찍어 줘`:`${mins}분 했어. ${(+it.dur||30)}분을 채우면 인증할 수 있어`):it.auto?`${mins}분 했어! 앱에서 끝냈으면 자동으로 체크돼요`:`끝! +${+it.pt||0} 포인트`)}
+function checkPending(){if(!ST.ready||isAdmin())return;let pd=null;try{pd=JSON.parse(localStorage.getItem('fam-pending')||'null')}catch(e){}if(!pd||pd.K!==ST.me)return;
+  if(pd.d!==today()){try{localStorage.removeItem('fam-pending')}catch(e){}return}if(Date.now()-pd.at<15000)return;const r=(doneDoc(pd.K,pd.d).run||{})[pd.id];if(!r||!r.cur){try{localStorage.removeItem('fam-pending')}catch(e){}return}endRun(pd.K,pd.id)}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(checkPending,600)});window.addEventListener('focus',()=>setTimeout(checkPending,600));
+function todayClock(K,t,sch){const pb=promiseBlocks(K,wdOf(t));pb.g.forEach(x=>x.tap=1);const items=[...sch,...pb.g,...pb.a];if(!items.length)return'';
+  const nm=nowMin(),run=pb.g.find(x=>x.run),cur=sch.find(x=>{const a=toMin(x.s),b=x.e?toMin(x.e):a+60;return nm>=a&&nm<(b<=a?b+1440:b)}),nx=[...sch.map(x=>({t:x.t,s:x.s})),...pb.g.filter(x=>!x.done).map(x=>({t:x.t,s:x.s}))].filter(x=>toMin(x.s)>nm).sort((a,b)=>toMin(a.s)-toMin(b.s))[0];
+  return`<section class="card" style="gap:10px"><div class="sec">오늘 시간표</div>
+   <div class="row" style="gap:8px">${run?`<span class="pill" style="background:#ff9f80;color:#3a2a1c">하는 중</span><b class="jua" style="font-size:22px">${esc(run.t)}</b>`:cur?`<span class="pill" style="background:var(--p2)">지금</span><b class="jua" style="font-size:22px">${esc(cur.t)}</b>`:'<span class="pill" style="background:var(--okbg)">지금</span><b class="jua" style="font-size:22px">자유 시간</b>'}</div>
+   ${nx?`<div class="small mute">다음 · <b style="color:var(--ink)">${esc(nx.t)}</b> ${esc(nx.s)}</div>`:''}
+   ${clockSVG(items,true,false)}
+   <div class="legend" style="justify-content:center"><span><i style="background:var(--line)"></i>약속 계획</span><span><i style="background:#ff9f80"></i>실제로 한 시간</span>${sch.length?'<span><i style="background:#cfe0ff"></i>학원·일정</span>':''}</div>
+   ${pb.g.length&&K===ST.me?'<p class="small mute" style="margin:0;text-align:center">회색 약속을 누르면 시작해요. 앱 약속은 그 앱이 열리고, 돌아오면 자동으로 멈춰요.</p>':''}</section>`}
 function sortItems(d,items){return items.slice().sort((x,y)=>{const a=tmOf(d,x),b=tmOf(d,y);return(a?0:1)-(b?0:1)||(a||'').localeCompare(b||'')})}
 const mmss=ms=>{const m=Math.floor(ms/60000),s=Math.floor(ms/1000)%60;return m+'분 '+pad(s)+'초'};
 function taskRow(K,i,d,date,canAct){const tm=tmOf(d,i);if(!tm&&!i.proof)return taskBtn(K,i,d,canAct);
@@ -348,7 +370,7 @@ function vToday(){const K=ST.me,t=today(),items=itemsFor(K,t),d=doneDoc(K,t),c=d
   <section class="card"><div class="sec">${LOCK} 부모님과 정한 오늘의 약속</div><div class="list">${items.length?sortItems(d,items).map(i=>taskRow(K,i,d,t,true)).join(''):'<div class="empty">오늘은 정한 약속이 없어요</div>'}</div></section>
   <section class="card"><div class="sec">내가 정한 도전 <span class="small">(하나에 +${ST.cfg.ownPt??2}, 하루 ${ST.cfg.ownMax??3}개까지 포인트)</span></div><div class="list">${own.map(o=>`<div class="row" style="flex-wrap:nowrap"><button class="task ${o.done?'on':''}" data-a="ownTick" data-id="${esc(o.id)}"><span class="bx"></span><span class="tt">${esc(o.t)}</span></button><button class="x" data-a="ownDel" data-id="${esc(o.id)}" aria-label="지우기">×</button></div>`).join('')||'<div class="empty">스스로 도전할 일을 적어 봐! (예: 책 20쪽 읽기)</div>'}</div>
    <div class="addrow"><input id="ownIn" maxlength="40" placeholder="오늘 내가 도전할 일"><button class="btn sm" data-a="ownAdd">추가</button></div></section>
-  ${sch.length||items.some(i=>tmOf(d,i))?todayStrip(sch,K,t):''}
+  ${todayClock(K,t,sch)}
   <section class="card"><h3>이번 주 나의 성장</h3>${weekBars(K)}</section>
   ${linkBtns(K)}`}
 const BUILTIN={'7ec7b9f4de41bc54dca769f62327a55d27927fcc47b6e44b24e4b5aad5117e4d':[{id:'b3',n:'도형교실',u:'https://rmsgp11-ui.github.io/hihoho/dohyung/',fixed:1},{id:'b5',n:'국어 훈련장',u:'https://rmsgp11-ui.github.io/hihoho/korean/',fixed:1},{id:'b1',n:'알림장',u:'https://sites.google.com/view/maean35/',fixed:1}],'8d9479376ec9cd02ae3d2e09886d032530078fc34346173d96177f1177ae7b33':[{id:'b3',n:'도형교실',u:'https://rmsgp11-ui.github.io/hihoho/dohyung/',fixed:1},{id:'b2',n:'구구단 마스터',u:'https://rmsgp11-ui.github.io/hihoho/gugudan/',fixed:1}]};
@@ -392,10 +414,10 @@ function vTasks(){const ks=kids();if(!ks.length)return'<div class="card"><p styl
   <section class="card"><h3>매일 반복 약속</h3><p class="small mute" style="margin:0">고른 요일마다 자동으로 들어가요. 아이는 체크만 할 수 있고 고치거나 지울 수 없어요.</p>
    <div class="list">${tpl.map(i=>`<div class="env"><div class="row sp" style="flex-wrap:nowrap"><span class="jua" style="font-size:18px">${esc(i.t)}</span><button class="x" data-a="tplDel" data-id="${esc(i.id)}" aria-label="지우기">×</button></div><div class="chips">${dayChips(i.days||[],'tplDay',i.id)}</div>
      <div class="g3t"><label class="small mute">포인트<input type="number" min="0" max="500" value="${+i.pt||0}" data-tplf="pt" data-id="${esc(i.id)}"></label><label class="small mute">시작 시각<input type="time" value="${esc(i.at||'')}" data-tplf="at" data-id="${esc(i.id)}"></label><label class="small mute">걸리는 시간(분)<input type="number" min="5" max="300" step="5" value="${i.dur||''}" placeholder="30" data-tplf="dur" data-id="${esc(i.id)}"></label></div>
-     <label class="small mute">확인 방법<select data-autosel="${esc(i.id)}">${autoOpts(i.proof?'proof':i.auto)}</select></label></div>`).join('')||'<div class="empty">아직 없어요. 예: 도형교실 수업 1개, 영어 단어 10개</div>'}</div>
+     <label class="small mute">확인 방법<select data-autosel="${esc(i.id)}">${autoOpts(i.proof?'proof':i.auto)}</select></label><label class="small mute">누르면 열 링크<select data-tplf="lu" data-id="${esc(i.id)}">${linkOpts(K,i.lu)}</select></label></div>`).join('')||'<div class="empty">아직 없어요. 예: 도형교실 수업 1개, 영어 단어 10개</div>'}</div>
    <div class="g3"><input id="tplT" maxlength="40" placeholder="약속 내용 (예: 리딩게이트 책 읽기)"><input id="tplP" type="number" min="0" max="500" value="10" aria-label="포인트"></div><div class="chips">${dayChips(ST.newDays,'newDay')}</div>
    <div class="g2"><label class="small mute">시작 시각 (안 정해도 돼요)<input id="tplAt" type="time"></label><label class="small mute">걸리는 시간(분)<input id="tplDur" type="number" min="5" max="300" step="5" placeholder="30"></label></div>
-   <label class="small mute">확인 방법<select id="tplAuto">${autoOpts('')}</select></label><button class="btn sm" data-a="tplAdd">반복 약속 추가</button></section>
+   <label class="small mute">확인 방법<select id="tplAuto">${autoOpts('')}</select></label><label class="small mute">누르면 열 링크<select id="tplLu">${linkOpts(K,'')}</select></label><button class="btn sm" data-a="tplAdd">반복 약속 추가</button></section>
   <section class="card"><h3>특정 날짜에만 하는 약속</h3><input id="planDate" type="date" value="${date}" aria-label="날짜"><div class="list">${plan.map(i=>`<div class="rw"><span class="nm" style="font-size:17px">${esc(i.t)}${i.at?` <span class="small mute">${esc(i.at)}${i.dur?' · '+i.dur+'분':''}</span>`:''}</span><span class="pt jua" style="color:var(--p)">+${+i.pt||0}</span><button class="x" data-a="planDel" data-id="${esc(i.id)}" aria-label="지우기">×</button></div>`).join('')||`<div class="empty">${fmtD(date)}에만 하는 약속이 없어요</div>`}</div>
    <div class="g3"><input id="planT" maxlength="40" placeholder="이날만 할 약속"><input id="planP" type="number" min="0" max="500" value="10" aria-label="포인트"></div><div class="g2"><label class="small mute">시작 시각<input id="planAt" type="time"></label><label class="small mute">걸리는 시간(분)<input id="planDur" type="number" min="5" max="300" step="5" placeholder="30"></label></div><button class="btn sm" data-a="planAdd">이날 약속 추가</button></section>
   <section class="card"><h3>${esc(name(K))}의 바로가기 링크</h3><p class="small mute" style="margin:0">${esc(name(K))}의 오늘 화면 맨 아래에 이 순서대로 보여요. 다른 가족에게는 안 보여요.</p>
@@ -409,7 +431,7 @@ function clockSVG(items,showNow,half){const S=360,c=S/2,R=130,ST0=half?420:0,LEN
   let s=`<svg class="clock" viewBox="0 0 ${S} ${S}" role="img" aria-label="${half?'오전 7시부터 저녁 9시까지':'하루'} 생활계획표 시계"><circle class="cface" cx="${c}" cy="${c}" r="${R}"/>`;
   const seg=x=>{let a=toMin(x.s),b=x.e?toMin(x.e):a+60;if(b<=a)b+=1440;if(!half)return[a,a+Math.min(b-a,1439)];const A=Math.max(a,ST0),B=Math.min(b,END);return B>A?[A,B]:null};
   items.forEach((x,i)=>{const col=x.ghost?'var(--line)':x.act?'#ff9f80':PAST[i%PAST.length];x._c=col;const g=seg(x);if(!g)return;const span=g[1]-g[0];
-    const[x1,y1]=pt(g[0],R),[x2,y2]=pt(g[1],R);s+=span>=LEN-1?`<circle class="wedge" fill="${col}" cx="${c}" cy="${c}" r="${R}"/>`:`<path class="wedge" fill="${col}" d="M${c} ${c} L${f(x1)} ${f(y1)} A${R} ${R} 0 ${span>LEN/2?1:0} 1 ${f(x2)} ${f(y2)} Z"/>`});
+    const[x1,y1]=pt(g[0],R),[x2,y2]=pt(g[1],R);const tap=x.ghost&&x.id&&x.tap?` data-a="clkTap" data-id="${esc(x.id)}" style="cursor:pointer"`:'',cls=`wedge${x.run?' running':''}${x.ghost&&x.done?' gdone':''}`;s+=span>=LEN-1?`<circle class="${cls}" fill="${col}" cx="${c}" cy="${c}" r="${R}"${tap}/>`:`<path class="${cls}" fill="${col}" d="M${c} ${c} L${f(x1)} ${f(y1)} A${R} ${R} 0 ${span>LEN/2?1:0} 1 ${f(x2)} ${f(y2)} Z"${tap}/>`});
   items.forEach(x=>{if(x.act)return;const g=seg(x);if(!g)return;const span=g[1]-g[0];if(span<(half?25:45))return;const[lx,ly]=pt(g[0]+span/2,R*(span<(half?60:120)?0.72:0.6));const t=x.t.length>6?x.t.slice(0,6)+'…':x.t;s+=`<text class="wl" x="${f(lx)}" y="${f(ly)}">${esc(t)}</text>`});
   const H=half?14:24;for(let k=0;k<H;k++){const h=(half?7:0)+k,m=h*60,mj=half?(k===0||h%3===0):h%6===0;const[a1,b1]=pt(m,R),[a2,b2]=pt(m,R-(mj?12:7)),[tx,ty]=pt(m,R+17);s+=`<line class="ht ${mj?'mj':''}" x1="${f(a1)}" y1="${f(b1)}" x2="${f(a2)}" y2="${f(b2)}"/><text class="hl ${mj?'mj':''}" x="${f(tx)}" y="${f(ty)}">${half&&k===0?'7·21':h}</text>`;
     if(half){const[q1,w1]=pt(m+30,R),[q2,w2]=pt(m+30,R-4);s+=`<line class="ht" x1="${f(q1)}" y1="${f(w1)}" x2="${f(q2)}" y2="${f(w2)}"/>`}}
@@ -594,9 +616,10 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   /* 오늘 */
   if(a==='tick'){const K=k,t=today(),it=itemsFor(K,t).find(i=>i.id===id);if(!it)return;if(autoOn(doneDoc(K,t),it)&&!(doneDoc(K,t).p||{})[id])return toast('앱에서 끝내서 자동으로 체크됐어요');if(it.proof&&!isAdmin())return toast('타이머와 인증 사진으로 체크돼요');let nowDone=false;await writeDone(K,t,d=>{if(d.p[id])delete d.p[id];else{d.p[id]={pt:+it.pt||0,at:Date.now()};nowDone=true}});
     if(nowDone&&K===ST.me){const c=dayCount(K,t);toast(c.pd===c.pt?'오늘 약속 다 지켰어! 정말 멋져!':`+${+it.pt||0} 포인트! 잘했어`)}return}
-  if(a==='tStart'){const K=ST.me;return writeDone(K,today(),d=>{d.run=d.run||{};const r=d.run[id]=d.run[id]||{segs:[]};r.segs=r.segs||[];r.cur=Date.now()}).then(()=>toast('시작! 끝나면 ■ 끝을 눌러 줘'))}
-  if(a==='tEnd'){const K=ST.me,t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it)return;let mins=0;await writeDone(K,t,d=>{d.run=d.run||{};const r=d.run[id];if(!r||!r.cur)return;r.segs=r.segs||[];r.segs.push([r.cur,Date.now()]);r.cur=null;mins=Math.round(runMs(r)/60000);if(!it.proof&&!d.p[id])d.p[id]={pt:+it.pt||0,at:Date.now()}});
-    return toast(it.proof?(mins>=(+it.dur||30)*0.9?'수고했어! 📷 인증 사진을 찍어 줘':`${mins}분 했어. ${(+it.dur||30)}분을 채우면 인증할 수 있어`):`끝! +${+it.pt||0} 포인트`)}
+  if(a==='tStart'){return startItem(ST.me,id)}
+  if(a==='tEnd'){return endRun(ST.me,id)}
+  if(a==='clkTap'){const K=ST.me,t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it||isAdmin())return;const d=doneDoc(K,t),r=(d.run||{})[id];
+    if(isDone(d,it))return toast('이미 끝낸 약속이에요');if(r&&r.cur)return endRun(K,id);if(it.proof&&runMs(r)>=(+it.dur||30)*60000*0.9)return toast('아래 약속에서 📷 인증 사진을 찍어 줘');return startItem(K,id)}
   if(a==='tMove'){return moveModal(id)}
   if(a==='mvGo'){return doMove(id)}
   if(a==='chkOk'||a==='chkNo'){const K=k,dt=b.dataset.d,it=itemsFor(K,dt).find(x=>x.id===id);if(!it)return;await writeDone(K,dt,d=>{d.chk=d.chk||{};if(a==='chkOk'){d.p[id]={pt:+it.pt||0,at:Date.now(),by:ST.me};delete d.chk[id]}else d.chk[id]={...(d.chk[id]||{}),st:'no',note:'부모님이 다시 하자고 했어요'}});return toast(a==='chkOk'?'확인했어요. 포인트가 들어갔어요':'다시 하도록 돌려보냈어요')}
@@ -610,7 +633,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='fbOpen'){ST.fbOpen=id;return render(true)}
   if(a==='goTasks'){ST.selKid=k;location.hash='tasks';return}
   if(a==='newDay'){const wd=+b.dataset.wd;ST.newDays=ST.newDays.includes(wd)?ST.newDays.filter(x=>x!==wd):[...ST.newDays,wd];b.classList.toggle('on',ST.newDays.includes(wd));return}
-  if(a==='tplAdd'){const t=val('tplT'),p=+val('tplP')||0;if(!t)return toast('약속 내용을 적어 주세요');if(!ST.newDays.length)return toast('요일을 하나 이상 골라 주세요');const K=ST.selKid,items=[...((ST.tpl[K]&&ST.tpl[K].items)||[]),{id:'t'+uid(),t,pt:p,days:ST.newDays.slice(),auto:val('tplAuto')==='proof'?'':val('tplAuto'),proof:val('tplAuto')==='proof',at:val('tplAt'),dur:+val('tplDur')||(val('tplAt')||val('tplAuto')==='proof'?30:0)}];$('#tplT').value='';await save('',D('tpl',K),{items},true);return render(true)}
+  if(a==='tplAdd'){const t=val('tplT'),p=+val('tplP')||0;if(!t)return toast('약속 내용을 적어 주세요');if(!ST.newDays.length)return toast('요일을 하나 이상 골라 주세요');const K=ST.selKid,items=[...((ST.tpl[K]&&ST.tpl[K].items)||[]),{id:'t'+uid(),t,pt:p,days:ST.newDays.slice(),auto:val('tplAuto')==='proof'?'':val('tplAuto'),proof:val('tplAuto')==='proof',lu:val('tplLu'),at:val('tplAt'),dur:+val('tplDur')||(val('tplAt')||val('tplAuto')==='proof'?30:0)}];$('#tplT').value='';await save('',D('tpl',K),{items},true);return render(true)}
   if(a==='tplDel'){const K=ST.selKid,items=((ST.tpl[K]&&ST.tpl[K].items)||[]).filter(i=>i.id!==id);return save('',D('tpl',K),{items},true)}
   if(a==='tplDay'){const K=ST.selKid,wd=+b.dataset.wd,items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));const i=items.find(x=>x.id===id);if(!i)return;i.days=i.days.includes(wd)?i.days.filter(x=>x!==wd):[...i.days,wd];return save('',D('tpl',K),{items},true)}
   if(a==='planAdd'){const t=val('planT'),p=+val('planP')||0;if(!t)return toast('약속 내용을 적어 주세요');const K=ST.selKid,date=ST.selDate||today(),items=[...((ST.plan[K]&&ST.plan[K][date]&&ST.plan[K][date].items)||[]),{id:'p'+uid(),t,pt:p,at:val('planAt'),dur:+val('planDur')||(val('planAt')?30:0)}];$('#planT').value='';await save('',D('plan',K,'days',date),{items,who:K,date});return render(true)}
@@ -657,7 +680,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='foodDel'){return F.FS.deleteDoc(D('food',id)).catch(()=>toast('지우기가 안 됐어요'))}
 });
 document.addEventListener('change',e=>{const as=e.target.dataset&&e.target.dataset.autosel;if(as){const K=ST.selKid,items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));const it=items.find(x=>x.id===as);if(it){const v=e.target.value;it.proof=v==='proof';it.auto=v==='proof'?'':v;if(it.proof&&!it.dur)it.dur=30;save('',D('tpl',K),{items},true);toast(it.proof?'타이머와 인증 사진으로 확인해요':it.auto?'앱 자동 체크를 연결했어요':'직접 체크로 바꿨어요')}return}
-  const tf=e.target.dataset&&e.target.dataset.tplf;if(tf){const K=ST.selKid,items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));const it=items.find(x=>x.id===e.target.dataset.id);if(it){const v=e.target.value;if(tf==='pt')it.pt=Math.max(0,+v||0);if(tf==='at')it.at=v;if(tf==='dur')it.dur=Math.max(0,+v||0);if(tf==='at'&&v&&!it.dur)it.dur=30;save('',D('tpl',K),{items},true).then(()=>toast(tf==='pt'?`포인트를 ${it.pt}로 바꿨어요`:'시간을 바꿨어요'))}return}
+  const tf=e.target.dataset&&e.target.dataset.tplf;if(tf){const K=ST.selKid,items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));const it=items.find(x=>x.id===e.target.dataset.id);if(it){const v=e.target.value;if(tf==='pt')it.pt=Math.max(0,+v||0);if(tf==='at')it.at=v;if(tf==='dur')it.dur=Math.max(0,+v||0);if(tf==='lu')it.lu=v;if(tf==='at'&&v&&!it.dur)it.dur=30;save('',D('tpl',K),{items},true).then(()=>toast(tf==='pt'?`포인트를 ${it.pt}로 바꿨어요`:tf==='lu'?'링크를 연결했어요':'시간을 바꿨어요'))}return}
   const pf=e.target.dataset&&e.target.dataset.proof;if(pf){const f=e.target.files&&e.target.files[0];if(f)sendProof(pf,f);return}if(e.target.id==='planDate'){ST.selDate=e.target.value||today();render(true)}});
 document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.isComposing)return;const m={ownIn:'ownAdd',foodIn:'foodAdd',tplT:'tplAdd',planT:'planAdd',schT:'schAdd',rwN:'rwAdd'}[e.target.id];if(m){e.preventDefault();const btn=document.querySelector(`[data-a="${m}"]`);if(btn)btn.click()}});
 window.addEventListener('hashchange',()=>{render(true);scrollTo(0,0)});
