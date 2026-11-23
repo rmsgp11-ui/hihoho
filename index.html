@@ -235,7 +235,7 @@ function weekBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw,...w.lw);co
 function miniBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw);return`<div class="mini">${w.tw.map(v=>`<i style="height:${(v/mx*100).toFixed(0)}%"></i>`).join('')}</div>`}
 
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='50';
+const APPV='51';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -270,6 +270,7 @@ function startRole(){const t=today();
     sub('wish',Q(C('wish'),['by','==',K]),s=>ST.wish=arr(s));
   }else{kids().forEach(K=>subKid(K,t));
     sub('schedAll',C('sched'),s=>{s.forEach(d=>ST.sched[d.id]=d.data())});
+    sub('cart',D('fam','cart'),s=>{ST.cart=(s.exists()&&s.data().items)||[]});
     sub('letters',C('letters'),s=>ST.lettersAll=arr(s));
     sub('redeem',C('redeem'),s=>ST.redeem=arr(s));
     sub('bonus',C('bonus'),s=>ST.bonus=arr(s));
@@ -300,7 +301,7 @@ async function pinKey(k){if(PIN.buf.length>=4)return;PIN.buf+=k;PIN.msg='';paint
 document.addEventListener('visibilitychange',()=>{if(document.hidden)hiddenAt=Date.now();else if(hiddenAt&&Date.now()-hiddenAt>10*60*1000&&!trusted()){unlocked=false;checkLock()}});
 
 /* ---------- 화면 ---------- */
-const TABS={kid:[['today','오늘'],['sched','달력'],['grow','나의 성장'],['letter','편지'],['food','먹고 싶은 것'],['point','포인트']],admin:[['home','가족'],['tasks','할 일'],['sched','일정'],['letter','편지'],['food','음식'],['reward','보상'],['learn','학습'],['set','설정']]};
+const TABS={kid:[['today','오늘'],['sched','달력'],['grow','나의 성장'],['letter','편지'],['food','먹고 싶은 것'],['point','포인트']],admin:[['home','가족'],['tasks','할 일'],['sched','일정'],['letter','편지'],['food','음식'],['cart','장바구니'],['reward','보상'],['learn','학습'],['set','설정']]};
 function view(){const tabs=TABS[ST.role]||[];const h=location.hash.slice(1);return tabs.some(t=>t[0]===h)?h:(tabs[0]||[''])[0]}
 let pending=false;
 function render(force){const a=document.activeElement;if(!force&&a&&a.closest&&a.closest('#app')&&a.matches('input,textarea,select')&&a.value){pending=true;return}pending=false;
@@ -310,7 +311,7 @@ function render(force){const a=document.activeElement;if(!force&&a&&a.closest&&a
   const v=view(),u=unread();if(!render.pc){render.pc=1;setTimeout(checkPending,1500)}
   $('#mebox').innerHTML=`<button class="me" data-a="profile">${av(ST.me)}${esc(name(ST.me))}</button>`;
   $('#tabs').innerHTML=(TABS[ST.role]||[]).map(([k,n])=>`<button class="${k===v?'on':''}" data-a="go" data-v="${k}">${n}${k==='letter'&&u?`<span class="badge">${u}</span>`:''}${k==='reward'&&(ST.redeem.some(r=>r.status==='wait')||ST.wish.some(w=>w.status==='wait'))?`<span class="badge">${ST.redeem.filter(r=>r.status==='wait').length+ST.wish.filter(w=>w.status==='wait').length}</span>`:''}</button>`).join('');
-  const V={today:vToday,sched:()=>isAdmin()?vSchedAdmin():vCal(),grow:vGrow,letter:vLetter,food:vFood,point:vPoint,home:vHome,tasks:vTasks,reward:vReward,learn:vLearn,set:vSettings}[v];
+  const V={today:vToday,sched:()=>isAdmin()?vSchedAdmin():vCal(),grow:vGrow,letter:vLetter,food:vFood,point:vPoint,home:vHome,tasks:vTasks,reward:vReward,cart:vCart,learn:vLearn,set:vSettings}[v];
   $('#app').innerHTML=V?V():'';}
 document.addEventListener('focusout',()=>{if(pending)setTimeout(()=>{if(pending)render()},0)});
 
@@ -620,12 +621,12 @@ function vLetter(){const others=fam().filter(e=>e!==ST.me);if(!others.includes(S
 
 const SEAS=/소금|설탕|간장|고추장|된장|식용유|올리브유|참기름|들기름|후추|다진\s*마늘|마늘\s*다진|식초|맛술|미림|굴소스|케첩|마요네즈|물엿|올리고당|고춧가루|깨|참깨|조미료|다시다|육수용|버터|꿀|소스|양념/;
 const isSeas=x=>x.s===true||(x.s!==false&&SEAS.test(x.n||''));
-const kurly=n=>'https://www.kurly.com/search?sword='+encodeURIComponent(n);
-function ingHtml(f,v){const it=v.items||[],buy=it.filter(x=>!isSeas(x)),sea=it.filter(isSeas);ST.ingBuy=buy;return`<h3>🥕 ${esc(v.food||f.name)} 식재료</h3>${v.food&&v.food.replace(/\s/g,'')!==String(f.name).replace(/\s/g,'')?`<span class="small mute">「${esc(f.name)}」를 「${esc(v.food)}」로 알아들었어요.</span>`:''}${v.serves?`<span class="small mute">${esc(v.serves)} 기준 · 집에 있는 건 체크해 두세요</span>`:''}
-   <div class="sec">장볼 재료</div><div class="list">${buy.map(x=>`<div class="rw" style="min-height:46px"><input type="checkbox" style="width:22px;height:22px;min-height:0" aria-label="집에 있음"><span class="nm" style="font-size:17px">${esc(x.n)} <span class="small mute">${esc(x.a||'')}</span></span><a class="btn sm ghost" href="${kurly(x.n)}" target="_blank" rel="noopener" style="text-decoration:none;white-space:nowrap">🛒 컬리</a></div>`).join('')||'<span class="small mute">없어요</span>'}</div>
-   ${sea.length?`<div class="sec">양념·조미료 (집에 있는지 확인)</div><div class="chips">${sea.map(x=>`<span class="chip" style="cursor:default">${esc(x.n)} <span class="small mute">${esc(x.a||'')}</span></span>`).join('')}</div>`:''}
+function ingHtml(f,v){const it=v.items||[],buy=it.filter(x=>!isSeas(x)),sea=it.filter(isSeas);ST.ingAll=[...buy,...sea];ST.ingFood=v.food||f.name;const row=(x,k,on)=>`<label class="rw" style="min-height:46px;cursor:pointer"><input type="checkbox" class="ingck" data-k="${k}" ${on?'checked':''} style="width:24px;height:24px;min-height:0"><span class="nm" style="font-size:17px">${esc(x.n)} <span class="small mute">${esc(x.a||'')}</span></span></label>`;
+  return`<h3>🥕 ${esc(v.food||f.name)} 식재료</h3>${v.food&&v.food.replace(/\s/g,'')!==String(f.name).replace(/\s/g,'')?`<span class="small mute">「${esc(f.name)}」를 「${esc(v.food)}」로 알아들었어요.</span>`:''}<span class="small mute">${v.serves?esc(v.serves)+' 기준 · ':''}살 재료를 체크하고 장바구니에 담아요.</span>
+   <div class="sec">장볼 재료</div><div class="list">${buy.map((x,k)=>row(x,k,true)).join('')||'<span class="small mute">없어요</span>'}</div>
+   ${sea.length?`<div class="sec">양념·조미료 (없는 것만 체크)</div><div class="list">${sea.map((x,k)=>row(x,buy.length+k,false)).join('')}</div>`:''}
    ${v.tip?`<span class="small">💡 ${esc(v.tip)}</span>`:''}
-   <div class="row"><button class="btn sm" data-a="ingCopy">장보기 목록 복사</button><button class="btn sm ghost" data-a="foodIngRe" data-id="${esc(f.id)}">다시 알아보기</button><button class="btn sm ghost" data-a="closeM">닫기</button></div>`}
+   <div class="row"><button class="btn" data-a="cartAddIng">🧺 장바구니에 담기</button><button class="btn sm ghost" data-a="foodIngRe" data-id="${esc(f.id)}">다시 알아보기</button><button class="btn sm ghost" data-a="closeM">닫기</button></div>`}
 async function foodIng(id,re,alt){const f0=ST.food.find(x=>x.id===id);if(!f0)return;const f={...f0,name:alt||f0.name};let v=!re&&(f.ing||(()=>{try{return JSON.parse(localStorage.getItem('ing-'+id)||'null')}catch(e){return null}})());
   if(v&&!alt)return openModal(ingHtml(f,v));openModal(`<h3>🥕 ${esc(f.name)}</h3><p class="mute" style="margin:0">필요한 식재료를 알아보는 중…</p>`);
   try{const tk=await F.auth.currentUser.getIdToken();const r=await fetch(window.AI_URL,{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tk},body:JSON.stringify({tier:'quick',prompt:`초등학생이 먹고 싶은 음식을 적었다: "${f.name}". 아이가 써서 맞춤법이 틀리거나 오타, 띄어쓰기 실수, 줄임말, 소리 나는 대로 쓴 글자가 있을 수 있다(예: 떡보끼→떡볶이, 김치찌게→김치찌개, 스파게리→스파게티, 치킨너겟). 가장 가까운 음식 이름으로 알아듣고, 4인 가족이 집에서 만들 때 필요한 식재료를 장보기 목록으로 알려 줘. 양념·기본 조미료도 포함하고, 양은 대략적으로. 사 먹는 음식(예: 피자, 치킨)이어도 집에서 만드는 기준으로 알려 줘.
@@ -635,6 +636,11 @@ JSON만 출력: {"food":"알아들은 음식 이름 (맞춤법 고친 것)","ser
     if(!r.ok)throw{code:'ai_'+r.status};const s2=((await r.json()).text)||'',a=s2.indexOf('{'),b=s2.lastIndexOf('}');v=JSON.parse(s2.slice(a,b+1));if(!v.items)throw{code:v.error||'bad_json'};
     try{localStorage.setItem('ing-'+id,JSON.stringify(v))}catch(e){}F.FS.updateDoc(D('food',id),{ing:v}).catch(()=>{});openModal(ingHtml(f,v))}
   catch(e){const c=(e&&e.code)||'오류';openModal(`<h3>🥕 ${esc(f.name)}</h3><p style="margin:0">${c==='unknown'||c==='off_topic'?'어떤 음식인지 잘 모르겠어요. 음식 이름을 다시 적어 볼까요?':'식재료를 알아보지 못했어요 ('+esc(c)+').'}</p><input id="ingName" maxlength="20" value="${esc(f.name)}" placeholder="예: 떡볶이"><div class="row"><button class="btn" data-a="foodIngName" data-id="${esc(id)}">다시 알아보기</button><button class="btn ghost" data-a="closeM">닫기</button></div>`)}}
+function vCart(){const L=(ST.cart||[]).slice().sort((a,b)=>(a.done-b.done)||(a.at-b.at)),left=L.filter(c=>!c.done).length;
+  return`<section class="card"><div class="row sp"><h3>🧺 장바구니</h3><span class="pill">살 것 ${left}개</span></div>
+   <div class="addrow"><input id="cartIn" maxlength="30" placeholder="직접 넣기 (예: 우유 1L)"><button class="btn sm" data-a="cartAdd">넣기</button></div>
+   <div class="list">${L.map(c=>`<div class="rw" style="min-height:50px;${c.done?'opacity:.5':''}"><button class="bx-btn" data-a="cartTick" data-id="${esc(c.id)}" aria-label="${c.done?'안 산 걸로':'샀어요'}" style="width:30px;height:30px;border-radius:8px;border:2.5px solid var(--p);background:${c.done?'var(--p)':'transparent'};color:#fff;font-size:16px;flex:none">${c.done?'✓':''}</button><span class="nm" style="font-size:17px;${c.done?'text-decoration:line-through':''}">${esc(c.n)} <span class="small mute">${esc(c.a||'')}</span>${(c.foods||[]).length?`<br><span class="small mute">${c.foods.map(esc).join(', ')}</span>`:''}</span><button class="x" data-a="cartDel" data-id="${esc(c.id)}" aria-label="지우기">×</button></div>`).join('')||'<div class="empty">비어 있어요. 음식 탭의 「필요한 식재료」에서 담을 수 있어요.</div>'}</div>
+   ${L.length?`<div class="row"><button class="btn sm" data-a="cartCopy">살 것 목록 복사</button>${L.length>left?'<button class="btn sm ghost" data-a="cartClear">산 것 지우기</button>':''}</div>`:''}</section>`}
 function vFood(){const list=ST.food.slice().sort((a,b)=>(a.done-b.done)||((b.likes||[]).length-(a.likes||[]).length)||(b.at-a.at));
   return`<section class="card"><h3>먹고 싶은 음식 적기</h3><div class="addrow"><input id="foodIn" maxlength="20" placeholder="예: 떡볶이, 엄마표 김밥"><button class="btn sm" data-a="foodAdd">적기</button></div><p class="small mute" style="margin:0">다른 사람이 적은 음식도 먹고 싶으면 "나도!"를 눌러요.</p></section>
   <div class="food">${list.map(f=>{const lk=f.likes||[],me=lk.includes(ST.me),mine=f.by===ST.me;return`<div class="fd ${f.done?'eaten':''}"><div class="row sp" style="flex-wrap:nowrap"><span class="row" style="gap:6px;flex-wrap:nowrap">${av(f.by,28)}<span class="small mute">${esc(name(f.by))} · ${ago(f.at)}</span></span>${mine||isAdmin()?`<button class="x" data-a="foodDel" data-id="${esc(f.id)}" aria-label="지우기">×</button>`:''}</div><span class="nm">${esc(f.name)}</span>
@@ -909,7 +915,14 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='foodLike'){const f=ST.food.find(x=>x.id===id);if(!f)return;const lk=f.likes||[];return F.FS.updateDoc(D('food',id),{likes:lk.includes(ST.me)?lk.filter(x=>x!==ST.me):[...lk,ST.me]}).catch(()=>toast('저장이 안 됐어요'))}
   if(a==='foodIng'){return foodIng(id)}
   if(a==='foodIngRe'){return foodIng(id,1)}
-  if(a==='ingCopy'){const boxes=[...document.querySelectorAll('#modal .rw input[type=checkbox]')],L=(ST.ingBuy||[]).filter((x,i)=>!(boxes[i]&&boxes[i].checked)).map(x=>`- ${x.n} ${x.a||''}`.trim());try{await navigator.clipboard.writeText(L.join('\n'));toast('장보기 목록을 복사했어요 ('+L.length+'개)')}catch(e){toast('복사가 안 됐어요')}return}
+  if(a==='cartAddIng'){const ks=[...document.querySelectorAll('#modal .ingck')].filter(x=>x.checked).map(x=>+x.dataset.k),L=ks.map(k=>ST.ingAll[k]).filter(Boolean);if(!L.length)return toast('담을 재료를 체크해 주세요');
+    const cur=(ST.cart||[]).slice(),fd=ST.ingFood||'';L.forEach(x=>{const ex=cur.find(c=>!c.done&&c.n===x.n);if(ex){if(fd&&!(ex.foods||[]).includes(fd))ex.foods=[...(ex.foods||[]),fd]}else cur.push({id:'c'+uid(),n:x.n,a:x.a||'',foods:fd?[fd]:[],done:false,at:Date.now(),by:ST.me})});
+    $('#modal').innerHTML='';await save('',D('fam','cart'),{items:cur});return toast(`장바구니에 ${L.length}개 담았어요`)}
+  if(a==='cartTick'){const cur=JSON.parse(JSON.stringify(ST.cart||[])),x=cur.find(c=>c.id===id);if(!x)return;x.done=!x.done;return save('',D('fam','cart'),{items:cur})}
+  if(a==='cartDel'){return save('',D('fam','cart'),{items:(ST.cart||[]).filter(c=>c.id!==id)})}
+  if(a==='cartAdd'){const n=val('cartIn');if(!n)return toast('살 것을 적어 주세요');$('#cartIn').value='';return save('',D('fam','cart'),{items:[...(ST.cart||[]),{id:'c'+uid(),n,a:'',foods:[],done:false,at:Date.now(),by:ST.me}]})}
+  if(a==='cartClear'){return save('',D('fam','cart'),{items:(ST.cart||[]).filter(c=>!c.done)}).then(()=>toast('산 것을 지웠어요'))}
+  if(a==='cartCopy'){const L=(ST.cart||[]).filter(c=>!c.done).map(c=>`- ${c.n}${c.a?' '+c.a:''}`);try{await navigator.clipboard.writeText(L.join('\n'));toast(`목록을 복사했어요 (${L.length}개)`)}catch(e){toast('복사가 안 됐어요')}return}
   if(a==='foodIngName'){const n=val('ingName');if(!n)return toast('음식 이름을 적어 주세요');return foodIng(id,1,n)}
   if(a==='foodDone'){const f=ST.food.find(x=>x.id===id);if(!f)return;return F.FS.updateDoc(D('food',id),{done:!f.done}).catch(()=>toast('저장이 안 됐어요'))}
   if(a==='foodDel'){return F.FS.deleteDoc(D('food',id)).catch(()=>toast('지우기가 안 됐어요'))}
