@@ -195,7 +195,7 @@ const tmOf=(d,i)=>(d.re&&d.re[i.id])||i.at||'';
 const countItems=(K,date)=>{const d=doneDoc(K,date);return itemsFor(K,date).filter(i=>!isOut(d,i))};
 const hmOf=ts=>{const x=new Date(ts);return pad(x.getHours())+':'+pad(x.getMinutes())};
 const nowMin=()=>{const x=new Date();return x.getHours()*60+x.getMinutes()};
-const runMs=r=>((r&&r.segs)||[]).reduce((a,g)=>a+(g[1]-g[0]),0)+(r&&r.cur?Date.now()-r.cur:0);
+const sg=g=>Array.isArray(g)?{s:g[0],e:g[1]}:(g||{s:0,e:0});const runMs=r=>((r&&r.segs)||[]).map(sg).reduce((a,g)=>a+(g.e-g.s),0)+(r&&r.cur?Date.now()-r.cur:0);
 const AUTO={dohyung:'도형교실 수업 1개 끝내면',gugudan:'구구단 오늘의 미션 끝내면',korean:'국어 훈련 끝내면',kbook:'국어 문제집 한 문장 끝내면'};
 const autoOn=(d,i)=>!!(i.auto&&d.auto&&d.auto[i.auto]);
 const isDone=(d,i)=>!!((d.p&&d.p[i.id])||autoOn(d,i));
@@ -217,7 +217,7 @@ function weekBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw,...w.lw);co
 function miniBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw);return`<div class="mini">${w.tw.map(v=>`<i style="height:${(v/mx*100).toFixed(0)}%"></i>`).join('')}</div>`}
 
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='33';
+const APPV='34';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -309,7 +309,7 @@ function taskBtn(K,i,d,canTick){const on=isDone(d,i),au=autoOn(d,i)&&!(d.p&&d.p[
 const addMin=(hm,m)=>{const t=toMin(hm)+m;return pad(Math.floor(t/60)%24)+':'+pad(t%60)};
 function promiseBlocks(K,wd){const t=today(),isT=wd===wdOf(t),g=[],a=[];
   if(isT){const d=doneDoc(K,t);countItems(K,t).forEach(i=>{const tm=tmOf(d,i),rr=(d.run||{})[i.id];if(tm)g.push({t:i.t,s:tm,e:addMin(tm,+i.dur||30),ghost:1,id:i.id,run:!!(rr&&rr.cur),done:isDone(d,i)});
-    const r=(d.run||{})[i.id];((r&&r.segs)||[]).forEach(x=>a.push({t:i.t,s:hmOf(x[0]),e:hmOf(Math.max(x[1],x[0]+60000)),act:1,id:i.id}));if(r&&r.cur)a.push({t:i.t,s:hmOf(r.cur),e:hmOf(Math.max(Date.now(),r.cur+60000)),act:1,id:i.id,run:1});
+    const r=(d.run||{})[i.id];((r&&r.segs)||[]).map(sg).forEach(x=>a.push({t:i.t,s:hmOf(x.s),e:hmOf(Math.max(x.e,x.s+60000)),act:1,id:i.id}));if(r&&r.cur)a.push({t:i.t,s:hmOf(r.cur),e:hmOf(Math.max(Date.now(),r.cur+60000)),act:1,id:i.id,run:1});
     if(autoOn(d,i)&&!(r&&r.segs&&r.segs.length)){const ts=d.auto[i.auto];if(ts)a.push({t:i.t,s:hmOf(ts-(+i.dur||20)*60000),e:hmOf(ts),act:1})}})}
   else((ST.tpl[K]&&ST.tpl[K].items)||[]).filter(i=>i.at&&(i.days||[]).includes(wd)).forEach(i=>g.push({t:i.t,s:i.at,e:addMin(i.at,+i.dur||30),ghost:1}));
   return{g,a}}
@@ -318,7 +318,7 @@ function startItem(K,id){const t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(
   if(url){try{window.open(url,'_blank','noopener')}catch(e){}try{localStorage.setItem('fam-pending',JSON.stringify({K,id,d:t,at:Date.now()}))}catch(e){}}
   return writeDone(K,t,d=>{d.run=d.run||{};const r=d.run[id]=d.run[id]||{segs:[]};r.segs=r.segs||[];if(!r.cur)r.cur=Date.now()}).then(()=>toast(url?`시작! 「${it.t}」 끝나고 돌아오면 자동으로 멈춰요`:'시작! 끝나면 ■ 끝을 눌러 줘'))}
 async function endRun(K,id,quiet){const t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it)return toast('약속을 찾지 못했어요 (E1)');let mins=0,ok=false;const was=(doneDoc(K,t).run||{})[id];if(!was||!was.cur){if(it.proof&&quiet!==2)return proofModal(id,0);return toast('이미 멈춰 있어요 (E2)')}
-  await writeDone(K,t,d=>{d.run=d.run||{};const r=d.run[id];if(!r||!r.cur)return;r.segs=r.segs||[];r.segs.push([r.cur,Date.now()]);r.cur=null;ok=true;mins=Math.round(runMs(r)/60000);if(!it.proof&&!it.auto&&!d.p[id])d.p[id]={pt:+it.pt||0,at:Date.now()}});
+  await writeDone(K,t,d=>{d.run=d.run||{};const r=d.run[id];if(!r||!r.cur)return;r.segs=r.segs||[];r.segs=r.segs.map(sg);r.segs.push({s:r.cur,e:Date.now()});r.cur=null;ok=true;mins=Math.round(runMs(r)/60000);if(!it.proof&&!it.auto&&!d.p[id])d.p[id]={pt:+it.pt||0,at:Date.now()}});
   try{const pd=JSON.parse(localStorage.getItem('fam-pending')||'null');if(pd&&pd.id===id)localStorage.removeItem('fam-pending')}catch(e){}
   if(quiet===2)return;if(!ok&&!it.proof)return toast('멈추지 못했어요 (E3)');if(it.proof)return proofModal(id,mins);toast(it.auto?`${mins}분 했어! 앱에서 끝냈으면 자동으로 체크돼요`:`끝! +${+it.pt||0} 포인트`)}
 function bookPts(d,id,i,n,detail){const P=+i.pt||0,h=Math.ceil(P/2);if(n===1&&!d.p[id])d.p[id]={pt:h,at:Date.now(),proof:detail};else if(n===2&&d.p[id])d.p[id].pt=P}
@@ -358,7 +358,7 @@ function taskRow(K,i,d,date,canAct){const tm=tmOf(d,i);if(!tm&&!i.proof)return t
   const on=isDone(d,i),out=d.out&&d.out[i.id],r=(d.run||{})[i.id]||{},ck=(d.chk||{})[i.id],me=K===ST.me,isT=date===today(),ms=runMs(r),du=+i.dur||30;
   const late=isT&&!on&&!out&&!r.cur&&!ms&&tm&&nowMin()>toMin(tm)+10;
   const meta=[tm?`🕓 ${tm}${i.dur?` · ${i.dur}분`:''}${d.re&&d.re[i.id]&&i.at&&d.re[i.id]!==i.at?` <span class="mute">(원래 ${esc(i.at)})</span>`:''}`:'',i.proof?'⏱️ 타이머 + 📷 인증':'',i.from?`<span class="mute">${esc(i.from.slice(5).replace('-','/'))}에서 미룬 약속</span>`:''].filter(Boolean).join(' · ');
-  let st='';if(out)st=`<span class="mute">미룸 → ${esc(fmtD(out.to))} ${esc(out.at||'')}</span>`;else if(on){const seg=(r.segs||[]);st=seg.length?`<span style="color:var(--ok)">실제 ${hmOf(seg[0][0])}~${hmOf(seg[seg.length-1][1])} (${Math.round(ms/60000)}분)</span>`:''}
+  let st='';if(out)st=`<span class="mute">미룸 → ${esc(fmtD(out.to))} ${esc(out.at||'')}</span>`;else if(on){const seg=(r.segs||[]).map(sg);st=seg.length?`<span style="color:var(--ok)">실제 ${hmOf(seg[0].s)}~${hmOf(seg[seg.length-1].e)} (${Math.round(ms/60000)}분)</span>`:''}
   else if(ck&&ck.st==='wait')st='<span style="color:var(--p)">부모님 확인을 기다리는 중</span>';else if(ck&&ck.st==='no')st=`<span style="color:var(--p)">인증이 안 됐어요${ck.note?': '+esc(ck.note):''}</span>`;
   else if(r.cur)st=`<span style="color:var(--ok)">진행 중 <b class="tmr" data-acc="${ms-(Date.now()-r.cur)}" data-s="${r.cur}">${mmss(ms)}</b></span>`;else if(ms)st=`<span class="mute">타이머 ${mmss(ms)}</span>`;else if(late)st='<span style="color:var(--p)">시작 시간이 지났어요</span>';
   const books=((d.pf||{})[i.id]||[]),need=i.proof&&((r.segs||[]).length>books.length)&&!(ck&&ck.st==='wait');
@@ -372,12 +372,12 @@ function taskRow(K,i,d,date,canAct){const tm=tmOf(d,i);if(!tm&&!i.proof)return t
   return`<div class="trow ${on?'on':''} ${out?'out':''}"><button class="task ${on?'on':''}" data-a="tick" data-k="${esc(K)}" data-id="${esc(i.id)}" ${canAct&&!i.proof&&!out?'':'disabled'}><span class="bx"></span><span class="tt">${esc(i.t)}<br><span class="small">${meta}</span>${st?`<br><span class="small">${st}</span>`:''}</span>${LOCK}<span class="pt">${i.proof?`+${Math.ceil((+i.pt||0)/2)}×2`:'+'+(+i.pt||0)}</span></button>${act?`<div class="row" style="gap:6px">${act}</div>`:''}</div>`}
 setInterval(()=>{document.querySelectorAll('.tmr[data-s]').forEach(el=>{el.textContent=mmss(+el.dataset.acc+(Date.now()-+el.dataset.s))})},1000);
 function shrinkPhoto(file){return new Promise((res,rej)=>{const img=new Image(),u=URL.createObjectURL(file);img.onload=()=>{const k=Math.min(1,1568/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',.85))};img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('img'))};img.src=u})}
-async function sendProof(id,file){const K=ST.me,t=today(),i=itemsFor(K,t).find(x=>x.id===id);if(!i)return;const d=doneDoc(K,t),ms=runMs((d.run||{})[id]),du=+i.dur||30;
+async function sendProof(id,file){const K=ST.me,t=today(),i=itemsFor(K,t).find(x=>x.id===id);if(!i)return;const d=doneDoc(K,t),ms=runMs((d.run||{})[id]),du=+i.dur||30;const ls=(((d.run||{})[id]||{}).segs||[]).map(sg).slice(-1)[0],lastMin=ls?Math.max(1,Math.round((ls.e-ls.s)/60000)):Math.round(ms/60000);
   $('#modal').innerHTML='';
   toast('선생님이 사진을 확인하는 중…');let ok=false,note='',detail='';
   try{const pic=await shrinkPhoto(file);const tk=await F.auth.currentUser.getIdToken();
     const r=await fetch(window.AI_URL,{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tk},body:JSON.stringify({tier:'quick',image:{media_type:'image/jpeg',data:pic.split(',')[1]},prompt:`너는 초등학생 가족 앱에서 아이가 약속한 활동을 실제로 했는지 인증 사진을 확인하는 선생님이다.
-약속: "${i.t}" (방금 타이머 기록 ${Math.max(1,Math.round(((((d.run||{})[id]||{}).segs||[]).slice(-1)[0]||[0,0]).reduce((a,b)=>b-a)/60000))}분). 오늘 날짜: ${t}.
+약속: "${i.t}" (방금 타이머 기록 ${lastMin}분). 오늘 날짜: ${t}.
 사진이 이 활동을 끝낸 증거로 보이면 ok를 true로 해. 예: 리딩게이트 학습 완료·결과 화면, 읽은 책 펼친 쪽, 푼 문제집 쪽, 쓴 공책.
 활동과 관계없는 사진, 알아볼 수 없는 사진, 화면에 날짜가 보이는데 오늘이 아니면 ok를 false로 해.
 JSON만 출력: {"ok":true 또는 false,"detail":"사진에서 확인한 것 (25자 이내)","reason":"아이에게 하는 짧은 말 (30자 이내, 반말)"}`})});
