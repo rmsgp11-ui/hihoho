@@ -198,7 +198,7 @@ function miniBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw);return`<di
 const FV='https://www.gstatic.com/firebasejs/10.12.2/';
 let F=null;const SUBS={};let rq=0;
 function sched(){if(rq)return;rq=requestAnimationFrame(()=>{rq=0;render()})}
-function sub(key,ref,cb){if(SUBS[key]||!F)return;SUBS[key]=F.FS.onSnapshot(ref,s=>{cb(s);sched()},e=>{console.warn(key,e&&e.code);if(key==='members'&&e&&e.code==='permission-denied')gate('<b>'+esc(ST.me)+'</b> 계정은 가족 목록에 없어요. 다른 구글 계정으로 로그인해 주세요.',true)})}
+function sub(key,ref,cb){if(SUBS[key]||!F)return;SUBS[key]=F.FS.onSnapshot(ref,s=>{cb(s);sched()},e=>{console.warn(key,e&&e.code);if(key==='members'&&e&&e.code==='permission-denied')gate('<b>'+esc(ST.me)+'</b> 계정은 가족 목록에 없어요. 다른 구글 계정으로 로그인해 주세요.<br><span class="small mute">(확인 코드 A: 가족 목록 읽기 거부)</span>',true)})}
 const arr=s=>s.docs.map(d=>({id:d.id,...d.data()}));
 const D=(...p)=>F.FS.doc(F.db,...p),C=(...p)=>F.FS.collection(F.db,...p),Q=(c,...w)=>F.FS.query(c,...w.map(x=>F.FS.where(...x)));
 const save=(p,ref,data,merge)=>F.FS.setDoc(ref,data,merge?{merge:true}:undefined).catch(e=>toast('저장이 안 됐어요 ('+(e&&e.code)+')'));
@@ -407,7 +407,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='pickColor'){ST.color=b.dataset.c;document.querySelectorAll('.colors button').forEach(x=>x.classList.toggle('on',x===b));return}
   if(a==='join'){const n=val('jn');if(!n)return toast('이름을 적어 주세요');const c=ST.color||COLORS[Object.keys(ST.members).length%COLORS.length];
     let role='kid';try{await F.FS.getDoc(D('tpl','__probe__'));role='admin'}catch(er){}
-    try{await F.FS.setDoc(D('members',ST.me),{name:n,color:c,role,at:Date.now()})}catch(er){gate('<b>'+esc(ST.me)+'</b> 계정은 가족 목록에 없어요. 다른 구글 계정으로 로그인해 주세요.',true)}return}
+    try{await F.FS.setDoc(D('members',ST.me),{name:n,color:c,role,at:Date.now()})}catch(er){gate('<b>'+esc(ST.me)+'</b> 계정은 가족 목록에 없어요. 다른 구글 계정으로 로그인해 주세요.<br><span class="small mute">(확인 코드 B: '+role+' 등록 거부 · '+esc((er&&er.code)||'')+')</span>',true)}return}
   if(a==='profile'){const m=ST.members[ST.me]||{};ST.color=m.color;return openModal(`<h3>내 정보</h3><span class="small mute">${esc(ST.me)} · ${isAdmin()?'보호자':'아이'}</span><label for="pn">이름</label><input id="pn" maxlength="10" value="${esc(m.name||'')}"><div class="colors">${COLORS.map(x=>`<button style="background:${x}" class="${x===m.color?'on':''}" data-a="pickColor" data-c="${x}" aria-label="색 고르기"></button>`).join('')}</div><div class="row"><button class="btn sm" data-a="profSave">저장</button><button class="btn sm ghost" data-a="logout">로그아웃</button><button class="btn sm ghost" data-a="closeM">닫기</button></div>
    <div class="env" style="cursor:default"><span class="jua" style="font-size:18px">내 휴대폰으로 알림 받기</span>
    <span class="small">① 휴대폰에 <b>ntfy</b> 앱을 설치해요 (앱스토어·플레이스토어에서 "ntfy" 검색, 무료).<br>② 앱에서 <b>＋</b>를 누르고 아래 <b>주제 이름</b>을 그대로 넣고 구독해요.<br>③ 아래 「테스트 알림」을 눌러 알림이 오는지 확인해요.</span>
