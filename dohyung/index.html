@@ -194,7 +194,6 @@ select{font:inherit;font-size:17px;min-height:48px;border-radius:12px;border:2px
     <button data-a="go" data-v="today">오늘</button>
     <button data-a="go" data-v="map">12주 지도</button>
     <button data-a="go" data-v="lab">실험실</button>
-    <button data-a="go" data-v="parent">보호자</button>
   </nav>
 </header>
 <main id="app"><p>불러오는 중…</p></main>
@@ -700,7 +699,7 @@ const recLesson=()=>LESSONS.find(L=>best(L.id)===0&&unlocked(L.id))||LESSONS.fin
 let cur=null,lab={tool:'tan',mf:null,mfSel:null,mfBad:null,mfState:'',mfStreak:0,md:null,mdCells:new Set(),mdRes:false,mdOk:false,geo:{pts:[],closed:false,task:0,an:null},gmsg:'',k:'F',sh:tf(SH.F,'id'),ox:2,oy:1,busy:false,ang:50,base:'right',msg:''};
 const PRAISE=['정확해!','끝까지 잘 봤어!','머릿속으로 잘 움직였네!','천천히 확인한 게 최고야!','도형 박사 등장!','차분하게 해서 맞혔어!'];
 const AGAIN=['괜찮아, 한 번 더!','거의 다 왔어!','다시 보면 보여!'];
-function view(){return cur?'lesson':W_?'warm':(['today','map','lab','parent'].includes(location.hash.slice(1))?location.hash.slice(1):'today')}
+function view(){return cur?'lesson':W_?'warm':(['today','map','lab'].includes(location.hash.slice(1))?location.hash.slice(1):'today')}
 function render(){const v=view();document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v||(v==='lesson'&&b.dataset.v==='map')||(v==='warm'&&b.dataset.v==='today')));
   $('#pill').innerHTML=`${star(1)}${totalStars()} <span class="small mute">/ 72</span>`;
   TG=null;$('#app').innerHTML=v==='warm'?vWarm():v==='lesson'?vLesson():v==='map'?vMap():v==='lab'?vLab():v==='parent'?vParent():vToday();paintSync();}
