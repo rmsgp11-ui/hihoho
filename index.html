@@ -55,7 +55,19 @@ main{max-width:960px;margin:0 auto;padding:20px max(4vw,14px) 80px;display:grid;
 .btn.ok{background:var(--ok);box-shadow:none}
 .hero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}
 .ring{width:132px;height:132px}
-.dclock{width:min(300px,100%);height:auto;display:block}
+.dclock{width:min(230px,100%);height:auto;display:block}
+.thead{display:grid;grid-template-columns:34px 1fr 1fr;gap:6px;font-family:'Jua';font-size:15px;color:var(--mute);text-align:center}
+.tt{position:relative;display:grid;grid-template-columns:34px 1fr 1fr;gap:6px;border-top:2px solid var(--line)}
+.tt .tl{position:absolute;left:34px;right:0;height:0;border-top:1px dashed var(--line);font-style:normal}.tt .tl.hr{border-top:1px solid var(--line)}
+.tt em{position:absolute;left:0;width:30px;text-align:right;font-style:normal;font-family:'Jua';font-size:14px;color:var(--mute);transform:translateY(-50%);line-height:1}.tt em small{display:block;font-size:10px}
+.tcol{position:relative;grid-row:1}.tcol.p{grid-column:2}.tcol.a{grid-column:3}
+.tb{position:absolute;left:0;right:0;border-radius:10px;padding:3px 8px;overflow:hidden;font-size:14px;line-height:1.25;display:flex;flex-direction:column;justify-content:center;color:#3a2a1c;border:2px solid var(--card)}
+.tb b{font-family:'Jua';font-weight:400;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tb span{font-size:12px;opacity:.8}
+.tb.sch{opacity:.85}.tb.pl{background:repeating-linear-gradient(135deg,#d9cfc2 0 7px,#e6ddd2 7px 14px);cursor:pointer;color:#4a3b2c}
+.tb.pl.done{opacity:.45}.tb.pl.done b::before{content:'✓ '}.tb.run{outline:3px dashed var(--p);outline-offset:-3px;animation:blink 1.2s ease-in-out infinite}@keyframes blink{50%{outline-color:transparent}}
+.tb.ac{background:#ff9f80}.tb.ac.run{cursor:pointer}
+.tnow{position:absolute;left:28px;right:0;height:0;border-top:3px solid var(--p);z-index:3;font-style:normal}.tnow::before{content:'';position:absolute;left:-6px;top:-7px;width:11px;height:11px;border-radius:50%;background:var(--p)}
+.tgap{text-align:center;font-family:'Jua';font-size:16px;padding:8px;border:2px dashed var(--line);border-radius:12px;margin:2px 0}
 .dclock .dbg{font-size:46px;text-anchor:middle;dominant-baseline:middle;opacity:.22;pointer-events:none}
 .dclock .wedge{stroke:var(--card);stroke-width:1.5}.dclock .wedge.ghost{opacity:.75}.dclock .wedge.act{opacity:.95}
 .dclock .dcnt{font-family:'Jua';font-size:24px;fill:var(--ink);text-anchor:middle;dominant-baseline:middle}
@@ -218,7 +230,7 @@ function weekBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw,...w.lw);co
 function miniBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw);return`<div class="mini">${w.tw.map(v=>`<i style="height:${(v/mx*100).toFixed(0)}%"></i>`).join('')}</div>`}
 
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='39';
+const APPV='40';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -344,8 +356,23 @@ function dayClock(K,t,sch,c){const pb=promiseBlocks(K,wdOf(t));if(K===ST.me)pb.g
   const n=new Date(),nm=n.getHours()*60+n.getMinutes(),[hx,hy]=pt(nm,R-6);s+=`<line class="hand" x1="${cx}" y1="${cx}" x2="${f(hx)}" y2="${f(hy)}"/>`;
   s+=`<circle cx="${cx}" cy="${cx}" r="34" fill="var(--card)" stroke="var(--line)" stroke-width="2"/><text x="${cx}" y="${cx-5}" class="dcnt">${c.pd}/${c.pt}</text><text x="${cx}" y="${cx+17}" class="dsub">약속</text></svg>`;
   return s}
+function timetable(K,t,sch){const pb=promiseBlocks(K,wdOf(t)),me=K===ST.me,wd=wdOf(t),PPM=1.15;
+  let rg=wd===0||wd===6?[[420,1320]]:[[420,490],[780,1320]];
+  const all=[...sch.map(x=>({s:toMin(x.s),e:x.e?toMin(x.e):toMin(x.s)+60})),...pb.g.map(x=>({s:toMin(x.s),e:toMin(x.e)})),...pb.a.map(x=>({s:toMin(x.s),e:toMin(x.e)}))].map(x=>({s:x.s,e:x.e<=x.s?Math.min(1440,x.s+60):x.e}));
+  all.forEach(x=>{if(!rg.some(r=>x.s>=r[0]&&x.e<=r[1]))rg.push([Math.floor(x.s/60)*60,Math.min(1440,Math.ceil(x.e/60)*60)])});
+  rg.sort((a,b)=>a[0]-b[0]);const R=[];rg.forEach(r=>{const l=R[R.length-1];if(l&&r[0]<=l[1])l[1]=Math.max(l[1],r[1]);else R.push(r.slice())});
+  const nm=nowMin(),hm=m=>`${m>=720?'오후':'오전'} ${(Math.floor(m/60)%12)||12}${m%60?':'+pad(m%60):'시'}`;
+  const blk=(x,ra,cls,col,extra)=>{const a=Math.max(ra[0],toMin(x.s)),e0=toMin(x.e||x.s)<=toMin(x.s)?toMin(x.s)+60:toMin(x.e),b=Math.min(ra[1],e0);if(b<=a)return'';const h=Math.max(24,(b-a)*PPM);
+    return`<div class="tb ${cls}" style="top:${((a-ra[0])*PPM).toFixed(1)}px;height:${h.toFixed(1)}px;${col?'background:'+col+';':''}"${extra||''}><b>${esc(x.t)}</b>${h>=36?`<span>${esc(x.s)}${x.e?'~'+esc(x.e):''}</span>`:''}</div>`};
+  let out='';R.forEach((ra,ri)=>{if(ri>0){const gp=[R[ri-1][1],ra[0]];out+=`<div class="tgap">${wd>0&&wd<6&&gp[0]<=490&&ra[0]>=780?'🏫 학교':'⋯'} <span class="small mute">${hm(gp[0])} ~ ${hm(gp[1])}</span></div>`}
+    const H=(ra[1]-ra[0])*PPM;let lines='';for(let m=Math.ceil(ra[0]/30)*30;m<=ra[1];m+=30){const y=((m-ra[0])*PPM).toFixed(1);lines+=`<i class="tl ${m%60?'':'hr'}" style="top:${y}px"></i>${m%60||m===ra[1]?'':`<em style="top:${y}px">${(Math.floor(m/60)%12)||12}${m===720?'<small>낮</small>':''}</em>`}`}
+    const plan=sch.map((x,i)=>blk(x,ra,'sch',PAST[i%PAST.length])).join('')+pb.g.map(x=>blk(x,ra,`pl${x.run?' run':''}${x.done?' done':''}`,'',me?` data-a="clkTap" data-id="${esc(x.id)}" role="button"`:'')).join('');
+    const act=pb.a.map(x=>blk({...x,t:x.t},ra,`ac${x.run?' run':''}`,'',me&&x.run?` data-a="clkTap" data-id="${esc(x.id)}" role="button"`:'')).join('');
+    out+=`<div class="tt" style="height:${H.toFixed(1)}px">${lines}<div class="tcol p">${plan}</div><div class="tcol a">${act}</div>${nm>=ra[0]&&nm<=ra[1]?`<i class="tnow" style="top:${((nm-ra[0])*PPM).toFixed(1)}px"></i>`:''}</div>`});
+  return`<section class="card" style="gap:8px"><div class="row sp"><h3>오늘 타임테이블</h3></div><div class="thead"><span></span><span>계획</span><span>실제로 한 시간</span></div>${out}
+   ${me&&pb.g.length?'<p class="small mute" style="margin:0">회색 계획을 누르면 시작해요. 앱 약속은 그 앱이 열리고 돌아오면 멈춰요. 하는 중인 주황 칸을 누르면 끝나요.</p>':''}</section>`}
 function heroNow(K,t,sch){const pb=promiseBlocks(K,wdOf(t)),nm=nowMin(),run=pb.g.find(x=>x.run),cur=sch.find(x=>{const a=toMin(x.s),b=x.e?toMin(x.e):a+60;return nm>=a&&nm<(b<=a?b+1440:b)}),nx=[...sch,...pb.g.filter(x=>!x.done)].filter(x=>toMin(x.s)>nm).sort((a,b)=>toMin(a.s)-toMin(b.s))[0];
-  return`${run&&K===ST.me?`<div class="row" style="justify-content:inherit"><span class="pill" style="background:#ff9f80;color:#3a2a1c">하는 중 · ${esc(run.t)} <b class="tmr" data-acc="${runMs((doneDoc(K,t).run||{})[run.id])-(Date.now()-((doneDoc(K,t).run||{})[run.id]||{}).cur)}" data-s="${((doneDoc(K,t).run||{})[run.id]||{}).cur}"></b></span><button class="btn sm ok" data-a="tEnd" data-id="${esc(run.id)}">■ 끝내기</button></div>`:''}<span class="small">${run?`<b style="color:#e8553a">하는 중 · ${esc(run.t)}</b>`:cur?`지금 · <b>${esc(cur.t)}</b>`:'지금 · 자유 시간'}${nx?` <span class="mute">· 다음 ${esc(nx.s)} ${esc(nx.t)}</span>`:''}</span>${pb.g.length?'<span class="small mute">시계의 회색 칸이 오늘 약속이에요. 눌러서 시작해요.</span>':''}`}
+  return`${run&&K===ST.me?`<div class="row" style="justify-content:inherit"><span class="pill" style="background:#ff9f80;color:#3a2a1c">하는 중 · ${esc(run.t)} <b class="tmr" data-acc="${runMs((doneDoc(K,t).run||{})[run.id])-(Date.now()-((doneDoc(K,t).run||{})[run.id]||{}).cur)}" data-s="${((doneDoc(K,t).run||{})[run.id]||{}).cur}"></b></span><button class="btn sm ok" data-a="tEnd" data-id="${esc(run.id)}">■ 끝내기</button></div>`:''}<span class="small">${run?`<b style="color:#e8553a">하는 중 · ${esc(run.t)}</b>`:cur?`지금 · <b>${esc(cur.t)}</b>`:'지금 · 자유 시간'}${nx?` <span class="mute">· 다음 ${esc(nx.s)} ${esc(nx.t)}</span>`:''}</span>${pb.g.length?'<span class="small mute">아래 타임테이블의 회색 칸을 눌러 시작해요.</span>':''}`}
 function todayClock(K,t,sch){const pb=promiseBlocks(K,wdOf(t));pb.g.forEach(x=>x.tap=1);const items=[...sch,...pb.g,...pb.a];if(!items.length)return'';
   const nm=nowMin(),run=pb.g.find(x=>x.run),cur=sch.find(x=>{const a=toMin(x.s),b=x.e?toMin(x.e):a+60;return nm>=a&&nm<(b<=a?b+1440:b)}),nx=[...sch.map(x=>({t:x.t,s:x.s})),...pb.g.filter(x=>!x.done).map(x=>({t:x.t,s:x.s}))].filter(x=>toMin(x.s)>nm).sort((a,b)=>toMin(a.s)-toMin(b.s))[0];
   return`<section class="card" style="gap:10px"><div class="sec">오늘 시간표</div>
@@ -417,9 +444,8 @@ function vToday(){const K=ST.me,t=today(),items=itemsFor(K,t),d=doneDoc(K,t),c=d
   return`<section class="card"><div class="hero">${dayClock(K,t,sch,c)}<div style="display:grid;gap:8px"><span class="mute">${fmtD(t)}</span><h1>${esc(name(K))}의 오늘</h1>
    <div class="row"><span class="pill">${COIN}${p.bal} 포인트</span><span class="pill" style="background:var(--okbg)">오늘 한 일 ${c.all}개</span></div>${heroNow(K,t,sch)}</div></div>
    ${allDone?`<div class="done-msg"><span class="jua" style="font-size:22px">오늘 약속 다 지켰어!</span> 스스로 해냈어. 정말 멋져!</div>`:c.pt?`<p class="mute" style="margin:0">약속 ${c.pt-c.pd}개 남았어. 하나씩 지켜 보자!</p>`:''}</section>
+  ${timetable(K,t,sch)}
   <section class="card"><div class="sec">${LOCK} 부모님과 정한 오늘의 약속</div><div class="list">${items.length?sortItems(d,items).map(i=>taskRow(K,i,d,t,true)).join(''):'<div class="empty">오늘은 정한 약속이 없어요</div>'}</div></section>
-  <section class="card"><div class="sec">내가 정한 도전 <span class="small">(하나에 +${ST.cfg.ownPt??2}, 하루 ${ST.cfg.ownMax??3}개까지 포인트)</span></div><div class="list">${own.map(o=>`<div class="row" style="flex-wrap:nowrap"><button class="task ${o.done?'on':''}" data-a="ownTick" data-id="${esc(o.id)}"><span class="bx"></span><span class="tt">${esc(o.t)}</span></button><button class="x" data-a="ownDel" data-id="${esc(o.id)}" aria-label="지우기">×</button></div>`).join('')||'<div class="empty">스스로 도전할 일을 적어 봐! (예: 책 20쪽 읽기)</div>'}</div>
-   <div class="addrow"><input id="ownIn" maxlength="40" placeholder="오늘 내가 도전할 일"><button class="btn sm" data-a="ownAdd">추가</button></div></section>
 
   <section class="card"><h3>이번 주 나의 성장</h3>${weekBars(K)}</section>
   ${linkBtns(K)}`}
