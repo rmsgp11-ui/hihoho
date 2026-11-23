@@ -126,6 +126,10 @@ label{display:grid;gap:4px;min-width:0}
 .ht{stroke:var(--mute);stroke-width:1}.ht.mj{stroke-width:2.5;stroke:var(--ink)}
 .hand{stroke:var(--p);stroke-width:3;stroke-linecap:round}
 .sw{width:14px;height:14px;border-radius:4px;flex:none;display:inline-block;vertical-align:-2px;margin-right:6px}
+.strip{position:relative;height:46px;border-radius:12px;background:var(--bg);border:2px solid var(--line);overflow:hidden}
+.strip i{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-style:normal;font-family:'Jua';font-size:14px;color:#3a2a1c;white-space:nowrap;overflow:hidden;border-right:2px solid var(--card)}
+.strip .now{position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1px;background:var(--p);border-radius:2px}
+.sticks{position:relative;height:16px;font-size:12px;color:var(--mute)}.sticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
 @media(max-width:600px){.hero{grid-template-columns:minmax(0,1fr);justify-items:center;text-align:center}.hero .row{justify-content:center}.g2{grid-template-columns:minmax(0,1fr)}.slot{grid-template-columns:6.2em minmax(0,1fr) auto}.tabs button{padding:10px 9px 12px;font-size:17px}}
 @media(prefers-reduced-motion:reduce){.ring .fg{transition:none}.btn:active{transform:none}}
 </style>
@@ -277,7 +281,7 @@ function vToday(){const K=ST.me,t=today(),items=itemsFor(K,t),d=doneDoc(K,t),c=d
   <section class="card"><div class="sec">${LOCK} 부모님이 정한 오늘의 미션</div><div class="list">${items.length?items.map(i=>taskBtn(K,i,d,true)).join(''):'<div class="empty">오늘은 정해진 미션이 없어요</div>'}</div></section>
   <section class="card"><div class="sec">내가 하고 싶은 일 <span class="small">(하나에 +${ST.cfg.ownPt??2}, 하루 ${ST.cfg.ownMax??3}개까지 포인트)</span></div><div class="list">${own.map(o=>`<div class="row" style="flex-wrap:nowrap"><button class="task ${o.done?'on':''}" data-a="ownTick" data-id="${esc(o.id)}"><span class="bx"></span><span class="tt">${esc(o.t)}</span></button><button class="x" data-a="ownDel" data-id="${esc(o.id)}" aria-label="지우기">×</button></div>`).join('')||'<div class="empty">스스로 정한 일을 적어 봐! (예: 책 20쪽 읽기)</div>'}</div>
    <div class="addrow"><input id="ownIn" maxlength="40" placeholder="오늘 내가 하고 싶은 일"><button class="btn sm" data-a="ownAdd">추가</button></div></section>
-  ${sch.length?`<section class="card"><div class="sec">오늘 시간표</div><div class="list">${sch.map(x=>`<div class="slot" style="border-color:${color(K)}"><span class="tm">${esc(x.s||'')}${x.e?'–'+esc(x.e):''}</span><span class="ti">${esc(x.t)}</span><span></span></div>`).join('')}</div></section>`:''}
+  ${sch.length?todayStrip(sch):''}
   <section class="card"><h3>이번 주 나의 성장</h3>${weekBars(K)}</section>
   <a class="btn ghost" href="../" style="text-decoration:none">도형교실 하러 가기</a>${linkBtns(K)}`}
 const BUILTIN={'7ec7b9f4de41bc54dca769f62327a55d27927fcc47b6e44b24e4b5aad5117e4d':[{id:'b1',n:'알림장',u:'https://sites.google.com/view/maean35/',fixed:1}]};
@@ -331,6 +335,18 @@ function clockSVG(items,showNow){const S=360,c=S/2,R=130;const ang=m=>m/1440*2*M
   for(let h=0;h<24;h++){const mj=h%6===0;const[a1,b1]=pt(h*60,R),[a2,b2]=pt(h*60,R-(mj?12:7)),[tx,ty]=pt(h*60,R+17);s+=`<line class="ht ${mj?'mj':''}" x1="${f(a1)}" y1="${f(b1)}" x2="${f(a2)}" y2="${f(b2)}"/><text class="hl ${mj?'mj':''}" x="${f(tx)}" y="${f(ty)}">${h}</text>`}
   if(showNow){const n=new Date(),m=n.getHours()*60+n.getMinutes(),[hx,hy]=pt(m,R-8);s+=`<line class="hand" x1="${c}" y1="${c}" x2="${f(hx)}" y2="${f(hy)}"/>`}
   return s+`<circle cx="${c}" cy="${c}" r="6" fill="var(--p)"/></svg>`}
+function todayStrip(sch){const A=6*60,B=23*60,now=new Date(),nm=now.getHours()*60+now.getMinutes(),pc=m=>((Math.min(B,Math.max(A,m))-A)/(B-A)*100).toFixed(2);
+  const ev=sch.map((x,i)=>{const a=toMin(x.s),b=x.e?toMin(x.e):a+60;return{...x,a,b:b<=a?b+1440:b,col:PAST[i%PAST.length]}});
+  const segs=[];ev.forEach(e=>{if(e.b>1440){segs.push({e,a:e.a,b:B});segs.push({e,a:A,b:e.b-1440})}else segs.push({e,a:e.a,b:e.b})});
+  const inNow=e=>(nm>=e.a&&nm<e.b)||(e.b>1440&&nm<e.b-1440);
+  const cur=ev.find(inNow),nx=ev.filter(e=>e.a>nm&&e.a<1440).sort((x,y)=>x.a-y.a)[0];
+  const hm=m=>`${Math.floor(m/60)}시${m%60?' '+(m%60)+'분':''}`,left=m=>m<60?m+'분':Math.floor(m/60)+'시간'+(m%60?' '+m%60+'분':'');
+  const head=cur?`<span class="pill" style="background:${cur.col};color:#3a2a1c">지금</span><b class="jua" style="font-size:22px">${esc(cur.t)}</b><span class="mute">${cur.e?esc(cur.e)+'까지':''}</span>`:'<span class="pill" style="background:var(--okbg)">지금</span><b class="jua" style="font-size:22px">자유 시간</b>';
+  const nxt=nx?`<div class="small mute">다음 · <b style="color:var(--ink)">${esc(nx.t)}</b> ${esc(nx.s)} (${left(nx.a-nm)} 뒤)</div>`:'';
+  const ticks=[6,9,12,15,18,21].map(h=>`<span style="left:${pc(h*60)}%">${h}시</span>`).join('');
+  return`<section class="card" style="gap:10px"><div class="sec">오늘 시간표</div><div class="row" style="gap:8px">${head}</div>${nxt}
+   <div class="strip">${segs.filter(g=>g.b>A&&g.a<B).map(g=>{const w=+pc(g.b)-+pc(g.a);return`<i style="left:${pc(g.a)}%;width:${w.toFixed(2)}%;background:${g.e.col}${inNow(g.e)?';outline:3px solid var(--p);outline-offset:-3px':''}">${w>9?esc(g.e.t):''}</i>`}).join('')}${nm>=A&&nm<=B?`<b class="now" style="left:${pc(nm)}%"></b>`:''}</div><div class="sticks">${ticks}</div>
+   <div class="chips">${ev.map(e=>`<span class="chip" style="${e.b<=nm&&e.b<=1440?'opacity:.45;':''}min-height:36px;font-size:15px"><span class="sw" style="background:${e.col};margin:0"></span>${esc(e.s)} ${esc(e.t)}</span>`).join('')}</div></section>`}
 function vSched(){const list=isAdmin()?fam():[ST.me];if(!list.includes(ST.selMember))ST.selMember=isAdmin()?ST.me:ST.me;const M=ST.selMember;if(isAdmin()&&!ST.sched[M])ST.sched[M]={items:[]};
   const items=((ST.sched[M]&&ST.sched[M].items)||[]);const day=ST.selDay;const di=items.filter(x=>(x.days||[]).includes(day)).sort((a,b)=>(a.s||'').localeCompare(b.s||''));const can=isAdmin()||M===ST.me;
   const nd=ST.schedDays||[day];
