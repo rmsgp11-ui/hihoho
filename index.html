@@ -304,7 +304,7 @@ function taskBtn(K,i,d,canTick){const on=isDone(d,i),au=autoOn(d,i)&&!(d.p&&d.p[
 const addMin=(hm,m)=>{const t=toMin(hm)+m;return pad(Math.floor(t/60)%24)+':'+pad(t%60)};
 function promiseBlocks(K,wd){const t=today(),isT=wd===wdOf(t),g=[],a=[];
   if(isT){const d=doneDoc(K,t);countItems(K,t).forEach(i=>{const tm=tmOf(d,i),rr=(d.run||{})[i.id];if(tm)g.push({t:i.t,s:tm,e:addMin(tm,+i.dur||30),ghost:1,id:i.id,run:!!(rr&&rr.cur),done:isDone(d,i)});
-    const r=(d.run||{})[i.id];((r&&r.segs)||[]).forEach(x=>a.push({t:i.t,s:hmOf(x[0]),e:hmOf(Math.max(x[1],x[0]+60000)),act:1}));if(r&&r.cur)a.push({t:i.t,s:hmOf(r.cur),e:hmOf(Math.max(Date.now(),r.cur+60000)),act:1});
+    const r=(d.run||{})[i.id];((r&&r.segs)||[]).forEach(x=>a.push({t:i.t,s:hmOf(x[0]),e:hmOf(Math.max(x[1],x[0]+60000)),act:1,id:i.id}));if(r&&r.cur)a.push({t:i.t,s:hmOf(r.cur),e:hmOf(Math.max(Date.now(),r.cur+60000)),act:1,id:i.id,run:1});
     if(autoOn(d,i)&&!(r&&r.segs&&r.segs.length)){const ts=d.auto[i.auto];if(ts)a.push({t:i.t,s:hmOf(ts-(+i.dur||20)*60000),e:hmOf(ts),act:1})}})}
   else((ST.tpl[K]&&ST.tpl[K].items)||[]).filter(i=>i.at&&(i.days||[]).includes(wd)).forEach(i=>g.push({t:i.t,s:i.at,e:addMin(i.at,+i.dur||30),ghost:1}));
   return{g,a}}
@@ -327,14 +327,14 @@ function dayClock(K,t,sch,c){const pb=promiseBlocks(K,wdOf(t));if(K===ST.me)pb.g
   const wedge=(x,col,cls,tap)=>{const[a,b]=seg(x),[x1,y1]=pt(a,R),[x2,y2]=pt(b,R);return`<path class="${cls}" fill="${col}" d="M${cx} ${cx} L${f(x1)} ${f(y1)} A${R} ${R} 0 ${b-a>720?1:0} 1 ${f(x2)} ${f(y2)} Z"${tap}/>`};
   sch.forEach((x,i)=>s+=wedge(x,PAST[i%PAST.length],'wedge',''));
   pb.g.forEach(x=>s+=wedge(x,'#b9aa98',`wedge ghost${x.run?' running':''}${x.done?' gdone':''}`,x.tap?` data-a="clkTap" data-id="${esc(x.id)}" style="cursor:pointer"`:''));
-  pb.a.forEach(x=>s+=wedge(x,'#ff7f57','wedge act',''));
+  pb.a.forEach(x=>s+=wedge(x,'#ff7f57',`wedge act${x.run?' running':''}`,K===ST.me&&x.id?` data-a="clkTap" data-id="${esc(x.id)}" style="cursor:pointer"`:''));
   [...sch,...pb.g].forEach(x=>{const[a,b]=seg(x);if(b-a<40)return;const[lx,ly]=pt(a+(b-a)/2,R*0.68);s+=`<text class="wl" x="${f(lx)}" y="${f(ly)}">${esc(x.t.length>5?x.t.slice(0,5)+'…':x.t)}</text>`});
   for(let h=0;h<24;h++){const m=h*60,mj=h%6===0,[a1,b1]=pt(m,R),[a2,b2]=pt(m,R-(mj?11:6)),[tx,ty]=pt(m,R+15);s+=`<line class="ht ${mj?'mj':''}" x1="${f(a1)}" y1="${f(b1)}" x2="${f(a2)}" y2="${f(b2)}"/><text class="hl ${mj?'mj':''}" x="${f(tx)}" y="${f(ty)}">${h%12||12}</text>`}
   const n=new Date(),nm=n.getHours()*60+n.getMinutes(),[hx,hy]=pt(nm,R-6);s+=`<line class="hand" x1="${cx}" y1="${cx}" x2="${f(hx)}" y2="${f(hy)}"/>`;
   s+=`<circle cx="${cx}" cy="${cx}" r="34" fill="var(--card)" stroke="var(--line)" stroke-width="2"/><text x="${cx}" y="${cx-5}" class="dcnt">${c.pd}/${c.pt}</text><text x="${cx}" y="${cx+17}" class="dsub">약속</text></svg>`;
   return s}
 function heroNow(K,t,sch){const pb=promiseBlocks(K,wdOf(t)),nm=nowMin(),run=pb.g.find(x=>x.run),cur=sch.find(x=>{const a=toMin(x.s),b=x.e?toMin(x.e):a+60;return nm>=a&&nm<(b<=a?b+1440:b)}),nx=[...sch,...pb.g.filter(x=>!x.done)].filter(x=>toMin(x.s)>nm).sort((a,b)=>toMin(a.s)-toMin(b.s))[0];
-  return`<span class="small">${run?`<b style="color:#e8553a">하는 중 · ${esc(run.t)}</b>`:cur?`지금 · <b>${esc(cur.t)}</b>`:'지금 · 자유 시간'}${nx?` <span class="mute">· 다음 ${esc(nx.s)} ${esc(nx.t)}</span>`:''}</span>${pb.g.length?'<span class="small mute">시계의 회색 칸이 오늘 약속이에요. 눌러서 시작해요.</span>':''}`}
+  return`${run&&K===ST.me?`<div class="row" style="justify-content:inherit"><span class="pill" style="background:#ff9f80;color:#3a2a1c">하는 중 · ${esc(run.t)} <b class="tmr" data-acc="${runMs((doneDoc(K,t).run||{})[run.id])-(Date.now()-((doneDoc(K,t).run||{})[run.id]||{}).cur)}" data-s="${((doneDoc(K,t).run||{})[run.id]||{}).cur}"></b></span><button class="btn sm ok" data-a="tEnd" data-id="${esc(run.id)}">■ 끝내기</button></div>`:''}<span class="small">${run?`<b style="color:#e8553a">하는 중 · ${esc(run.t)}</b>`:cur?`지금 · <b>${esc(cur.t)}</b>`:'지금 · 자유 시간'}${nx?` <span class="mute">· 다음 ${esc(nx.s)} ${esc(nx.t)}</span>`:''}</span>${pb.g.length?'<span class="small mute">시계의 회색 칸이 오늘 약속이에요. 눌러서 시작해요.</span>':''}`}
 function todayClock(K,t,sch){const pb=promiseBlocks(K,wdOf(t));pb.g.forEach(x=>x.tap=1);const items=[...sch,...pb.g,...pb.a];if(!items.length)return'';
   const nm=nowMin(),run=pb.g.find(x=>x.run),cur=sch.find(x=>{const a=toMin(x.s),b=x.e?toMin(x.e):a+60;return nm>=a&&nm<(b<=a?b+1440:b)}),nx=[...sch.map(x=>({t:x.t,s:x.s})),...pb.g.filter(x=>!x.done).map(x=>({t:x.t,s:x.s}))].filter(x=>toMin(x.s)>nm).sort((a,b)=>toMin(a.s)-toMin(b.s))[0];
   return`<section class="card" style="gap:10px"><div class="sec">오늘 시간표</div>
