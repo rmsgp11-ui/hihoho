@@ -1,10 +1,9 @@
-// 10번 단계에서 Firebase 콘솔의 firebaseConfig 값을 여기에 붙여 넣어요.
-// 비어 있으면 로그인 없이 이 기기에만 저장돼요.
+// Firebase 웹 앱 설정 (공개되어도 되는 값이에요. 데이터 보호는 Firestore 보안 규칙이 맡아요.)
 window.firebaseConfig = {
-  // apiKey: "...",
-  // authDomain: "...",
-  // projectId: "...",
-  // storageBucket: "...",
-  // messagingSenderId: "...",
-  // appId: "..."
+  apiKey: "AIzaSyDbt4FrmyLyzQCMU98ZKUyp2QhSJfLgDIs",
+  authDomain: "study-ho.firebaseapp.com",
+  projectId: "study-ho",
+  storageBucket: "study-ho.firebasestorage.app",
+  messagingSenderId: "535637659184",
+  appId: "1:535637659184:web:8f26bf8d8b0d1e187027f5"
 };
