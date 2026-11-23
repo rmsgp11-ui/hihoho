@@ -297,7 +297,7 @@ function vPoint(){const K=ST.me,p=points(K),rw=(ST.cfg.rewards||[]).slice().sort
   ${mine.length?`<section class="card"><h3>내 신청</h3><div class="list">${mine.map(r=>`<div class="rw"><span class="nm">${esc(r.name)}</span><span class="small mute">${ago(r.at)}</span><span class="st ${r.status}">${{wait:'기다리는 중',ok:'받았어요',no:'안 됐어요'}[r.status]}</span>${r.status==='wait'?`<button class="x" data-a="redeemCancel" data-id="${esc(r.id)}" aria-label="취소">×</button>`:''}</div>`).join('')}</div></section>`:''}
   ${bon.length?`<section class="card"><h3>칭찬 포인트</h3><div class="list">${bon.map(b=>`<div class="rw"><span class="nm" style="font-size:17px">${esc(b.why||'칭찬')}</span><span class="pill">+${b.pt}</span></div>`).join('')}</div></section>`:''}
   <section class="card"><h3>보상 요청함</h3><p class="small mute" style="margin:0">받고 싶은 보상이 목록에 없으면 부모님께 요청해 봐! 부모님이 포인트를 정해서 목록에 넣어 줄 거야.</p>
-   ${ST.justWish?`<div class="done-msg"><b>부모님께 요청을 보냈어요!</b><div class="row" style="margin-top:8px"><button class="btn sm" data-a="wishNotify">부모님께 알림 보내기</button><button class="btn sm ghost" data-a="wishOk">괜찮아요</button></div></div>`:`<input id="wsN" maxlength="30" placeholder="받고 싶은 보상 (예: 레고 사기, 놀이공원 가기)"><input id="wsM" maxlength="60" placeholder="이유나 하고 싶은 말 (안 적어도 돼요)"><button class="btn sm" data-a="wishAdd">요청 보내기</button>`}
+   ${`<input id="wsN" maxlength="30" placeholder="받고 싶은 보상 (예: 레고 사기, 놀이공원 가기)"><input id="wsM" maxlength="60" placeholder="이유나 하고 싶은 말 (안 적어도 돼요)"><button class="btn sm" data-a="wishAdd">요청 보내기</button>`}
    ${ST.wish.filter(w=>w.by===ST.me).length?`<div class="list">${ST.wish.filter(w=>w.by===ST.me).sort((a,b)=>b.at-a.at).map(w=>`<div class="rw"><span class="nm" style="font-size:17px">${esc(w.name)}${w.status==='ok'?`<br><span class="small mute" style="font-family:'Gowun Dodum'">보상 목록에 ${w.cost}P로 들어갔어요</span>`:''}${w.status==='no'&&w.reply?`<br><span class="small mute" style="font-family:'Gowun Dodum'">${esc(w.reply)}</span>`:''}</span><span class="st ${w.status}">${{wait:'기다리는 중',ok:'목록에 추가됨',no:'이번엔 안 돼요'}[w.status]}</span>${w.status==='wait'?`<button class="x" data-a="wishCancel" data-id="${esc(w.id)}" aria-label="취소">×</button>`:''}</div>`).join('')}</div>`:''}</section>
   <section class="card"><h3>이번 주 vs 지난주</h3>${weekBars(K)}</section>`}
 
@@ -361,9 +361,9 @@ function vLetter(){const others=fam().filter(e=>e!==ST.me);if(!others.includes(S
   const js=ST.justSent;
   const env=(l,mode)=>{const open=ST.openLetter===l.id||mode!=='in';const who=mode==='in'?l.from:mode==='out'?l.to:l.from;
     return`<button class="env ${mode==='in'&&!l.read?'unread':''}" data-a="openL" data-id="${esc(l.id)}" ${mode!=='in'?'disabled style="cursor:default"':''}><span class="hd">${av(who,30)}${mode==='all'?`${esc(name(l.from))} → ${esc(name(l.to))}`:mode==='in'?`${esc(name(l.from))}의 편지`:`${esc(name(l.to))}에게`}<span class="small mute" style="margin-left:auto">${ago(l.at)}</span></span>${open||l.read?`<span class="bd">${esc(l.text)}</span>`:'<span class="mute">눌러서 열어 보기</span>'}${mode==='out'?`<span class="small mute">${l.read?'읽었어요':'아직 안 읽었어요'}</span>`:''}</button>`};
-  return`<section class="card"><h3>비밀편지 쓰기</h3>${js?`<div class="done-msg"><b>${esc(name(js.to))}에게 편지를 보냈어요!</b><br><span class="small">알림은 저절로 가지 않아요. 지금 알려 주고 싶을 때만 눌러요.</span><div class="row" style="margin-top:8px"><button class="btn sm" data-a="notify">${esc(name(js.to))}에게 알림 보내기</button><button class="btn sm ghost" data-a="sentOk">괜찮아요</button></div></div>`:`
+  return`<section class="card"><h3>비밀편지 쓰기</h3>${`
    <div class="chips">${others.map(e=>`<button class="chip ${e===ST.letterTo?'on':''}" data-a="letterTo" data-k="${esc(e)}"><span class="dot" style="background:${color(e)}"></span>${esc(name(e))}에게</button>`).join('')}</div>
-   <textarea id="lText" maxlength="500" placeholder="하고 싶은 말을 적어 봐요"></textarea><button class="btn" data-a="sendL" ${ST.letterTo?'':'disabled'}>보내기</button>${isAdmin()?'':'<p class="small mute" style="margin:0">편지는 받는 사람이 읽어요. 부모님도 볼 수 있어요.</p>'}`}</section>
+   <textarea id="lText" maxlength="500" placeholder="하고 싶은 말을 적어 봐요"></textarea><button class="btn" data-a="sendL" ${ST.letterTo?'':'disabled'}>보내기</button>${isAdmin()?'':'<p class="small mute" style="margin:0">보내면 받는 사람 휴대폰에 알림이 가요. 편지는 부모님도 볼 수 있어요.</p>'}`}</section>
   <section class="card"><h3>받은 편지 ${unread()?`<span class="pill" style="background:var(--p);color:#fff;font-size:15px">새 편지 ${unread()}</span>`:''}</h3><div class="list">${inbox.map(l=>env(l,'in')).join('')||'<div class="empty">아직 받은 편지가 없어요</div>'}</div></section>
   ${sent.length?`<section class="card"><h3>보낸 편지</h3><div class="list">${sent.map(l=>env(l,'out')).join('')}</div></section>`:''}
   ${isAdmin()?`<section class="card"><div class="row sp"><h3>가족 편지 전체</h3><button class="btn sm ghost" data-a="toggleAll">${ST.showAll?'접기':'보기'}</button></div>${ST.showAll?`<div class="list">${ST.lettersAll.filter(l=>l.to!==ST.me&&l.from!==ST.me).sort((a,b)=>b.at-a.at).map(l=>env(l,'all')).join('')||'<div class="empty">아이들끼리 주고받은 편지가 없어요</div>'}</div>`:''}</section>`:''}`}
@@ -389,10 +389,10 @@ const val=id=>{const e=$('#'+id);return e?e.value.trim():''};
 async function writeDone(K,date,mut){const d=JSON.parse(JSON.stringify(doneDoc(K,date)));d.p=d.p||{};d.own=d.own||[];mut(d);d.date=date;d.who=K;await save('',D('done',K,'days',date),d)}
 const APPURL=()=>location.href.split('#')[0];
 function ensureTopic(){const m=ST.members[ST.me];if(m&&!m.nt&&!ensureTopic.busy){ensureTopic.busy=1;F.FS.setDoc(D('members',ST.me),{...m,nt:'wg-'+uid()+uid()}).catch(()=>{}).finally(()=>ensureTopic.busy=0)}}
-async function push(to,title,message){const list=(Array.isArray(to)?to:[to]).filter(e=>ST.members[e]&&ST.members[e].nt);
-  if(!list.length)return toast('받는 사람이 아직 알림 받기를 설정하지 않았어요');let ok=0;
+async function push(to,title,message,quiet){const list=(Array.isArray(to)?to:[to]).filter(e=>ST.members[e]&&ST.members[e].nt);
+  if(!list.length){if(!quiet)toast('받는 사람이 아직 알림 받기를 설정하지 않았어요');return 0}let ok=0;
   for(const e of list){try{const r=await fetch('https://ntfy.sh/',{method:'POST',body:JSON.stringify({topic:ST.members[e].nt,title,message,click:APPURL(),tags:['house_with_garden']})});if(r.ok)ok++}catch(er){}}
-  toast(ok?`알림을 보냈어요 (${list.map(name).join(', ')})`:'알림을 못 보냈어요. 인터넷을 확인해 주세요')}
+  if(!quiet)toast(ok?`알림을 보냈어요 (${list.map(name).join(', ')})`:'알림을 못 보냈어요. 인터넷을 확인해 주세요');return ok}
 function share(text){const url=location.href.split('#')[0];if(navigator.share){navigator.share({title:'우리가족',text,url}).catch(()=>{})}else if(navigator.clipboard){navigator.clipboard.writeText(text+' '+url).then(()=>toast('메시지를 복사했어요. 카톡에 붙여 넣어 주세요')).catch(()=>toast('공유를 지원하지 않는 브라우저예요'))}}
 function openModal(h){$('#modal').innerHTML=`<div class="modal" data-a="closeM"><div class="card" data-stop="1">${h}</div></div>`}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;if(b.classList.contains('modal')&&e.target.closest('[data-stop]'))return;const a=b.dataset.a,k=b.dataset.k,id=b.dataset.id;
@@ -444,7 +444,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='redeem'){const r=(ST.cfg.rewards||[]).find(x=>x.id===id);if(!r)return;if(points(ST.me).bal<r.cost)return toast('포인트가 조금 모자라요');return openModal(`<h3>「${esc(r.name)}」로 바꿀까요?</h3><p style="margin:0">${r.cost} 포인트를 써요. 부모님이 확인하면 받을 수 있어요.</p><div class="row"><button class="btn" data-a="redeemGo" data-id="${esc(r.id)}">바꿀래요</button><button class="btn ghost" data-a="closeM">다음에</button></div>`)}
   if(a==='redeemGo'){const r=(ST.cfg.rewards||[]).find(x=>x.id===id);$('#modal').innerHTML='';if(!r)return;await F.FS.addDoc(C('redeem'),{by:ST.me,rid:r.id,name:r.name,cost:r.cost,status:'wait',at:Date.now()}).catch(()=>toast('신청이 안 됐어요'));return toast('신청했어요! 부모님이 확인할 거예요')}
   if(a==='redeemCancel'){return F.FS.deleteDoc(D('redeem',id)).catch(()=>toast('취소가 안 됐어요'))}
-  if(a==='wishAdd'){const n=val('wsN');if(!n)return toast('받고 싶은 보상을 적어 주세요');try{await F.FS.addDoc(C('wish'),{by:ST.me,name:n,note:val('wsM'),status:'wait',at:Date.now()});ST.justWish=true;render(true)}catch(er){toast('보내기가 안 됐어요')}return}
+  if(a==='wishAdd'){const n=val('wsN');if(!n)return toast('받고 싶은 보상을 적어 주세요');try{await F.FS.addDoc(C('wish'),{by:ST.me,name:n,note:val('wsM'),status:'wait',at:Date.now()});$('#wsN').value='';$('#wsM').value='';render(true);toast('부모님께 요청을 보냈어요');push(Object.keys(ST.members).filter(e=>ST.members[e].role==='admin'),'보상 요청함',`${name(ST.me)}가 갖고 싶은 보상을 요청했어요`,true)}catch(er){toast('보내기가 안 됐어요')}return}
   if(a==='wishNotify'){await push(Object.keys(ST.members).filter(e=>ST.members[e].role==='admin'),'보상 요청함',`${name(ST.me)}가 갖고 싶은 보상을 요청했어요`);ST.justWish=false;return render(true)}
   if(a==='wishOk'){ST.justWish=false;return render(true)}
   if(a==='wishCancel'){return F.FS.deleteDoc(D('wish',id)).catch(()=>toast('취소가 안 됐어요'))}
@@ -458,7 +458,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='schDel'){const M=ST.selMember,items=((ST.sched[M]&&ST.sched[M].items)||[]).filter(x=>x.id!==id);return save('',D('sched',M),{items})}
   /* 편지 */
   if(a==='letterTo'){ST.letterTo=k;document.querySelectorAll('[data-a=letterTo]').forEach(x=>x.classList.toggle('on',x===b));return}
-  if(a==='sendL'){const t=$('#lText')&&$('#lText').value.trim();if(!t)return toast('편지 내용을 적어 주세요');const to=ST.letterTo;try{await F.FS.addDoc(C('letters'),{from:ST.me,to,text:t,read:false,at:Date.now()});$('#lText').value='';ST.justSent={to};render(true)}catch(er){toast('보내기가 안 됐어요')}return}
+  if(a==='sendL'){const t=$('#lText')&&$('#lText').value.trim();if(!t)return toast('편지 내용을 적어 주세요');const to=ST.letterTo;b.disabled=true;try{await F.FS.addDoc(C('letters'),{from:ST.me,to,text:t,read:false,at:Date.now()});$('#lText').value='';render(true);toast(`${name(to)}에게 편지를 보냈어요`);push(to,'비밀편지 도착',`${name(ST.me)}에게서 편지가 왔어요. 열어 보세요!`,true)}catch(er){toast('보내기가 안 됐어요');b.disabled=false}return}
   if(a==='notify'){const to=ST.justSent&&ST.justSent.to;if(!to)return;await push(to,'비밀편지 도착',`${name(ST.me)}에게서 편지가 왔어요. 열어 보세요!`);ST.justSent=null;return render(true)}
   if(a==='sentOk'){ST.justSent=null;return render(true)}
   if(a==='openL'){ST.openLetter=ST.openLetter===id?'':id;const l=myLetters().find(x=>x.id===id);if(l&&!l.read)F.FS.updateDoc(D('letters',id),{read:true}).catch(()=>{});return render(true)}
