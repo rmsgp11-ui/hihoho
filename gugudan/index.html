@@ -346,8 +346,9 @@ function next(){
   if(Q.mode==='speed'&&Date.now()>=Q.end)return finish();
   if(Q.i>=Q.list.length)return finish();ask();
 }
+function autoDone(key){try{if(!FB||!FB.user)return;const em=(FB.user.email||'').toLowerCase(),t=today();FB.FS.setDoc(FB.FS.doc(FB.db,'done',em,'days',t),{auto:{[key]:Date.now()},date:t,who:em},{merge:true}).catch(()=>{})}catch(e){}}
 function finish(){
-  clearInterval(timer);if(!Q)return;
+  clearInterval(timer);if(!Q)return;if(Q.mode==='mission')autoDone('gugudan');
   const sp=Q.mode==='speed';
   if(sp&&Q.ok>S.best){S.best=Q.ok;save()}
   const asked=sp?Q.i:Q.list.length;

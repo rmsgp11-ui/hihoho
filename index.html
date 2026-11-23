@@ -177,10 +177,13 @@ const isAdmin=()=>ST.role==='admin';
 /* ---------- 할 일·포인트 계산 ---------- */
 function itemsFor(K,date){const wd=wdOf(date);const t=((ST.tpl[K]&&ST.tpl[K].items)||[]).filter(i=>(i.days||[]).includes(wd));const p=((ST.plan[K]&&ST.plan[K][date]&&ST.plan[K][date].items)||[]);return[...t,...p]}
 const doneDoc=(K,date)=>(ST.done[K]&&ST.done[K][date])||{p:{},own:[]};
-function dayCount(K,date){const d=doneDoc(K,date);const items=itemsFor(K,date);const pd=items.filter(i=>d.p&&d.p[i.id]).length;const od=(d.own||[]).filter(o=>o.done).length;return{pd,pt:items.length,od,all:pd+od}}
-function dayCountHist(K,date){const d=doneDoc(K,date);return Object.keys(d.p||{}).length+(d.own||[]).filter(o=>o.done).length}
+const AUTO={dohyung:'도형교실 수업 1개 끝내면',gugudan:'구구단 오늘의 미션 끝내면',korean:'국어 훈련 끝내면'};
+const autoOn=(d,i)=>!!(i.auto&&d.auto&&d.auto[i.auto]);
+const isDone=(d,i)=>!!((d.p&&d.p[i.id])||autoOn(d,i));
+function dayCount(K,date){const d=doneDoc(K,date);const items=itemsFor(K,date);const pd=items.filter(i=>isDone(d,i)).length;const od=(d.own||[]).filter(o=>o.done).length;return{pd,pt:items.length,od,all:pd+od}}
+function dayCountHist(K,date){const d=doneDoc(K,date);const ex=itemsFor(K,date).filter(i=>autoOn(d,i)&&!(d.p&&d.p[i.id])).length;return Object.keys(d.p||{}).length+ex+(d.own||[]).filter(o=>o.done).length}
 function points(K){let e=0;const own=ST.cfg.ownPt??2,mx=ST.cfg.ownMax??3;
-  for(const d of Object.values(ST.done[K]||{})){for(const v of Object.values(d.p||{}))e+=+v.pt||0;e+=Math.min((d.own||[]).filter(o=>o.done).length,mx)*own}
+  for(const d of Object.values(ST.done[K]||{})){for(const v of Object.values(d.p||{}))e+=+v.pt||0;if(d.date&&d.auto)itemsFor(K,d.date).forEach(i=>{if(autoOn(d,i)&&!(d.p&&d.p[i.id]))e+=+i.pt||0});e+=Math.min((d.own||[]).filter(o=>o.done).length,mx)*own}
   e+=ST.bonus.filter(b=>b.who===K).reduce((s,b)=>s+(+b.pt||0),0);
   const sp=ST.redeem.filter(r=>r.by===K&&r.status!=='no').reduce((s,r)=>s+(+r.cost||0),0);return{earned:e,spent:sp,bal:e-sp}}
 function weekData(K){const m=monday(today());const tw=[],lw=[];for(let i=0;i<7;i++){tw.push(dayCountHist(K,addDays(m,i)));lw.push(dayCountHist(K,addDays(m,i-7)))}return{tw,lw,ts:tw.reduce((a,b)=>a+b,0),ls:lw.reduce((a,b)=>a+b,0)}}
@@ -272,7 +275,8 @@ function vJoin(){const c=ST.color||COLORS[Object.keys(ST.members).length%COLORS.
   <div class="colors">${COLORS.map(x=>`<button style="background:${x}" class="${x===c?'on':''}" data-a="pickColor" data-c="${x}" aria-label="색 고르기"></button>`).join('')}</div>
   <button class="btn" data-a="join">시작하기</button></div>`}
 
-function taskBtn(K,i,d,canTick){const on=!!(d.p&&d.p[i.id]);return`<button class="task ${on?'on':''}" data-a="tick" data-k="${esc(K)}" data-id="${esc(i.id)}" ${canTick?'':'disabled'}><span class="bx"></span><span class="tt">${esc(i.t)}</span>${LOCK}<span class="pt">+${+i.pt||0}</span></button>`}
+const autoOpts=v=>`<option value="">연결 안 함 (직접 체크)</option>${Object.entries(AUTO).map(([k,t])=>`<option value="${k}" ${v===k?'selected':''}>${t}</option>`).join('')}`;
+function taskBtn(K,i,d,canTick){const on=isDone(d,i),au=autoOn(d,i)&&!(d.p&&d.p[i.id]);return`<button class="task ${on?'on':''}" data-a="tick" data-k="${esc(K)}" data-id="${esc(i.id)}" ${canTick?'':'disabled'}><span class="bx"></span><span class="tt">${esc(i.t)}${au?'<br><span class="small" style="color:var(--ok)">앱에서 끝내서 자동 체크</span>':i.auto&&!on?`<br><span class="small mute">${AUTO[i.auto]||''} 자동 체크</span>`:''}</span>${LOCK}<span class="pt">+${+i.pt||0}</span></button>`}
 function vToday(){const K=ST.me,t=today(),items=itemsFor(K,t),d=doneDoc(K,t),c=dayCount(K,t),own=d.own||[],p=points(K);
   const allDone=items.length&&c.pd===items.length;const sch=((ST.sched[K]&&ST.sched[K].items)||[]).filter(x=>(x.days||[]).includes(wdOf(t))).sort((a,b)=>(a.s||'').localeCompare(b.s||''));
   return`<section class="card"><div class="hero">${ring(c.pd,items.length)}<div style="display:grid;gap:8px"><span class="mute">${fmtD(t)}</span><h1>${esc(name(K))}의 오늘</h1>
@@ -323,8 +327,8 @@ function vTasks(){const ks=kids();if(!ks.length)return'<div class="card"><p styl
   return`<div class="chips">${ks.map(k=>`<button class="chip ${k===K?'on':''}" data-a="selKid" data-k="${esc(k)}"><span class="dot" style="background:${color(k)}"></span>${esc(name(k))}</button>`).join('')}</div>
   <section class="card"><h3>${esc(name(K))}의 오늘 약속 (${dayCount(K,t).pd}/${ti.length})</h3><div class="list">${ti.map(i=>taskBtn(K,i,d,true)).join('')||'<div class="empty">오늘 약속이 없어요</div>'}</div>${(d.own||[]).length?`<div class="sec">스스로 정한 도전</div><div class="chips">${d.own.map(o=>`<span class="chip ${o.done?'on':''}">${o.done?'완료 · ':''}${esc(o.t)}</span>`).join('')}</div>`:''}</section>
   <section class="card"><h3>매일 반복 약속</h3><p class="small mute" style="margin:0">고른 요일마다 자동으로 들어가요. 아이는 체크만 할 수 있고 고치거나 지울 수 없어요.</p>
-   <div class="list">${tpl.map(i=>`<div class="env"><div class="row sp" style="flex-wrap:nowrap"><span class="jua" style="font-size:18px">${esc(i.t)}</span><span class="row" style="flex-wrap:nowrap"><span class="pt jua" style="color:var(--p)">+${+i.pt||0}</span><button class="x" data-a="tplDel" data-id="${esc(i.id)}" aria-label="지우기">×</button></span></div><div class="chips">${dayChips(i.days||[],'tplDay',i.id)}</div></div>`).join('')||'<div class="empty">아직 없어요. 예: 도형교실 수업 1개, 영어 단어 10개</div>'}</div>
-   <div class="g3"><input id="tplT" maxlength="40" placeholder="약속 내용 (예: 도형교실 수업 1개)"><input id="tplP" type="number" min="0" max="100" value="10" aria-label="포인트"></div><div class="chips">${dayChips(ST.newDays,'newDay')}</div><button class="btn sm" data-a="tplAdd">반복 약속 추가</button></section>
+   <div class="list">${tpl.map(i=>`<div class="env"><div class="row sp" style="flex-wrap:nowrap"><span class="jua" style="font-size:18px">${esc(i.t)}</span><span class="row" style="flex-wrap:nowrap"><span class="pt jua" style="color:var(--p)">+${+i.pt||0}</span><button class="x" data-a="tplDel" data-id="${esc(i.id)}" aria-label="지우기">×</button></span></div><div class="chips">${dayChips(i.days||[],'tplDay',i.id)}</div><label class="small mute">자동 체크<select data-autosel="${esc(i.id)}">${autoOpts(i.auto)}</select></label></div>`).join('')||'<div class="empty">아직 없어요. 예: 도형교실 수업 1개, 영어 단어 10개</div>'}</div>
+   <div class="g3"><input id="tplT" maxlength="40" placeholder="약속 내용 (예: 도형교실 수업 1개)"><input id="tplP" type="number" min="0" max="100" value="10" aria-label="포인트"></div><div class="chips">${dayChips(ST.newDays,'newDay')}</div><label class="small mute">자동 체크 (앱에서 끝내면 저절로 체크)<select id="tplAuto">${autoOpts('')}</select></label><button class="btn sm" data-a="tplAdd">반복 약속 추가</button></section>
   <section class="card"><h3>특정 날짜에만 하는 약속</h3><input id="planDate" type="date" value="${date}" aria-label="날짜"><div class="list">${plan.map(i=>`<div class="rw"><span class="nm" style="font-size:17px">${esc(i.t)}</span><span class="pt jua" style="color:var(--p)">+${+i.pt||0}</span><button class="x" data-a="planDel" data-id="${esc(i.id)}" aria-label="지우기">×</button></div>`).join('')||`<div class="empty">${fmtD(date)}에만 하는 약속이 없어요</div>`}</div>
    <div class="g3"><input id="planT" maxlength="40" placeholder="이날만 할 약속"><input id="planP" type="number" min="0" max="100" value="10" aria-label="포인트"></div><button class="btn sm" data-a="planAdd">이날 약속 추가</button></section>
   <section class="card"><h3>${esc(name(K))}의 바로가기 링크</h3><p class="small mute" style="margin:0">${esc(name(K))}의 오늘 화면 맨 아래에 이 순서대로 보여요. 다른 가족에게는 안 보여요.</p>
@@ -430,7 +434,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='pinCreate'){PIN.mode='create';PIN.buf='';PIN.msg='';return paintPin()}
   if(a==='lockNow'){unlocked=false;PIN.mode='enter';return paintPin()}
   /* 오늘 */
-  if(a==='tick'){const K=k,t=today(),it=itemsFor(K,t).find(i=>i.id===id);if(!it)return;let nowDone=false;await writeDone(K,t,d=>{if(d.p[id])delete d.p[id];else{d.p[id]={pt:+it.pt||0,at:Date.now()};nowDone=true}});
+  if(a==='tick'){const K=k,t=today(),it=itemsFor(K,t).find(i=>i.id===id);if(!it)return;if(autoOn(doneDoc(K,t),it)&&!(doneDoc(K,t).p||{})[id])return toast('앱에서 끝내서 자동으로 체크됐어요');let nowDone=false;await writeDone(K,t,d=>{if(d.p[id])delete d.p[id];else{d.p[id]={pt:+it.pt||0,at:Date.now()};nowDone=true}});
     if(nowDone&&K===ST.me){const c=dayCount(K,t);toast(c.pd===c.pt?'오늘 약속 다 지켰어! 정말 멋져!':`+${+it.pt||0} 포인트! 잘했어`)}return}
   if(a==='ownAdd'){const t=val('ownIn');if(!t)return;$('#ownIn').value='';await writeDone(ST.me,today(),d=>d.own.push({id:uid(),t,done:false}));return render(true)}
   if(a==='ownTick'){return writeDone(ST.me,today(),d=>{const o=d.own.find(x=>x.id===id);if(o){o.done=!o.done;o.at=Date.now()}})}
@@ -438,8 +442,8 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   /* 관리 */
   if(a==='selKid'){ST.selKid=k;return render(true)}
   if(a==='goTasks'){ST.selKid=k;location.hash='tasks';return}
-  if(a==='newDay'){const wd=+b.dataset.wd;ST.newDays=ST.newDays.includes(wd)?ST.newDays.filter(x=>x!==wd):[...ST.newDays,wd];return render(true)}
-  if(a==='tplAdd'){const t=val('tplT'),p=+val('tplP')||0;if(!t)return toast('약속 내용을 적어 주세요');if(!ST.newDays.length)return toast('요일을 하나 이상 골라 주세요');const K=ST.selKid,items=[...((ST.tpl[K]&&ST.tpl[K].items)||[]),{id:'t'+uid(),t,pt:p,days:ST.newDays.slice()}];$('#tplT').value='';await save('',D('tpl',K),{items},true);return render(true)}
+  if(a==='newDay'){const wd=+b.dataset.wd;ST.newDays=ST.newDays.includes(wd)?ST.newDays.filter(x=>x!==wd):[...ST.newDays,wd];b.classList.toggle('on',ST.newDays.includes(wd));return}
+  if(a==='tplAdd'){const t=val('tplT'),p=+val('tplP')||0;if(!t)return toast('약속 내용을 적어 주세요');if(!ST.newDays.length)return toast('요일을 하나 이상 골라 주세요');const K=ST.selKid,items=[...((ST.tpl[K]&&ST.tpl[K].items)||[]),{id:'t'+uid(),t,pt:p,days:ST.newDays.slice(),auto:val('tplAuto')}];$('#tplT').value='';await save('',D('tpl',K),{items},true);return render(true)}
   if(a==='tplDel'){const K=ST.selKid,items=((ST.tpl[K]&&ST.tpl[K].items)||[]).filter(i=>i.id!==id);return save('',D('tpl',K),{items},true)}
   if(a==='tplDay'){const K=ST.selKid,wd=+b.dataset.wd,items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));const i=items.find(x=>x.id===id);if(!i)return;i.days=i.days.includes(wd)?i.days.filter(x=>x!==wd):[...i.days,wd];return save('',D('tpl',K),{items},true)}
   if(a==='planAdd'){const t=val('planT'),p=+val('planP')||0;if(!t)return toast('약속 내용을 적어 주세요');const K=ST.selKid,date=ST.selDate||today(),items=[...((ST.plan[K]&&ST.plan[K][date]&&ST.plan[K][date].items)||[]),{id:'p'+uid(),t,pt:p}];$('#planT').value='';await save('',D('plan',K,'days',date),{items,who:K,date});return render(true)}
@@ -469,7 +473,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   /* 시간표 */
   if(a==='selMember'){ST.selMember=k;return render(true)}
   if(a==='selDay'){ST.selDay=+b.dataset.wd;ST.schedDays=null;return render(true)}
-  if(a==='schDay'){const wd=+b.dataset.wd,cur=ST.schedDays||[ST.selDay];ST.schedDays=cur.includes(wd)?cur.filter(x=>x!==wd):[...cur,wd];return render(true)}
+  if(a==='schDay'){const wd=+b.dataset.wd,cur=ST.schedDays||[ST.selDay];ST.schedDays=cur.includes(wd)?cur.filter(x=>x!==wd):[...cur,wd];b.classList.toggle('on',ST.schedDays.includes(wd));return}
   if(a==='schAdd'){const t=val('schT');if(!t)return toast('일정 이름을 적어 주세요');const days=ST.schedDays||[ST.selDay];if(!days.length)return toast('요일을 골라 주세요');const M=ST.selMember,items=[...((ST.sched[M]&&ST.sched[M].items)||[]),{id:uid(),t,s:val('schS'),e:val('schE'),days}];$('#schT').value='';ST.schedDays=null;await save('',D('sched',M),{items});return render(true)}
   if(a==='schDel'){const M=ST.selMember,items=((ST.sched[M]&&ST.sched[M].items)||[]).filter(x=>x.id!==id);return save('',D('sched',M),{items})}
   /* 편지 */
@@ -485,7 +489,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='foodDone'){const f=ST.food.find(x=>x.id===id);if(!f)return;return F.FS.updateDoc(D('food',id),{done:!f.done}).catch(()=>toast('저장이 안 됐어요'))}
   if(a==='foodDel'){return F.FS.deleteDoc(D('food',id)).catch(()=>toast('지우기가 안 됐어요'))}
 });
-document.addEventListener('change',e=>{if(e.target.id==='planDate'){ST.selDate=e.target.value||today();render(true)}});
+document.addEventListener('change',e=>{const as=e.target.dataset&&e.target.dataset.autosel;if(as){const K=ST.selKid,items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));const it=items.find(x=>x.id===as);if(it){it.auto=e.target.value;save('',D('tpl',K),{items},true);toast(it.auto?'자동 체크를 연결했어요':'자동 체크를 껐어요')}return}if(e.target.id==='planDate'){ST.selDate=e.target.value||today();render(true)}});
 document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.isComposing)return;const m={ownIn:'ownAdd',foodIn:'foodAdd',tplT:'tplAdd',planT:'planAdd',schT:'schAdd',rwN:'rwAdd'}[e.target.id];if(m){e.preventDefault();const btn=document.querySelector(`[data-a="${m}"]`);if(btn)btn.click()}});
 window.addEventListener('hashchange',()=>{render(true);scrollTo(0,0)});
 boot();

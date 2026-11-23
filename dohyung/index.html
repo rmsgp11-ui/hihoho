@@ -668,13 +668,16 @@ function gate(msg){$('#modal').innerHTML=`<div class="modal" style="background:v
 async function initDB(){
   const cfg=window.firebaseConfig;if(!cfg||!cfg.apiKey){sync='local';paintSync();return}
   try{const A=await import(FV+'firebase-app.js'),AU=await import(FV+'firebase-auth.js'),FS=await import(FV+'firebase-firestore.js');
-    const app=A.initializeApp(cfg),auth=AU.getAuth(app);FB={AU,FS,auth,ref:FS.doc(FS.getFirestore(app),'progress','jiho'),user:null};
+    const app=A.initializeApp(cfg),auth=AU.getAuth(app);FB={AU,FS,auth,db:FS.getFirestore(app),ref:null,user:null};
     $('#modal').innerHTML='<div class="modal" style="background:var(--bg)"><div class="card q" style="text-align:center"><h2>도형교실</h2><p class="mute" style="margin:0">로그인 확인 중…</p></div></div>';
     AU.onAuthStateChanged(auth,u=>{FB.user=u;if(unsub){unsub();unsub=null}
       if(!u){sync='local';gate('');paintSync();return}
-      $('#modal').innerHTML='';let first=true;
+      $('#modal').innerHTML='';let first=true;const em=(u.email||'').toLowerCase();
+      if(S.owner&&S.owner!==em){S=blank();try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}render()}S.owner=em;
+      FB.ref=FS.doc(FB.db,'progress','dohyung_'+em);
+      FS.getDoc(FB.ref).then(async snap=>{if(!snap.exists()){try{const old=await FS.getDoc(FS.doc(FB.db,'progress','jiho'));const od=old.exists()?old.data():null;if(od&&od.state&&(od.by||'').toLowerCase()===em)await FS.setDoc(FB.ref,od)}catch(e){}}}).catch(()=>{}).finally(()=>{if(FB.user!==u)return;
       unsub=FS.onSnapshot(FB.ref,snap=>{const d=snap.exists()?snap.data():null;const took=adopt(d);if(first){first=false;if(!took&&S.updated&&(!d||!d.state||(d.state.updated||0)<S.updated))push()}sync='cloud';paintSync()},
-        e=>{sync='local';paintSync();if(e&&e.code==='permission-denied')gate(`<b>${u.email}</b> 계정은 허용 목록에 없어요. Firestore 규칙에 이 메일을 넣었는지 확인해 주세요.`)});
+        e=>{sync='local';paintSync();if(e&&e.code==='permission-denied')gate(`<b>${u.email}</b> 계정은 허용 목록에 없어요. Firestore 규칙에 이 메일을 넣었는지 확인해 주세요.`)});});
     });
   }catch(e){sync='local';paintSync()}
 }
@@ -827,7 +830,8 @@ function vParent(){if(pinOK&&Date.now()-pinT>10*60*1000)pinOK=false;if(!pinOK||P
 
 /* ---------- 동작 ---------- */
 function startLesson(id){const L=LESSONS[id-1];if(!L||!unlocked(id))return;cur={L,step:'concept',qs:makeQs(L),i:0,sel:null,out:{},cells:new Set(),tries:0,state:'',res:[],t0:0};render();scrollTo(0,0)}
-function finish(){const c=cur,L=c.L;const fo=c.res.filter(r=>r.ok).length,st=fo>=5?3:fo>=4?2:fo>=3?1:0;
+function autoDone(key){try{if(!FB||!FB.user)return;const em=(FB.user.email||'').toLowerCase(),d=new Date(),t=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;FB.FS.setDoc(FB.FS.doc(FB.FS.getFirestore(),'done',em,'days',t),{auto:{[key]:Date.now()},date:t,who:em},{merge:true}).catch(()=>{})}catch(e){}}
+function finish(){autoDone('dohyung');const c=cur,L=c.L;const fo=c.res.filter(r=>r.ok).length,st=fo>=5?3:fo>=4?2:fo>=3?1:0;
   const r=S.les[L.id]||{best:0,tries:0};r.tries++;r.best=Math.max(r.best,st);r.last=fo;r.date=today();S.les[L.id]=r;
   c.res.forEach(x=>{const k=S.keys[x.key]||[0,0];k[1]++;if(x.ok)k[0]++;S.keys[x.key]=k;if(!x.ok){S.qw[1]++;if(x.quick)S.qw[0]++;S.log.unshift({d:today(),l:L.id,k:x.key,q:x.txt.slice(0,80),quick:x.quick})}});
   S.log=S.log.slice(0,60);const d=S.daily[today()]||{};d.les=1;S.daily[today()]=d;c.step='done';save();render();scrollTo(0,0)}
