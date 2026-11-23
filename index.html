@@ -217,7 +217,7 @@ function weekBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw,...w.lw);co
 function miniBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw);return`<div class="mini">${w.tw.map(v=>`<i style="height:${(v/mx*100).toFixed(0)}%"></i>`).join('')}</div>`}
 
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='35';
+const APPV='36';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -359,7 +359,7 @@ function taskRow(K,i,d,date,canAct){const tm=tmOf(d,i);if(!tm&&!i.proof)return t
   const late=isT&&!on&&!out&&!r.cur&&!ms&&tm&&nowMin()>toMin(tm)+10;
   const meta=[tm?`🕓 ${tm}${i.dur?` · ${i.dur}분`:''}${d.re&&d.re[i.id]&&i.at&&d.re[i.id]!==i.at?` <span class="mute">(원래 ${esc(i.at)})</span>`:''}`:'',i.proof?'⏱️ 타이머 + 📷 인증':'',i.from?`<span class="mute">${esc(i.from.slice(5).replace('-','/'))}에서 미룬 약속</span>`:''].filter(Boolean).join(' · ');
   let st='';if(out)st=`<span class="mute">미룸 → ${esc(fmtD(out.to))} ${esc(out.at||'')}</span>`;else if(on){const seg=(r.segs||[]).map(sg);st=seg.length?`<span style="color:var(--ok)">실제 ${hmOf(seg[0].s)}~${hmOf(seg[seg.length-1].e)} (${Math.round(ms/60000)}분)</span>`:''}
-  else if(ck&&ck.st==='wait')st='<span style="color:var(--p)">부모님 확인을 기다리는 중</span>';else if(ck&&ck.st==='no')st=`<span style="color:var(--p)">인증이 안 됐어요${ck.note?': '+esc(ck.note):''}</span>`;
+  else if(ck&&ck.st==='wait')st=`<span style="color:var(--p)">부모님 확인을 기다리는 중${ck.note?' · '+esc(ck.note):''}</span>`;else if(ck&&ck.st==='no')st=`<span style="color:var(--p)">인증이 안 됐어요${ck.note?': '+esc(ck.note):''}</span>`;
   else if(r.cur)st=`<span style="color:var(--ok)">진행 중 <b class="tmr" data-acc="${ms-(Date.now()-r.cur)}" data-s="${r.cur}">${mmss(ms)}</b></span>`;else if(ms)st=`<span class="mute">타이머 ${mmss(ms)}</span>`;else if(late)st='<span style="color:var(--p)">시작 시간이 지났어요</span>';
   const books=((d.pf||{})[i.id]||[]),need=i.proof&&((r.segs||[]).length>books.length)&&!(ck&&ck.st==='wait');
   if(i.proof&&books.length)st=`<span style="color:var(--ok)">인증 ${books.length}번${books.length?': '+books.map(x=>esc(x.detail||'완료')).join(', '):''}</span>`+(r.cur?` · <span style="color:var(--ok)">진행 중 <b class="tmr" data-acc="${ms-(Date.now()-r.cur)}" data-s="${r.cur}">${mmss(ms)}</b></span>`:'');
@@ -381,7 +381,7 @@ async function sendProof(id,file){const K=ST.me,t=today(),i=itemsFor(K,t).find(x
 사진이 이 활동을 끝낸 증거로 보이면 ok를 true로 해. 예: 리딩게이트 학습 완료·결과 화면, 읽은 책 펼친 쪽, 푼 문제집 쪽, 쓴 공책.
 활동과 관계없는 사진, 알아볼 수 없는 사진, 화면에 날짜가 보이는데 오늘이 아니면 ok를 false로 해.
 JSON만 출력: {"ok":true 또는 false,"detail":"사진에서 확인한 것 (25자 이내)","reason":"아이에게 하는 짧은 말 (30자 이내, 반말)"}`})});
-    if(!r.ok)throw 0;const s2=((await r.json()).text)||'',a=s2.indexOf('{'),b=s2.lastIndexOf('}');const v=JSON.parse(s2.slice(a,b+1));ok=v.ok===true;note=v.reason||'';detail=v.detail||''}catch(e){note='선생님 확인이 안 돼서 부모님께 보냈어요'}
+    if(!r.ok){let ec='';try{ec=(await r.json()).error||''}catch(x){}throw{code:'ai_'+r.status+(ec?'_'+ec:'')}}const s2=((await r.json()).text)||'',a=s2.indexOf('{'),b=s2.lastIndexOf('}');const v=JSON.parse(s2.slice(a,b+1));ok=v.ok===true;note=(v.reason||'')+(ok?'':' (선생님이 확인하지 못해서 부모님께 보냈어요)');detail=v.detail||''}catch(e){note=`선생님 연결이 안 돼서 부모님께 보냈어요 (${(e&&e.code)||'오류'})`}
   let nb=0;await writeDone(K,t,dd=>{dd.chk=dd.chk||{};dd.pf=dd.pf||{};const L=dd.pf[id]=dd.pf[id]||[];if(ok){L.push({detail,at:Date.now()});nb=L.length;bookPts(dd,id,i,L.length,detail);delete dd.chk[id]}else dd.chk[id]={st:'wait',note,detail,at:Date.now()}});
   if(ok){const P=+i.pt||0,h=Math.ceil(P/2);toast(nb===1?`1권 인증 완료! +${h} 포인트${detail?' · '+detail:''}`:nb===2?`2권 인증 완료! +${P-h} 포인트`:`${nb}권째 인증 완료! (포인트는 2권까지)`)}else{toast(note||'부모님께 확인을 요청했어요');push(fam().filter(e=>ST.members[e].role==='admin'),'우리가족 인증 확인',`${name(K)}가 「${i.t}」 인증을 보냈어요. 할 일 탭에서 확인해 주세요`,true)}}
 function moveModal(id){const K=ST.me,t=today(),i=itemsFor(K,t).find(x=>x.id===id);if(!i)return;const d=doneDoc(K,t),half=Math.ceil((+i.pt||0)/2),freeToday=!(d.reN&&d.reN[id]);
