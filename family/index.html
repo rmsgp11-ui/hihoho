@@ -284,7 +284,7 @@ function vToday(){const K=ST.me,t=today(),items=itemsFor(K,t),d=doneDoc(K,t),c=d
   ${sch.length?todayStrip(sch):''}
   <section class="card"><h3>이번 주 나의 성장</h3>${weekBars(K)}</section>
   <a class="btn ghost" href="../" style="text-decoration:none">도형교실 하러 가기</a>${linkBtns(K)}`}
-const BUILTIN={'7ec7b9f4de41bc54dca769f62327a55d27927fcc47b6e44b24e4b5aad5117e4d':[{id:'b1',n:'알림장',u:'https://sites.google.com/view/maean35/',fixed:1}],'8d9479376ec9cd02ae3d2e09886d032530078fc34346173d96177f1177ae7b33':[{id:'b2',n:'구구단 마스터',u:'../gugudan/',fixed:1}]};
+const BUILTIN={'7ec7b9f4de41bc54dca769f62327a55d27927fcc47b6e44b24e4b5aad5117e4d':[{id:'b1',n:'알림장',u:'https://sites.google.com/view/maean35/',fixed:1}],'8d9479376ec9cd02ae3d2e09886d032530078fc34346173d96177f1177ae7b33':[{id:'b2',n:'구구단 마스터',u:'https://rmsgp11-ui.github.io/hihoho/gugudan/',fixed:1}]};
 const HASH={};function hashOf(e){if(HASH[e]===undefined){HASH[e]=null;try{crypto.subtle.digest('SHA-256',new TextEncoder().encode(e)).then(b=>{HASH[e]=[...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('');sched()}).catch(()=>{})}catch(er){}}return HASH[e]}
 const linksOf=K=>((ST.tpl[K]&&ST.tpl[K].links)||[]);
 const allLinks=K=>[...(BUILTIN[hashOf(K)]||[]),...linksOf(K)];
