@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>지호의 도형 탐험</title>
+<title>도형교실</title>
 <meta name="theme-color" content="#2f5bea">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
@@ -187,7 +187,7 @@ select{font:inherit;font-size:17px;min-height:48px;border-radius:12px;border:2px
 <body>
 <header class="top">
   <div class="tb">
-    <div class="brand"><svg viewBox="0 0 34 34"><rect x="2" y="2" width="30" height="30" rx="8" fill="var(--p)"/><path d="M9 25 L17 9 L25 25 Z" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/><circle cx="17" cy="20" r="2.6" fill="var(--y)"/></svg>지호의 도형 탐험</div>
+    <div class="brand"><svg viewBox="0 0 34 34"><rect x="2" y="2" width="30" height="30" rx="8" fill="var(--p)"/><path d="M9 25 L17 9 L25 25 Z" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/><circle cx="17" cy="20" r="2.6" fill="var(--y)"/></svg>도형교실</div>
     <div class="pill" id="pill"></div>
   </div>
   <nav class="tabs" id="tabs">
@@ -664,7 +664,7 @@ async function push(){if(!FB||!FB.user)return;if(writing){again=true;return}writ
   try{await FB.FS.setDoc(FB.ref,{state:JSON.parse(JSON.stringify(S)),by:FB.user.email||'',at:FB.FS.serverTimestamp()});sync='cloud'}catch(e){sync='local'}
   writing=false;if(again){again=false;push()}paintSync()}
 function adopt(d){if(d&&d.state&&(d.state.updated||0)>(S.updated||0)){S=Object.assign(blank(),JSON.parse(JSON.stringify(d.state)));try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}if(!cur&&!W_&&!drag)render();return true}return false}
-function gate(msg){$('#modal').innerHTML=`<div class="modal" style="background:var(--bg)"><div class="card q" style="text-align:center;justify-items:center"><h2>지호의 도형 탐험</h2><p style="margin:0">진도를 저장하려면 구글 계정으로 로그인해요.</p>${msg?`<div class="fb bad" style="text-align:left">${msg}</div>`:''}<button class="btn" data-a="login">Google로 로그인</button><p class="small mute" style="margin:0">카카오톡 안 브라우저에서는 로그인이 안 돼요. <b>Chrome</b>으로 열어 주세요.</p></div></div>`}
+function gate(msg){$('#modal').innerHTML=`<div class="modal" style="background:var(--bg)"><div class="card q" style="text-align:center;justify-items:center"><h2>도형교실</h2><p style="margin:0">진도를 저장하려면 구글 계정으로 로그인해요.</p>${msg?`<div class="fb bad" style="text-align:left">${msg}</div>`:''}<button class="btn" data-a="login">Google로 로그인</button><p class="small mute" style="margin:0">카카오톡 안 브라우저에서는 로그인이 안 돼요. <b>Chrome</b>으로 열어 주세요.</p></div></div>`}
 async function initDB(){
   const cfg=window.firebaseConfig;if(!cfg||!cfg.apiKey){sync='local';paintSync();return}
   try{const A=await import(FV+'firebase-app.js'),AU=await import(FV+'firebase-auth.js'),FS=await import(FV+'firebase-firestore.js');

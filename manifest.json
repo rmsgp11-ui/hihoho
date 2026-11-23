@@ -1,6 +1,6 @@
 {
-  "name": "지호의 도형 탐험",
-  "short_name": "도형 탐험",
+  "name": "도형교실",
+  "short_name": "도형교실",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
