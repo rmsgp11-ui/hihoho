@@ -174,6 +174,11 @@ select{font:inherit;font-size:17px;min-height:48px;border-radius:12px;border:2px
 .pc{stroke:#fff;stroke-width:1.5;stroke-linejoin:round;cursor:grab;opacity:.96}
 .pc.sel{stroke:var(--ink);stroke-width:3}
 .tgok .pc{stroke:#fff;opacity:1}
+.pinbox{max-width:360px;margin:0 auto;text-align:center;display:grid;gap:16px;justify-items:center}
+.pdots{display:flex;gap:14px}.pdots i{width:20px;height:20px;border-radius:50%;border:3px solid var(--p)}.pdots i.f{background:var(--p)}
+.pkeys{display:grid;grid-template-columns:repeat(3,72px);gap:12px}
+.pkeys button{height:64px;border-radius:18px;border:2px solid var(--line);background:var(--card);font-family:'Jua';font-size:28px;box-shadow:0 4px 0 var(--sh)}
+.pkeys button:active{transform:translateY(2px)}
 @media(max-width:760px){.hero,.lab{grid-template-columns:minmax(0,1fr)}.statg{grid-template-columns:repeat(2,minmax(0,1fr))}.stamps{grid-template-columns:repeat(8,minmax(0,1fr))}}
 @media(max-width:600px){.brand{font-size:20px}.qt{font-size:19px}.ch{font-size:17px}.bar{grid-template-columns:7.5em minmax(0,1fr) 3.2em}.btn{font-size:20px;padding:0 18px}}
 @media(prefers-reduced-motion:reduce){#lg{transition:none}.shake{animation:none}.btn{transition:none}}
@@ -788,7 +793,23 @@ function labOp(o){if(lab.busy)return;const N=7,px=34;const[w,h]=dims(lab.sh);con
   if(!g||reduce){apply();return render()}
   lab.busy=true;g.style.transform=css;setTimeout(()=>{lab.busy=false;apply();render()},480)}
 
-function vParent(){const done=LESSONS.filter(L=>best(L.id)>0).length;let ok=0,tot=0;Object.values(S.keys).forEach(([a,b])=>{ok+=a;tot+=b});
+let pinOK=false,pinT=0,PIN={mode:'',buf:'',first:'',msg:'',bad:0,until:0};
+async function hashPin(x){const t='jiho-geo:'+x;try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return[...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('')}catch(e){let h=0;for(const c of t)h=(h*31+c.charCodeAt(0))|0;return'h'+h}}
+function vPin(){const m=PIN.mode||(S.pin?'enter':'create');PIN.mode=m;const wait=PIN.until>Date.now();
+  const title=m==='create'?'보호자 비밀번호 만들기':m==='confirm'?'한 번 더 입력해 주세요':'보호자 비밀번호';
+  const sub=m==='create'?'숫자 4자리를 정해 주세요. 지호가 모르는 번호로!':m==='confirm'?'같은 번호를 다시 눌러요.':'보호자 화면을 보려면 비밀번호를 눌러요.';
+  return`<div class="card"><div class="pinbox"><h2>${title}</h2><p class="mute" style="margin:0">${sub}</p>
+  <div class="pdots">${[0,1,2,3].map(i=>`<i class="${i<PIN.buf.length?'f':''}"></i>`).join('')}</div>
+  <div class="toast">${wait?'여러 번 틀려서 30초 동안 잠겼어요.':PIN.msg}</div>
+  <div class="pkeys">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-a="pk" data-k="${n}" ${wait?'disabled':''}>${n}</button>`).join('')}<button data-a="pkx" aria-label="취소" style="font-size:17px">${m==='enter'?'':'취소'}</button><button data-a="pk" data-k="0" ${wait?'disabled':''}>0</button><button data-a="pkdel" aria-label="지우기">⌫</button></div>
+  ${m==='enter'?'<button class="btn ghost" data-a="pkforgot" style="min-height:44px;font-size:16px">비밀번호를 잊었어요</button>':''}</div></div>`}
+async function pinDigit(k){const m=PIN.mode;if(PIN.buf.length>=4||PIN.until>Date.now())return;PIN.buf+=k;PIN.msg='';render();if(PIN.buf.length<4)return;
+  const v=PIN.buf;await new Promise(r=>setTimeout(r,150));PIN.buf='';
+  if(m==='create'){PIN.first=v;PIN.mode='confirm'}
+  else if(m==='confirm'){if(v===PIN.first){S.pin=await hashPin(v);save();pinOK=true;pinT=Date.now();PIN.mode='';PIN.msg=''}else{PIN.mode='create';PIN.msg='두 번 누른 번호가 달라요. 처음부터 다시!'}}
+  else{if(await hashPin(v)===S.pin){pinOK=true;pinT=Date.now();PIN.bad=0;PIN.mode=''}else{PIN.bad++;PIN.msg='번호가 틀렸어요.';if(PIN.bad>=5){PIN.bad=0;PIN.until=Date.now()+30000;setTimeout(render,30100)}}}
+  render()}
+function vParent(){if(pinOK&&Date.now()-pinT>10*60*1000)pinOK=false;if(!pinOK||PIN.mode==='create'||PIN.mode==='confirm')return vPin();const done=LESSONS.filter(L=>best(L.id)>0).length;let ok=0,tot=0;Object.values(S.keys).forEach(([a,b])=>{ok+=a;tot+=b});
   const rec=recLesson(),wk=weekNow();const behind=wk>0?wk-rec.w:0;
   const ks=Object.entries(S.keys).filter(([,v])=>v[1]>=2).map(([k,[a,b]])=>({k,p:Math.round(100*a/b),n:b})).sort((x,y)=>x.p-y.p);
   let sp=[0,0];SPATIAL.forEach(k=>{if(S.keys[k]){sp[0]+=S.keys[k][0];sp[1]+=S.keys[k][1]}});
@@ -802,7 +823,7 @@ function vParent(){const done=LESSONS.filter(L=>best(L.id)>0).length;let ok=0,to
    <p class="small mute">「찍은 비율」이 30%를 넘으면 실력보다 충동성이 점수를 깎고 있다는 뜻이에요. 그럴 땐 문제 풀 때 "손가락으로 짚고 소리 내어 말하기"를 규칙으로 정해 주세요.</p></div>
   <div class="card" style="margin-top:16px"><h3>약한 부분 (낮은 순)</h3>${ks.length?ks.slice(0,10).map(x=>`<div class="bar"><span>${KN[x.k]}</span><span class="t"><i style="width:${x.p}%;background:${x.p<60?'var(--c)':x.p<80?'var(--y)':'var(--ok)'}"></i></span><span class="p">${x.p}%</span></div>`).join('')+'<p class="small mute">2문제 이상 푼 영역만 보여요. 60% 아래(빨강)는 실험실이나 필름으로 다시 해 주세요.</p>':'<p class="mute">아직 푼 문제가 없어요.</p>'}</div>
   <div class="card" style="margin-top:16px"><h3>최근에 틀린 문제</h3>${S.log.length?S.log.slice(0,15).map(r=>`<div style="padding:10px 0;border-bottom:1px solid var(--line)"><div class="small mute">${r.d.slice(5).replace('-','/')} · ${r.l}강 · ${KN[r.k]||r.k}${r.quick?' · <b style="color:var(--c)">3초 안에 찍음</b>':''}</div><div>${r.q}</div></div>`).join(''):'<p class="mute">아직 없어요.</p>'}</div>
-  <div class="card" style="margin-top:16px"><h3>설정</h3><div class="row" style="margin-top:10px"><button class="chk ${S.open?'on':''}" style="width:auto" data-a="toggleOpen"><span class="bx"></span><span>모든 수업 열기 (순서 상관없이)</span></button><button class="btn ghost" data-a="askReset">기록 지우기</button></div><p class="sync" id="sync"></p></div>`}
+  <div class="card" style="margin-top:16px"><h3>설정</h3><div class="row" style="margin-top:10px"><button class="btn ghost" data-a="pinChange">비밀번호 바꾸기</button><button class="btn ghost" data-a="pinLock">잠그기</button><button class="chk ${S.open?'on':''}" style="width:auto" data-a="toggleOpen"><span class="bx"></span><span>모든 수업 열기 (순서 상관없이)</span></button><button class="btn ghost" data-a="askReset">기록 지우기</button></div><p class="sync" id="sync"></p></div>`}
 
 /* ---------- 동작 ---------- */
 function startLesson(id){const L=LESSONS[id-1];if(!L||!unlocked(id))return;cur={L,step:'concept',qs:makeQs(L),i:0,sel:null,out:{},cells:new Set(),tries:0,state:'',res:[],t0:0};render();scrollTo(0,0)}
@@ -811,7 +832,7 @@ function finish(){const c=cur,L=c.L;const fo=c.res.filter(r=>r.ok).length,st=fo>
   c.res.forEach(x=>{const k=S.keys[x.key]||[0,0];k[1]++;if(x.ok)k[0]++;S.keys[x.key]=k;if(!x.ok){S.qw[1]++;if(x.quick)S.qw[0]++;S.log.unshift({d:today(),l:L.id,k:x.key,q:x.txt.slice(0,80),quick:x.quick})}});
   S.log=S.log.slice(0,60);const d=S.daily[today()]||{};d.les=1;S.daily[today()]=d;c.step='done';save();render();scrollTo(0,0)}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;
-  if(a==='go'){cur=null;W_=null;if(location.hash==='#'+b.dataset.v)render();else location.hash=b.dataset.v;return}
+  if(a==='go'){cur=null;W_=null;if(b.dataset.v!=='parent'){pinOK=false;PIN.mode='';PIN.buf=''}if(location.hash==='#'+b.dataset.v)render();else location.hash=b.dataset.v;return}
   if(a==='start'){W_=null;return startLesson(+b.dataset.id)}
   if(a==='warmStart'){const list=warmSet();W_={list,i:0,t0:Date.now(),solved:0,hints:0,timeUp:false,done:false,tg:tgSetup(list[0])};render();return scrollTo(0,0)}
   if(a==='wnext'||a==='wskip'){const w=W_;if(w.i>=w.list.length-1||w.timeUp){w.done=true;const d=S.daily[today()]||{};d.warm=1;S.daily[today()]=d;S.tgc=(S.tgc||0)+w.solved;S.tgh=(S.tgh||0)+w.hints;save()}else{w.i++;w.tg=tgSetup(w.list[w.i])}render();return scrollTo(0,0)}
@@ -856,6 +877,15 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   if(a==='labBase'){lab.base=b.dataset.b;return render()}
   if(a==='toggleOpen'){S.open=!S.open;save();return render()}
   if(a==='askReset'){$('#modal').innerHTML=`<div class="modal"><div class="card q"><h3>기록을 모두 지울까요?</h3><p style="margin:0">별, 정답률, 틀린 문제 기록이 모두 사라지고 되돌릴 수 없어요.</p><div class="row"><button class="btn" style="background:var(--c);box-shadow:none" data-a="doReset">지우기</button><button class="btn ghost" data-a="closeM">취소</button></div></div></div>`;return}
+  if(a==='pk')return pinDigit(b.dataset.k);
+  if(a==='pkdel'){PIN.buf=PIN.buf.slice(0,-1);return render()}
+  if(a==='pkx'){if(PIN.mode==='enter')return;PIN.buf='';if(S.pin){PIN.mode='';pinOK=true;pinT=Date.now()}else{PIN.mode='';location.hash='today'}return render()}
+  if(a==='pinChange'){PIN.mode='create';PIN.buf='';PIN.msg='';return render()}
+  if(a==='pinLock'){pinOK=false;PIN.mode='';return render()}
+  if(a==='pkforgot'){
+    if(FB&&FB.user){const pr=new FB.AU.GoogleAuthProvider();FB.AU.reauthenticateWithPopup(FB.user,pr).then(()=>{S.pin='';save();PIN.mode='create';PIN.buf='';PIN.msg='구글 계정 확인 완료! 새 비밀번호를 만들어요.';render()}).catch(()=>{PIN.msg='구글 계정 확인이 안 됐어요.';render()});return}
+    $('#modal').innerHTML=`<div class="modal"><div class="card q"><h3>비밀번호를 지울까요?</h3><p style="margin:0">아직 로그인 연결 전이라 구글 계정으로 확인할 수 없어요. 지우면 새 비밀번호를 만들 수 있어요. (진도는 그대로예요)</p><div class="row"><button class="btn" data-a="pinWipe">지우기</button><button class="btn ghost" data-a="closeM">취소</button></div></div></div>`;return}
+  if(a==='pinWipe'){S.pin='';save();PIN.mode='create';$('#modal').innerHTML='';return render()}
   if(a==='login')return login();
   if(a==='logout'){if(FB)FB.AU.signOut(FB.auth);return}
   if(a==='doReset'){S=blank();save();$('#modal').innerHTML='';return render()}
@@ -873,7 +903,7 @@ document.addEventListener('pointermove',e=>{if(!drag||!TG)return;const svg=$('#t
 const endDrag=()=>{if(!drag||!TG){drag=null;return}const d=drag;drag=null;const pc=TG.pieces[d.i];if(!d.moved&&d.wasSel)pc.rot=(pc.rot+1)%8;tgSnap(TG,d.i);tgDone(TG);render()};
 document.addEventListener('pointerup',endDrag);document.addEventListener('pointercancel',endDrag);
 setInterval(()=>{if(!W_||W_.done)return;const left=Math.max(0,300-Math.floor((Date.now()-W_.t0)/1000));const el=$('#wtime');if(el)el.textContent=Math.floor(left/60)+':'+String(left%60).padStart(2,'0');if(left===0&&!W_.timeUp){W_.timeUp=true;if(!drag)render()}},1000);
-window.addEventListener('hashchange',()=>{cur=null;W_=null;render();scrollTo(0,0)});
+window.addEventListener('hashchange',()=>{cur=null;W_=null;if(location.hash!=='#parent'){pinOK=false;PIN.mode='';PIN.buf=''}render();scrollTo(0,0)});
 lab.ox=Math.floor((7-dims(lab.sh)[0])/2);lab.oy=Math.floor((7-dims(lab.sh)[1])/2);
 render();initDB();
 
