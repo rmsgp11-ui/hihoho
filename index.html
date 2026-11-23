@@ -217,7 +217,8 @@ function weekBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw,...w.lw);co
 function miniBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw);return`<div class="mini">${w.tw.map(v=>`<i style="height:${(v/mx*100).toFixed(0)}%"></i>`).join('')}</div>`}
 
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='32';
+const APPV='33';
+window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
 /* ---------- Firebase ---------- */
@@ -316,10 +317,10 @@ function linkFor(K,i){if(i.lu)return i.lu;const m={dohyung:'/dohyung/',gugudan:'
 function startItem(K,id){const t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it)return;const url=linkFor(K,it);
   if(url){try{window.open(url,'_blank','noopener')}catch(e){}try{localStorage.setItem('fam-pending',JSON.stringify({K,id,d:t,at:Date.now()}))}catch(e){}}
   return writeDone(K,t,d=>{d.run=d.run||{};const r=d.run[id]=d.run[id]||{segs:[]};r.segs=r.segs||[];if(!r.cur)r.cur=Date.now()}).then(()=>toast(url?`시작! 「${it.t}」 끝나고 돌아오면 자동으로 멈춰요`:'시작! 끝나면 ■ 끝을 눌러 줘'))}
-async function endRun(K,id,quiet){const t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it)return;let mins=0,ok=false;
+async function endRun(K,id,quiet){const t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it)return toast('약속을 찾지 못했어요 (E1)');let mins=0,ok=false;const was=(doneDoc(K,t).run||{})[id];if(!was||!was.cur){if(it.proof&&quiet!==2)return proofModal(id,0);return toast('이미 멈춰 있어요 (E2)')}
   await writeDone(K,t,d=>{d.run=d.run||{};const r=d.run[id];if(!r||!r.cur)return;r.segs=r.segs||[];r.segs.push([r.cur,Date.now()]);r.cur=null;ok=true;mins=Math.round(runMs(r)/60000);if(!it.proof&&!it.auto&&!d.p[id])d.p[id]={pt:+it.pt||0,at:Date.now()}});
   try{const pd=JSON.parse(localStorage.getItem('fam-pending')||'null');if(pd&&pd.id===id)localStorage.removeItem('fam-pending')}catch(e){}
-  if(!ok||quiet===2)return;if(it.proof)return proofModal(id,mins);toast(it.auto?`${mins}분 했어! 앱에서 끝냈으면 자동으로 체크돼요`:`끝! +${+it.pt||0} 포인트`)}
+  if(quiet===2)return;if(!ok&&!it.proof)return toast('멈추지 못했어요 (E3)');if(it.proof)return proofModal(id,mins);toast(it.auto?`${mins}분 했어! 앱에서 끝냈으면 자동으로 체크돼요`:`끝! +${+it.pt||0} 포인트`)}
 function bookPts(d,id,i,n,detail){const P=+i.pt||0,h=Math.ceil(P/2);if(n===1&&!d.p[id])d.p[id]={pt:h,at:Date.now(),proof:detail};else if(n===2&&d.p[id])d.p[id].pt=P}
 function proofModal(id,mins){openModal(`<h3>📷 인증 사진 찍기</h3><p style="margin:0">${mins?mins+'분 동안 했어! ':''}방금 끝낸 것을 찍어 줘. 리딩게이트 완료 화면이나 읽은 책 표지·마지막 쪽이면 돼요.</p>
    <label class="btn" for="pfm">📷 카메라 열기</label><input id="pfm" type="file" accept="image/*" capture="environment" data-proof="${esc(id)}" hidden>
