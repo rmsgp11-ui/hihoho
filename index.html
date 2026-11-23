@@ -230,7 +230,7 @@ function weekBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw,...w.lw);co
 function miniBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw);return`<div class="mini">${w.tw.map(v=>`<i style="height:${(v/mx*100).toFixed(0)}%"></i>`).join('')}</div>`}
 
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='40';
+const APPV='41';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -370,7 +370,7 @@ function timetable(K,t,sch){const pb=promiseBlocks(K,wdOf(t)),me=K===ST.me,wd=wd
     const act=pb.a.map(x=>blk({...x,t:x.t},ra,`ac${x.run?' run':''}`,'',me&&x.run?` data-a="clkTap" data-id="${esc(x.id)}" role="button"`:'')).join('');
     out+=`<div class="tt" style="height:${H.toFixed(1)}px">${lines}<div class="tcol p">${plan}</div><div class="tcol a">${act}</div>${nm>=ra[0]&&nm<=ra[1]?`<i class="tnow" style="top:${((nm-ra[0])*PPM).toFixed(1)}px"></i>`:''}</div>`});
   return`<section class="card" style="gap:8px"><div class="row sp"><h3>오늘 타임테이블</h3></div><div class="thead"><span></span><span>계획</span><span>실제로 한 시간</span></div>${out}
-   ${me&&pb.g.length?'<p class="small mute" style="margin:0">회색 계획을 누르면 시작해요. 앱 약속은 그 앱이 열리고 돌아오면 멈춰요. 하는 중인 주황 칸을 누르면 끝나요.</p>':''}</section>`}
+   ${me&&pb.g.length?'<p class="small mute" style="margin:0">계획을 누르면 시작·끝내기·미루기·인증을 할 수 있어요. 앱 약속은 시작하면 그 앱이 열리고, 돌아오면 멈춰요.</p>':''}</section>`}
 function heroNow(K,t,sch){const pb=promiseBlocks(K,wdOf(t)),nm=nowMin(),run=pb.g.find(x=>x.run),cur=sch.find(x=>{const a=toMin(x.s),b=x.e?toMin(x.e):a+60;return nm>=a&&nm<(b<=a?b+1440:b)}),nx=[...sch,...pb.g.filter(x=>!x.done)].filter(x=>toMin(x.s)>nm).sort((a,b)=>toMin(a.s)-toMin(b.s))[0];
   return`${run&&K===ST.me?`<div class="row" style="justify-content:inherit"><span class="pill" style="background:#ff9f80;color:#3a2a1c">하는 중 · ${esc(run.t)} <b class="tmr" data-acc="${runMs((doneDoc(K,t).run||{})[run.id])-(Date.now()-((doneDoc(K,t).run||{})[run.id]||{}).cur)}" data-s="${((doneDoc(K,t).run||{})[run.id]||{}).cur}"></b></span><button class="btn sm ok" data-a="tEnd" data-id="${esc(run.id)}">■ 끝내기</button></div>`:''}<span class="small">${run?`<b style="color:#e8553a">하는 중 · ${esc(run.t)}</b>`:cur?`지금 · <b>${esc(cur.t)}</b>`:'지금 · 자유 시간'}${nx?` <span class="mute">· 다음 ${esc(nx.s)} ${esc(nx.t)}</span>`:''}</span>${pb.g.length?'<span class="small mute">아래 타임테이블의 회색 칸을 눌러 시작해요.</span>':''}`}
 function todayClock(K,t,sch){const pb=promiseBlocks(K,wdOf(t));pb.g.forEach(x=>x.tap=1);const items=[...sch,...pb.g,...pb.a];if(!items.length)return'';
@@ -441,11 +441,11 @@ async function doMove(id){const K=ST.me,t=today(),i=itemsFor(K,t).find(x=>x.id==
   await writeDone(K,t,dd=>{dd.re=dd.re||{};dd.reN=dd.reN||{};dd.re[id]=at;dd.reN[id]=(dd.reN[id]||0)+1;if(fee){dd.fee=dd.fee||[];dd.fee.push({id,t:i.t,pt:fee,at:Date.now()})}});toast(`오늘 ${at}로 미뤘어요${fee?` (-${fee}P)`:' (무료)'}`)}
 function vToday(){const K=ST.me,t=today(),items=itemsFor(K,t),d=doneDoc(K,t),c=dayCount(K,t),own=d.own||[],p=points(K);
   const allDone=c.pt&&c.pd===c.pt;const sch=((ST.sched[K]&&ST.sched[K].items)||[]).filter(x=>(x.days||[]).includes(wdOf(t))).sort((a,b)=>(a.s||'').localeCompare(b.s||''));
-  return`<section class="card"><div class="hero">${dayClock(K,t,sch,c)}<div style="display:grid;gap:8px"><span class="mute">${fmtD(t)}</span><h1>${esc(name(K))}의 오늘</h1>
-   <div class="row"><span class="pill">${COIN}${p.bal} 포인트</span><span class="pill" style="background:var(--okbg)">오늘 한 일 ${c.all}개</span></div>${heroNow(K,t,sch)}</div></div>
+  return`<section class="card"><div class="hero">${ring(c.pd,c.pt)}<div style="display:grid;gap:8px"><span class="mute">${fmtD(t)}</span><h1>${esc(name(K))}의 오늘</h1>
+   <div class="row"><span class="pill">${COIN}${p.bal} 포인트</span><span class="pill" style="background:var(--okbg)">오늘 한 일 ${c.all}개</span></div></div></div>
    ${allDone?`<div class="done-msg"><span class="jua" style="font-size:22px">오늘 약속 다 지켰어!</span> 스스로 해냈어. 정말 멋져!</div>`:c.pt?`<p class="mute" style="margin:0">약속 ${c.pt-c.pd}개 남았어. 하나씩 지켜 보자!</p>`:''}</section>
   ${timetable(K,t,sch)}
-  <section class="card"><div class="sec">${LOCK} 부모님과 정한 오늘의 약속</div><div class="list">${items.length?sortItems(d,items).map(i=>taskRow(K,i,d,t,true)).join(''):'<div class="empty">오늘은 정한 약속이 없어요</div>'}</div></section>
+  ${(()=>{const un=items.filter(i=>!tmOf(d,i));return un.length?`<section class="card"><div class="sec">${LOCK} 시간 안 정한 약속</div><div class="list">${un.map(i=>taskRow(K,i,d,t,true)).join('')}</div></section>`:(items.length?'':'<section class="card"><div class="empty">오늘은 정한 약속이 없어요</div></section>')})()}
 
   <section class="card"><h3>이번 주 나의 성장</h3>${weekBars(K)}</section>
   ${linkBtns(K)}`}
@@ -690,12 +690,12 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='lockNow'){trust(false);unlocked=false;PIN.mode='enter';return paintPin()}
   if(a==='pinOff'){await save('',D('fam','cfg'),{pin:'',pinOff:true},true);trust(false);unlocked=true;PIN.mode='';paintPin();toast('관리자 비밀번호를 껐어요');return render(true)}
   /* 오늘 */
-  if(a==='tick'){const K=k,t=today(),it=itemsFor(K,t).find(i=>i.id===id);if(!it)return;if(autoOn(doneDoc(K,t),it)&&!(doneDoc(K,t).p||{})[id])return toast('앱에서 끝내서 자동으로 체크됐어요');if(it.proof&&!isAdmin())return toast('타이머와 인증 사진으로 체크돼요');let nowDone=false;await writeDone(K,t,d=>{if(d.p[id])delete d.p[id];else{d.p[id]={pt:+it.pt||0,at:Date.now()};nowDone=true}});
+  if(a==='tick'){if(b.closest('#modal'))$('#modal').innerHTML='';const K=k,t=today(),it=itemsFor(K,t).find(i=>i.id===id);if(!it)return;if(autoOn(doneDoc(K,t),it)&&!(doneDoc(K,t).p||{})[id])return toast('앱에서 끝내서 자동으로 체크됐어요');if(it.proof&&!isAdmin())return toast('타이머와 인증 사진으로 체크돼요');let nowDone=false;await writeDone(K,t,d=>{if(d.p[id])delete d.p[id];else{d.p[id]={pt:+it.pt||0,at:Date.now()};nowDone=true}});
     if(nowDone&&K===ST.me){const c=dayCount(K,t);toast(c.pd===c.pt?'오늘 약속 다 지켰어! 정말 멋져!':`+${+it.pt||0} 포인트! 잘했어`)}return}
-  if(a==='tStart'){return startItem(ST.me,id)}
-  if(a==='tEnd'){return endRun(ST.me,id)}
-  if(a==='clkTap'){const K=ST.me,t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it||isAdmin())return;const d=doneDoc(K,t),r=(d.run||{})[id];
-    if(r&&r.cur)return endRun(K,id);if(isDone(d,it)&&!it.proof)return toast('이미 끝낸 약속이에요');return startItem(K,id)}
+  if(a==='tStart'){$('#modal').innerHTML='';return startItem(ST.me,id)}
+  if(a==='tEnd'){$('#modal').innerHTML='';return endRun(ST.me,id)}
+  if(a==='clkTap'){const K=ST.me,t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it||isAdmin())return;const d=doneDoc(K,t);
+    return openModal(`<h3>${esc(it.t)}</h3><div class="list">${taskRow(K,it,d,t,true)}</div><button class="btn ghost" data-a="closeM">닫기</button>`)}
   if(a==='tMove'){return moveModal(id)}
   if(a==='resetDay'){return openModal(`<h3>${esc(name(k))}의 오늘 기록 초기화</h3><p style="margin:0">오늘 체크, 타이머 시간, 인증, 미루기 기록을 지우고 처음 상태로 돌려요. 받은 포인트도 오늘 것만 빠져요. 스스로 정한 도전은 남아요.</p><div class="row"><button class="btn" data-a="resetGo" data-k="${esc(k)}">초기화</button><button class="btn ghost" data-a="closeM">취소</button></div>`)}
   if(a==='resetGo'){$('#modal').innerHTML='';await writeDone(k,today(),d=>{d.p={};d.run={};d.pf={};d.chk={};d.fee=[];d.re={};d.reN={};d.out={};d.auto={};delete d.box});try{localStorage.removeItem('fam-pending')}catch(e){}return toast(name(k)+'의 오늘 기록을 초기화했어요')}
