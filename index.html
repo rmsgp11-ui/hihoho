@@ -235,7 +235,7 @@ function weekBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw,...w.lw);co
 function miniBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw);return`<div class="mini">${w.tw.map(v=>`<i style="height:${(v/mx*100).toFixed(0)}%"></i>`).join('')}</div>`}
 
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='48';
+const APPV='49';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -618,15 +618,15 @@ function vLetter(){const others=fam().filter(e=>e!==ST.me);if(!others.includes(S
   ${sent.length?`<section class="card"><h3>보낸 편지</h3><div class="list">${sent.map(l=>env(l,'out')).join('')}</div></section>`:''}
   ${isAdmin()?`<section class="card"><div class="row sp"><h3>가족 편지 전체</h3><button class="btn sm ghost" data-a="toggleAll">${ST.showAll?'접기':'보기'}</button></div>${ST.showAll?`<div class="list">${ST.lettersAll.filter(l=>l.to!==ST.me&&l.from!==ST.me).sort((a,b)=>b.at-a.at).map(l=>env(l,'all')).join('')||'<div class="empty">아이들끼리 주고받은 편지가 없어요</div>'}</div>`:''}</section>`:''}`}
 
-function ingHtml(f,v){return`<h3>🥕 ${esc(f.name)} 식재료</h3>${v.serves?`<span class="small mute">${esc(v.serves)} 기준</span>`:''}<div class="list">${(v.items||[]).map(x=>`<label class="rw" style="min-height:44px;cursor:pointer"><input type="checkbox" style="width:22px;height:22px;min-height:0"><span class="nm" style="font-size:17px">${esc(x.n)}</span><span class="small mute">${esc(x.a||'')}</span></label>`).join('')}</div>${v.tip?`<span class="small">💡 ${esc(v.tip)}</span>`:''}<span class="small mute">집에 있는 재료는 체크해 보세요.</span><div class="row"><button class="btn sm ghost" data-a="foodIngRe" data-id="${esc(f.id)}">다시 알아보기</button><button class="btn ghost" data-a="closeM">닫기</button></div>`}
-async function foodIng(id,re){const f=ST.food.find(x=>x.id===id);if(!f)return;let v=!re&&(f.ing||(()=>{try{return JSON.parse(localStorage.getItem('ing-'+id)||'null')}catch(e){return null}})());
-  if(v)return openModal(ingHtml(f,v));openModal(`<h3>🥕 ${esc(f.name)}</h3><p class="mute" style="margin:0">필요한 식재료를 알아보는 중…</p>`);
-  try{const tk=await F.auth.currentUser.getIdToken();const r=await fetch(window.AI_URL,{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tk},body:JSON.stringify({tier:'quick',prompt:`가족이 집에서 만들어 먹고 싶은 음식: "${f.name}". 4인 가족이 집에서 만들 때 필요한 식재료를 장보기 목록으로 알려 줘. 양념·기본 조미료도 포함하고, 양은 대략적으로.
-음식 이름이 아니거나 아이에게 부적절하면 {"error":"off_topic"}.
-JSON만 출력: {"serves":"4인분","items":[{"n":"재료 이름","a":"양 (예: 300g, 2개)"}],"tip":"장보기나 만들기 팁 한 문장 (40자 이내)"}`})});
+function ingHtml(f,v){return`<h3>🥕 ${esc(v.food||f.name)} 식재료</h3>${v.food&&v.food.replace(/\s/g,'')!==String(f.name).replace(/\s/g,'')?`<span class="small mute">「${esc(f.name)}」를 「${esc(v.food)}」로 알아들었어요.</span>`:''}${v.serves?`<span class="small mute">${esc(v.serves)} 기준</span>`:''}<div class="list">${(v.items||[]).map(x=>`<label class="rw" style="min-height:44px;cursor:pointer"><input type="checkbox" style="width:22px;height:22px;min-height:0"><span class="nm" style="font-size:17px">${esc(x.n)}</span><span class="small mute">${esc(x.a||'')}</span></label>`).join('')}</div>${v.tip?`<span class="small">💡 ${esc(v.tip)}</span>`:''}<span class="small mute">집에 있는 재료는 체크해 보세요.</span><div class="row"><button class="btn sm ghost" data-a="foodIngRe" data-id="${esc(f.id)}">다시 알아보기</button><button class="btn ghost" data-a="closeM">닫기</button></div>`}
+async function foodIng(id,re,alt){const f0=ST.food.find(x=>x.id===id);if(!f0)return;const f={...f0,name:alt||f0.name};let v=!re&&(f.ing||(()=>{try{return JSON.parse(localStorage.getItem('ing-'+id)||'null')}catch(e){return null}})());
+  if(v&&!alt)return openModal(ingHtml(f,v));openModal(`<h3>🥕 ${esc(f.name)}</h3><p class="mute" style="margin:0">필요한 식재료를 알아보는 중…</p>`);
+  try{const tk=await F.auth.currentUser.getIdToken();const r=await fetch(window.AI_URL,{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tk},body:JSON.stringify({tier:'quick',prompt:`초등학생이 먹고 싶은 음식을 적었다: "${f.name}". 아이가 써서 맞춤법이 틀리거나 오타, 띄어쓰기 실수, 줄임말, 소리 나는 대로 쓴 글자가 있을 수 있다(예: 떡보끼→떡볶이, 김치찌게→김치찌개, 스파게리→스파게티, 치킨너겟). 가장 가까운 음식 이름으로 알아듣고, 4인 가족이 집에서 만들 때 필요한 식재료를 장보기 목록으로 알려 줘. 양념·기본 조미료도 포함하고, 양은 대략적으로. 사 먹는 음식(예: 피자, 치킨)이어도 집에서 만드는 기준으로 알려 줘.
+도저히 음식으로 알아볼 수 없을 때만 {"error":"unknown"}, 아이에게 부적절하면 {"error":"off_topic"}.
+JSON만 출력: {"food":"알아들은 음식 이름 (맞춤법 고친 것)","serves":"4인분","items":[{"n":"재료 이름","a":"양 (예: 300g, 2개)"}],"tip":"장보기나 만들기 팁 한 문장 (40자 이내)"}`})});
     if(!r.ok)throw{code:'ai_'+r.status};const s2=((await r.json()).text)||'',a=s2.indexOf('{'),b=s2.lastIndexOf('}');v=JSON.parse(s2.slice(a,b+1));if(!v.items)throw{code:v.error||'bad_json'};
     try{localStorage.setItem('ing-'+id,JSON.stringify(v))}catch(e){}F.FS.updateDoc(D('food',id),{ing:v}).catch(()=>{});openModal(ingHtml(f,v))}
-  catch(e){openModal(`<h3>🥕 ${esc(f.name)}</h3><p style="margin:0">식재료를 알아보지 못했어요 (${esc((e&&e.code)||'오류')}).</p><button class="btn ghost" data-a="closeM">닫기</button>`)}}
+  catch(e){const c=(e&&e.code)||'오류';openModal(`<h3>🥕 ${esc(f.name)}</h3><p style="margin:0">${c==='unknown'||c==='off_topic'?'어떤 음식인지 잘 모르겠어요. 음식 이름을 다시 적어 볼까요?':'식재료를 알아보지 못했어요 ('+esc(c)+').'}</p><input id="ingName" maxlength="20" value="${esc(f.name)}" placeholder="예: 떡볶이"><div class="row"><button class="btn" data-a="foodIngName" data-id="${esc(id)}">다시 알아보기</button><button class="btn ghost" data-a="closeM">닫기</button></div>`)}}
 function vFood(){const list=ST.food.slice().sort((a,b)=>(a.done-b.done)||((b.likes||[]).length-(a.likes||[]).length)||(b.at-a.at));
   return`<section class="card"><h3>먹고 싶은 음식 적기</h3><div class="addrow"><input id="foodIn" maxlength="20" placeholder="예: 떡볶이, 엄마표 김밥"><button class="btn sm" data-a="foodAdd">적기</button></div><p class="small mute" style="margin:0">다른 사람이 적은 음식도 먹고 싶으면 "나도!"를 눌러요.</p></section>
   <div class="food">${list.map(f=>{const lk=f.likes||[],me=lk.includes(ST.me),mine=f.by===ST.me;return`<div class="fd ${f.done?'eaten':''}"><div class="row sp" style="flex-wrap:nowrap"><span class="row" style="gap:6px;flex-wrap:nowrap">${av(f.by,28)}<span class="small mute">${esc(name(f.by))} · ${ago(f.at)}</span></span>${mine||isAdmin()?`<button class="x" data-a="foodDel" data-id="${esc(f.id)}" aria-label="지우기">×</button>`:''}</div><span class="nm">${esc(f.name)}</span>
@@ -901,6 +901,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='foodLike'){const f=ST.food.find(x=>x.id===id);if(!f)return;const lk=f.likes||[];return F.FS.updateDoc(D('food',id),{likes:lk.includes(ST.me)?lk.filter(x=>x!==ST.me):[...lk,ST.me]}).catch(()=>toast('저장이 안 됐어요'))}
   if(a==='foodIng'){return foodIng(id)}
   if(a==='foodIngRe'){return foodIng(id,1)}
+  if(a==='foodIngName'){const n=val('ingName');if(!n)return toast('음식 이름을 적어 주세요');return foodIng(id,1,n)}
   if(a==='foodDone'){const f=ST.food.find(x=>x.id===id);if(!f)return;return F.FS.updateDoc(D('food',id),{done:!f.done}).catch(()=>toast('저장이 안 됐어요'))}
   if(a==='foodDel'){return F.FS.deleteDoc(D('food',id)).catch(()=>toast('지우기가 안 됐어요'))}
 });
