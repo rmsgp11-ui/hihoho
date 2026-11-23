@@ -195,7 +195,7 @@ async function boot(){
     AU.onAuthStateChanged(F.auth,u=>{for(const k in SUBS){SUBS[k]();delete SUBS[k]}Object.assign(ST,{me:'',role:'',ready:false,members:{},tpl:{},plan:{},done:{},sched:{},lettersTo:[],lettersFrom:[],lettersAll:[],food:[],redeem:[],bonus:[],selKid:'',selDate:'',selMember:'',justSent:null,openLetter:'',showAll:false,schedDays:null});unlocked=false;PIN.mode='';
       if(!u){gate('');return}
       ST.me=(u.email||'').toLowerCase();$('#full').innerHTML='';
-      sub('members',C('members'),s=>{ST.members={};s.forEach(d=>ST.members[d.id]=d.data());ST.ready=true;const m=ST.members[ST.me];if(m){ST.role=m.role;startRole()}});
+      sub('members',C('members'),s=>{ST.members={};s.forEach(d=>ST.members[d.id]=d.data());ST.ready=true;const m=ST.members[ST.me];if(m){if(ST.role&&ST.role!==m.role){for(const k in SUBS)if(k!=='members'&&k!=='cfg'){SUBS[k]();delete SUBS[k]}}ST.role=m.role;startRole()}else{ST.role='';checkLock()}});
       sub('cfg',D('fam','cfg'),s=>{ST.cfg=Object.assign({rewards:[],ownPt:2,ownMax:3,pin:''},s.exists()?s.data():{});checkLock()});
       render();});
   }catch(e){$('#app').innerHTML='<div class="card"><p>연결이 안 됐어요. 인터넷을 확인하고 새로고침해 주세요.</p></div>'}
@@ -223,7 +223,7 @@ const unread=()=>myLetters().filter(l=>!l.read).length;
 /* ---------- 관리자 잠금 ---------- */
 let unlocked=false,hiddenAt=0,PIN={buf:'',mode:'',first:'',msg:''};
 async function hashPin(x){const t='family:'+x;try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return[...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('')}catch(e){let h=0;for(const c of t)h=(h*31+c.charCodeAt(0))|0;return'h'+h}}
-function checkLock(){if(isAdmin()&&ST.cfg.pin&&!unlocked&&!PIN.mode)PIN.mode='enter';paintPin()}
+function checkLock(){if(!isAdmin()){PIN.mode='';PIN.buf=''}else if(ST.cfg.pin&&!unlocked&&!PIN.mode)PIN.mode='enter';paintPin()}
 function paintPin(){if(!PIN.mode){if($('#full').dataset.pin){$('#full').innerHTML='';delete $('#full').dataset.pin}return}
   const m=PIN.mode,t=m==='enter'?'관리자 비밀번호':m==='create'?'관리자 비밀번호 만들기':'한 번 더 눌러 주세요';
   $('#full').dataset.pin='1';$('#full').innerHTML=`<div class="full"><div class="card"><h2>${t}</h2><p class="mute" style="margin:0">${m==='enter'?'부모님만 들어갈 수 있어요.':'숫자 4자리. 아이들이 모르는 번호로!'}</p><div class="pdots">${[0,1,2,3].map(i=>`<i class="${i<PIN.buf.length?'f':''}"></i>`).join('')}</div><div style="min-height:24px;color:var(--p)">${PIN.msg}</div><div class="pkeys">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-a="pk" data-k="${n}">${n}</button>`).join('')}<button data-a="pkx" style="font-size:16px">${m==='enter'?'':'취소'}</button><button data-a="pk" data-k="0">0</button><button data-a="pkdel" aria-label="지우기">⌫</button></div></div></div>`}
@@ -341,8 +341,8 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='go'){if(location.hash==='#'+b.dataset.v)render(true);else location.hash=b.dataset.v;return}
   if(a==='pickColor'){ST.color=b.dataset.c;document.querySelectorAll('.colors button').forEach(x=>x.classList.toggle('on',x===b));return}
   if(a==='join'){const n=val('jn');if(!n)return toast('이름을 적어 주세요');const c=ST.color||COLORS[Object.keys(ST.members).length%COLORS.length];
-    for(const role of['admin','kid']){try{await F.FS.setDoc(D('members',ST.me),{name:n,color:c,role,at:Date.now()});return}catch(er){}}
-    return toast('가족 목록에 없는 계정이에요')}
+    let role='kid';try{await F.FS.getDoc(D('tpl','__probe__'));role='admin'}catch(er){}
+    try{await F.FS.setDoc(D('members',ST.me),{name:n,color:c,role,at:Date.now()})}catch(er){toast('가족 목록에 없는 계정이에요')}return}
   if(a==='profile'){const m=ST.members[ST.me]||{};ST.color=m.color;return openModal(`<h3>내 정보</h3><span class="small mute">${esc(ST.me)} · ${isAdmin()?'보호자':'아이'}</span><label for="pn">이름</label><input id="pn" maxlength="10" value="${esc(m.name||'')}"><div class="colors">${COLORS.map(x=>`<button style="background:${x}" class="${x===m.color?'on':''}" data-a="pickColor" data-c="${x}" aria-label="색 고르기"></button>`).join('')}</div><div class="row"><button class="btn sm" data-a="profSave">저장</button><button class="btn sm ghost" data-a="logout">로그아웃</button><button class="btn sm ghost" data-a="closeM">닫기</button></div>`)}
   if(a==='profSave'){const n=$('#pn').value.trim();if(!n)return;const m=ST.members[ST.me];await save('',D('members',ST.me),{...m,name:n,color:ST.color||m.color});$('#modal').innerHTML='';return}
   if(a==='closeM'){$('#modal').innerHTML='';return}
