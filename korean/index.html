@@ -742,7 +742,7 @@ async function feedback(text){
       { modelTier: "quick" });
     S.fb = r;
     $("#ai").innerHTML = `<div class="note ok"><b>선생님 한마디 ${"★".repeat(Math.max(1, Math.min(3, r.stars | 0)))}</b><br>👍 ${esc(r.good)}<br>✏️ ${esc(r.tip)}<br><span class="muted">고쳐 보면: ${esc(r.better)}</span></div>`;
-  } catch (e) { $("#ai").textContent = ""; }
+  } catch (e) { $("#ai").textContent = "선생님 한마디를 이번엔 못 받아 왔어요 (" + ((e && e.code) || "오류") + ")"; }
 }
 
 // 3. 꼼꼼 읽기 (조건 낱말에 동그라미 → 답 고르기)
@@ -2286,7 +2286,7 @@ function aiShim(){ return { json: async (prompt, o) => {
   const t = await u.getIdToken();
   const r = await fetch(window.AI_URL, { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + t }, body: JSON.stringify({ prompt, tier: (o && o.modelTier) === "quick" ? "quick" : "default" }) });
   if (r.status === 429) throw { code: "rate_limited" };
-  if (!r.ok) throw { code: "ai_" + r.status };
+  if (!r.ok){ let d = ""; try { d = (await r.json()).error || ""; } catch (x) {} throw { code: "ai_" + r.status + (d ? "_" + d : "") }; }
   const s = ((await r.json()).text) || "", a = s.search(/[\[{]/), b = Math.max(s.lastIndexOf("}"), s.lastIndexOf("]"));
   if (a < 0 || b < a) throw { code: "bad_json" };
   const v = JSON.parse(s.slice(a, b + 1)); if (v && v.error === "off_topic") throw { code: "off_topic" };
