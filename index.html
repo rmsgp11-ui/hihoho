@@ -234,7 +234,7 @@ function weekBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw,...w.lw);co
 function miniBars(K){const w=weekData(K);const mx=Math.max(1,...w.tw);return`<div class="mini">${w.tw.map(v=>`<i style="height:${(v/mx*100).toFixed(0)}%"></i>`).join('')}</div>`}
 
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='45';
+const APPV='46';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -651,14 +651,14 @@ function learnPrompt(K){const f=learnFacts(K),L=[];
   if(f.kb)f.kb.forEach(x=>L.push(`[국어 문제집 한 문장] ${x.d} 「${x.k.title||''}」 별 ${x.k.stars||'-'}: ${x.k.sum.slice(0,120)}`));
   if(f.doh)L.push(`[수학 도형교실] 수업 ${f.doh.done}/24개 완료, 별 ${f.doh.stars}/72. 한 번에 맞힌 비율 ${f.doh.first??'-'}%, 공간(이동) 문제 ${f.doh.spatial??'-'}%, 틀린 문제 중 3초 안에 찍은 비율 ${f.doh.quick??'-'}%. ${f.doh.wkNow?`지금 ${f.doh.wkNow}주차, 진도 ${f.doh.nextW}주차.`:''} 약한 유형: ${f.doh.weak.map(x=>x.k+' '+x.p+'%').join(', ')||'없음'}. 잘하는 유형: ${f.doh.strong.map(x=>x.k+' '+x.p+'%').join(', ')||'-'}.`);
   if(f.gug)L.push(`[수학 구구단] 최근 7일 중 ${f.gug.days}일, 문제 ${f.gug.week}개. 60초 스피드 최고 ${f.gug.best}개. 자주 틀린 곱셈: ${f.gug.weak.join(', ')||'없음'}.`);
-  L.push(`[생활 약속] 이번 주 약속·도전 ${f.fam.ts}개 (지난주 ${f.fam.ls}개).`);
+  {const h=habitFacts(K,monday(today()));L.push(`[생활 약속] 이번 주 약속 지킴 ${h.pd}/${h.pt}, 제시간 시작 ${h.ontime}/${h.timed}${h.lateN?`(늦을 때 평균 ${h.lateAvg}분)`:''}, 미룬 약속 ${h.moves}번, 실행 시간 ${h.mins}분.${h.missed.length?' 자주 놓친 약속: '+h.missed.map(x=>x.t+' '+x.done+'/'+x.n).join(', ')+'.':''}${h.late.length?' 늦게 시작한 약속: '+h.late.map(x=>x.t+' 평균 '+x.avg+'분').join(', ')+'.':''} 이번 주 한 일 ${f.fam.ts}개 (지난주 ${f.fam.ls}개).`)}
   return`너는 초등학생의 국어·영어·수학 학습을 보는 따뜻하고 전문적인 학습 코치다. 아래는 가족 학습 앱에 쌓인 아이의 최근 기록이다. 보호자에게 줄 학습 피드백을 써라.
 기록에 있는 사실만 근거로 쓰고, 기록이 없는 과목은 subjects에 넣지 마라. 숫자를 그대로 나열하지 말고 의미를 풀어 말해라. 보호자에게는 존댓말, 아이에게 하는 말(toKid)은 다정한 반말.
 
 ${L.join('\n')}
 
 반드시 아래 JSON만 출력해. 각 문장 70자 이내.
-{"headline":"이번 기록을 한 문장으로","subjects":[{"name":"국어 또는 수학 또는 영어","good":"잘하고 있는 점","worry":"살펴볼 점","todo":"집에서 이번 주에 해 볼 구체적인 한 가지"}],"habit":"공부 습관에 대한 한 문장","toKid":"아이에게 전할 칭찬 한마디"}`}
+{"headline":"이번 기록을 한 문장으로","subjects":[{"name":"국어 또는 수학 또는 영어 또는 생활 습관","good":"잘하고 있는 점","worry":"살펴볼 점","todo":"집에서 이번 주에 해 볼 구체적인 한 가지"}],"habit":"공부 습관에 대한 한 문장","toKid":"아이에게 전할 칭찬 한마디"}`}
 async function askLearnAI(K){const L=ST.learn[K];if(!L||L.ai)return;if(!window.AI_URL)return toast('AI 연결 주소가 없어요');L.ai='busy';L.aiErr='';render(true);
   try{const t=await F.auth.currentUser.getIdToken();const r=await fetch(window.AI_URL,{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+t},body:JSON.stringify({prompt:learnPrompt(K),tier:'default'})});
     if(!r.ok){let e='';try{e=(await r.json()).error||''}catch(x){}throw{code:'ai_'+r.status+(e?'_'+e:'')}}
@@ -690,6 +690,31 @@ const SEC_DOH=f=>{const d=f.doh,st=(v,l)=>`<div class="rw" style="min-height:40p
  ${d.all.length?`<div class="sec">약한 부분 (낮은 순)</div><div class="list">${d.all.map(x=>`<div class="rw" style="min-height:38px"><span class="nm" style="font-size:15px;font-family:'Gowun Dodum'">${esc(x.k)}</span><span style="flex:1;min-width:60px;height:10px;border-radius:5px;background:var(--line);overflow:hidden"><i style="display:block;height:100%;width:${x.p}%;background:${x.p<60?'var(--p)':x.p<80?'var(--y)':'var(--ok)'}"></i></span><b class="jua" style="font-size:16px">${x.p}%</b></div>`).join('')}</div><span class="small mute">2문제 이상 푼 영역만 보여요. 60% 아래는 실험실에서 다시 해 보게 해 주세요.</span>`:''}
  ${d.log.length?`<div class="sec">최근에 틀린 문제</div><div class="list">${d.log.map(r=>`<div class="env" style="cursor:default"><span class="small mute">${esc((r.d||'').slice(5).replace('-','/'))} · ${r.l}강 · ${esc(KNAME[r.k]||r.k||'')}${r.quick?' · <b style="color:var(--p)">3초 안에 찍음</b>':''}</span><span style="font-size:16px">${esc(String(r.q||'').replace(/<[^>]*>/g,''))}</span></div>`).join('')}</div>`:''}</section>`};
 const SEC_GUG=f=>`${f.gug?`<section class="card"><h3>수학 · 구구단</h3><span>최근 7일 중 <b>${f.gug.days}일</b> · 문제 <b>${f.gug.week}개</b> · 스피드 최고 <b>${f.gug.best}개</b></span>${f.gug.weak.length?`<span class="small">자주 틀린 곱셈: ${f.gug.weak.map(esc).join(', ')}</span>`:''}</section>`:''}`;
+/* ---------- 생활 습관 (보호자용 주간 요약) ---------- */
+function habitFacts(K,ws){const t=today(),o={pd:0,pt:0,timed:0,ontime:0,lateSum:0,lateN:0,moves:0,mins:0,days:[],items:{}};
+  for(let i=0;i<7;i++){const d0=addDays(ws,i);if(d0>t)break;const d=doneDoc(K,d0),used=!!(ST.done[K]&&ST.done[K][d0]);const it=countItems(K,d0);let dn=0;
+    if(!used&&d0<t){o.days.push({d:d0,dn:0,n:it.length,none:1});continue}
+    it.forEach(x=>{const r=o.items[x.t]=o.items[x.t]||{n:0,done:0,late:0,lateSum:0,moves:0};r.n++;const ok=isDone(d,x);if(ok){r.done++;dn++}
+      const tm=tmOf(d,x),rr=(d.run||{})[x.id],s0=rr&&rr.segs&&rr.segs.length?sg(rr.segs[0]):(rr&&rr.cur?{s:rr.cur}:null);
+      if(tm&&s0){o.timed++;const st=new Date(s0.s),lm=st.getHours()*60+st.getMinutes()-toMin(x.at||tm);if(lm<=10)o.ontime++;else{o.lateSum+=lm;o.lateN++;r.late++;r.lateSum+=lm}}o.mins+=Math.round(runMs(rr)/60000)});
+    (d.fee||[]).forEach(f=>{o.moves++;const r=o.items[f.t]=o.items[f.t]||{n:0,done:0,late:0,lateSum:0,moves:0};r.moves++});
+    o.pd+=dn;o.pt+=it.length;o.days.push({d:d0,dn,n:it.length})}
+  o.lateAvg=o.lateN?Math.round(o.lateSum/o.lateN):0;
+  const L=Object.entries(o.items).map(([t,r])=>({t,...r,rate:r.n?r.done/r.n:1}));
+  o.missed=L.filter(x=>x.n&&x.done<x.n).sort((a,b)=>a.rate-b.rate||b.n-a.n).slice(0,3);
+  o.late=L.filter(x=>x.late).sort((a,b)=>b.lateSum/b.late-a.lateSum/a.late).slice(0,3).map(x=>({...x,avg:Math.round(x.lateSum/x.late)}));
+  o.moved=L.filter(x=>x.moves).sort((a,b)=>b.moves-a.moves).slice(0,3);return o}
+function habitCard(K){const ws=monday(today()),h=habitFacts(K,ws),p=habitFacts(K,addDays(ws,-7));if(!h.pt&&!p.pt)return'';
+  const pct=(a,b)=>b?Math.round(a/b*100):0,cmp=pct(h.pd,h.pt)-pct(p.pd,p.pt);
+  return`<section class="card"><div class="row sp"><h3>생활 습관 · 이번 주</h3><span class="small mute">월요일부터 오늘까지</span></div>
+   <div class="list">
+    <div class="rw" style="min-height:40px"><span class="nm" style="font-size:16px;font-family:'Gowun Dodum'">약속 지킴</span><b class="jua">${h.pd}/${h.pt}</b><span class="small mute">${pct(h.pd,h.pt)}%${p.pt?` · 지난주 ${pct(p.pd,p.pt)}% ${cmp>0?'<b style="color:var(--ok)">▲'+cmp+'</b>':cmp<0?'<b style="color:var(--p)">▼'+(-cmp)+'</b>':''}`:''}</span></div>
+    ${h.timed?`<div class="rw" style="min-height:40px"><span class="nm" style="font-size:16px;font-family:'Gowun Dodum'">제시간 시작 (10분 안)</span><b class="jua">${h.ontime}/${h.timed}</b><span class="small mute">${h.lateN?`늦을 땐 평균 ${h.lateAvg}분`:'모두 제시간'}</span></div>`:''}
+    <div class="rw" style="min-height:40px"><span class="nm" style="font-size:16px;font-family:'Gowun Dodum'">미룬 약속</span><b class="jua" style="color:${h.moves?'var(--p)':'var(--ok)'}">${h.moves}번</b><span class="small mute">실행 시간 ${h.mins}분</span></div></div>
+   <div class="chips">${h.days.map(x=>`<span class="chip" style="cursor:default;min-height:34px;font-size:14px;${x.none?'opacity:.5':''}">${WD[wdOf(x.d)]} ${x.none?'안 씀':x.dn+'/'+x.n}</span>`).join('')}</div>
+   ${h.missed.length?`<span class="small"><b>자주 놓친 약속:</b> ${h.missed.map(x=>`${esc(x.t)} ${x.done}/${x.n}`).join(', ')}</span>`:''}
+   ${h.late.length?`<span class="small"><b>늦게 시작한 약속:</b> ${h.late.map(x=>`${esc(x.t)} (평균 ${x.avg}분 늦음)`).join(', ')}</span>`:''}
+   ${h.moved.length?`<span class="small"><b>자주 미룬 약속:</b> ${h.moved.map(x=>`${esc(x.t)} ${x.moves}번`).join(', ')}</span>`:''}</section>`}
 function vLearn(){const ks=kids();if(!ks.length)return'<div class="card"><p style="margin:0">아이가 아직 등록되지 않았어요.</p></div>';
   if(!ks.includes(ST.selKid))ST.selKid=ks[0];const K=ST.selKid;loadLearn(K);const L=ST.learn[K]||{loading:1};
   const chips=`<div class="chips">${ks.map(k=>`<button class="chip ${k===K?'on':''}" data-a="selKid" data-k="${esc(k)}"><span class="dot" style="background:${color(k)}"></span>${esc(name(k))}</button>`).join('')}</div>`;
@@ -700,11 +725,15 @@ function vLearn(){const ks=kids();if(!ks.length)return'<div class="card"><p styl
    <p class="small mute" style="margin:0">${esc(name(K))}의 국어·수학 기록을 모아 Claude가 보호자용 피드백을 써요. 받은 피드백은 아래에 쌓여요.</p>
    <button class="btn" data-a="learnAI" ${L.ai||!any?'disabled':''}>${L.ai?'Claude 선생님이 기록을 읽는 중…':'새 피드백 받기'}</button>${L.aiErr?`<span class="small" style="color:var(--p)">피드백을 못 받았어요 (${esc(L.aiErr)}). 잠시 뒤 다시 눌러 주세요.</span>`:''}
    ${h[0]?fbCard(h[0],true):''}</section>
+  ${habitCard(K)}
   ${appSections(K,f,L)}
   ${h.length>1?`<section class="card"><h3>지난 피드백</h3><div class="list">${h.slice(1).map(x=>fbCard(x,ST.fbOpen===x.id)).join('')}</div></section>`:''}`}
 /* ---------- 동작 ---------- */
 const val=id=>{const e=$('#'+id);return e?e.value.trim():''};
-async function writeDone(K,date,mut){const d=JSON.parse(JSON.stringify(doneDoc(K,date)));d.p=d.p||{};d.own=d.own||[];mut(d);d.date=date;d.who=K;await save('',D('done',K,'days',date),d)}
+async function writeDone(K,date,mut){const ref=D('done',K,'days',date),prep=x=>{const d=JSON.parse(JSON.stringify(x||{}));d.p=d.p||{};d.own=d.own||[];return d};
+  if(F.FS.runTransaction){try{await F.FS.runTransaction(F.db,async tx=>{const sn=await tx.get(ref);const d=prep(sn.exists()?sn.data():doneDoc(K,date));mut(d);d.date=date;d.who=K;tx.set(ref,JSON.parse(JSON.stringify(d)))});return}
+    catch(e){if(e&&e.code==='permission-denied')return toast('저장이 안 됐어요 (permission-denied)');if(e&&e.code==='invalid-argument')return toast('저장이 안 됐어요 (invalid-argument)')}}
+  const d=prep(doneDoc(K,date));mut(d);d.date=date;d.who=K;await save('',ref,d)}
 const APPURL=()=>location.href.split('#')[0];
 function ensureTopic(){const m=ST.members[ST.me];if(m&&!m.nt&&!ensureTopic.busy){ensureTopic.busy=1;F.FS.setDoc(D('members',ST.me),{...m,nt:'wg-'+uid()+uid()}).catch(()=>{}).finally(()=>ensureTopic.busy=0)}}
 async function push(to,title,message,quiet){const list=(Array.isArray(to)?to:[to]).filter(e=>ST.members[e]&&ST.members[e].nt&&!ST.members[e].mute);
