@@ -110,7 +110,7 @@ export default {
       await env.KV.put("tx:" + id, JSON.stringify({ id, at, amt, merchant, card: String(b.card ?? b.카드 ?? "").slice(0, 30), cat, acct: String(b.acct ?? b.통장 ?? "").slice(0, 20) }), { expirationTtl: 60 * 60 * 24 * 60 });
       return plain({ ok: true, amt, merchant, cat });
     }
-    if (req.method !== "POST") return J({ ok: true, v: "6-acct" });
+    if (req.method !== "POST") return J({ ok: true, v: "7-remind" });
     if (req.headers.get("origin") !== ORIGIN) return J({ error: "origin" }, 403);
     let em;
     try { em = await verify((req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "")); } catch (e) { return J({ error: "auth" }, 401); }
@@ -124,6 +124,26 @@ export default {
       if ((await req.clone().json().catch(() => ({}))).ack) for (const k of list.keys) await env.KV.delete(k.name);
       let log = null; try { log = JSON.parse(await env.KV.get("log:last") || "null"); } catch (e) {}
       return J({ items, log });
+    }
+    if (url.pathname === "/remind/sync"){
+      // 부모가 아이별 약속 시간표와 알림 주소를 맡겨 둠 → 5분마다 도는 예약 작업이 시간 맞춰 알림을 보냄
+      if (!env.KV) return J({ error: "no_kv" }, 500);
+      if (!ADMIN.includes(await sha(em))) return J({ error: "not_admin" }, 403);
+      let b = {}; try { b = await req.json(); } catch (e) {}
+      const kids = (Array.isArray(b.kids) ? b.kids : []).slice(0, 6).map(k => ({ topic: String(k.topic || "").slice(0, 80), name: String(k.name || "").slice(0, 20),
+        items: (Array.isArray(k.items) ? k.items : []).slice(0, 60).map(i => ({ t: String(i.t || "").slice(0, 40), at: String(i.at || "").slice(0, 5), days: (i.days || []).map(Number).filter(d => d >= 0 && d < 7) })).filter(i => /^\d\d:\d\d$/.test(i.at)),
+        dated: (Array.isArray(k.dated) ? k.dated : []).slice(0, 60).map(i => ({ t: String(i.t || "").slice(0, 40), at: String(i.at || "").slice(0, 5), d: String(i.d || "").slice(0, 10) })).filter(i => /^\d\d:\d\d$/.test(i.at)) })).filter(k => k.topic);
+      const cfg = { on: b.on !== false, lead: Math.max(0, Math.min(30, +b.lead || 5)), kids, url: String(b.url || "").slice(0, 200), at: Date.now() };
+      await env.KV.put("remind", JSON.stringify(cfg));
+      return J({ ok: true, kids: kids.length, items: kids.reduce((a, k) => a + k.items.length + k.dated.length, 0) });
+    }
+    if (url.pathname === "/remind/own"){
+      // 아이가 직접 넣은 「내 계획」(오늘·내일)도 알림 받게 맡겨 둠
+      if (!env.KV) return J({ error: "no_kv" }, 500);
+      let b = {}; try { b = await req.json(); } catch (e) {}
+      const v = { topic: String(b.topic || "").slice(0, 80), dated: (Array.isArray(b.dated) ? b.dated : []).slice(0, 40).map(i => ({ t: String(i.t || "").slice(0, 40), at: String(i.at || "").slice(0, 5), d: String(i.d || "").slice(0, 10) })).filter(i => /^\d\d:\d\d$/.test(i.at)) };
+      await env.KV.put("ro:" + (await sha(em)).slice(0, 16), JSON.stringify(v), { expirationTtl: 60 * 60 * 24 * 3 });
+      return J({ ok: true, n: v.dated.length });
     }
     if (url.pathname === "/ack"){
       if (!env.KV) return J({ error: "no_kv" }, 500);
@@ -150,5 +170,26 @@ export default {
     if (!r.ok) return J({ error: "upstream", status: r.status, detail: (await r.text()).slice(0, 300) }, 502);
     const d = await r.json();
     return J({ text: (d.content || []).filter(c => c.type === "text").map(c => c.text).join("") });
+  },
+  // Cloudflare 예약 작업(Cron "*/5 * * * *")이 5분마다 부름: 곧 시작할 약속을 아이 폰에 알림
+  async scheduled(ev, env){
+    if (!env.KV) return;
+    let C = null; try { C = JSON.parse(await env.KV.get("remind") || "null"); } catch (e) {}
+    if (!C || !C.on || !Array.isArray(C.kids)) return;
+    const k = new Date(Date.now() + 9 * 3600e3), wd = k.getUTCDay(), date = k.toISOString().slice(0, 10), now = k.getUTCHours() * 60 + k.getUTCMinutes();
+    const lead = +C.lead || 5, toMin = s => +s.slice(0, 2) * 60 + +s.slice(3, 5);
+    const kids = C.kids.map(x => ({ ...x, dated: [...(x.dated || [])] }));
+    try { const L = await env.KV.list({ prefix: "ro:" }); for (const k2 of L.keys){ const v = JSON.parse(await env.KV.get(k2.name) || "null"); if (!v || !v.topic) continue; const kd = kids.find(x => x.topic === v.topic); if (kd) kd.dated.push(...v.dated); } } catch (e) {}
+    for (const kid of kids){
+      const due = [...kid.items.filter(i => i.days.includes(wd)), ...(kid.dated || []).filter(i => i.d === date)]
+        .filter(i => { const m = toMin(i.at) - lead; return m >= now - 2 && m < now + 3; });
+      for (const i of due){
+        const key = "rs:" + date + ":" + kid.topic.slice(-6) + ":" + i.at + ":" + i.t;
+        if (await env.KV.get(key)) continue;
+        await env.KV.put(key, "1", { expirationTtl: 60 * 60 * 26 });
+        const h = toMin(i.at), hh = Math.floor(h / 60), mm = h % 60, when = `${hh < 12 ? "오전" : "오후"} ${hh % 12 || 12}:${String(mm).padStart(2, "0")}`;
+        try { await fetch("https://ntfy.sh/", { method: "POST", body: JSON.stringify({ topic: kid.topic, title: lead ? `⏰ ${lead}분 뒤 「${i.t}」` : `⏰ 「${i.t}」 할 시간이야`, message: `${when}에 시작해요. 앱에서 ▶ 시작을 눌러 줘!`, click: C.url || undefined, tags: ["alarm_clock"], priority: 4 }) }); } catch (e) {}
+      }
+    }
   },
 };
