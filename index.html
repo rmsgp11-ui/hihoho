@@ -256,7 +256,7 @@ window.famShop={ledger:async a=>{if(!isAdmin())return'not-admin';await ledAdd((A
   report:async o=>{if(!isAdmin())return'not-admin';const clean=a=>(Array.isArray(a)?a:[]).slice(0,40).map(x=>({n:String(x.n||'').slice(0,40),product:String(x.product||'').slice(0,80),price:+x.price||0,ok:!!x.ok}));
     await save('',D('fam','cart'),{shop:{at:Date.now(),coupang:clean(o&&o.coupang),kurly:clean(o&&o.kurly),total:+(o&&o.total)||0,notes:String((o&&o.notes)||'').slice(0,300)},req:null},true);return'saved'}};
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='62';
+const APPV='63';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -677,12 +677,12 @@ const ledKey=ym=>'ledger_'+ym;
 function ledSub(ym){ST.led=ST.led||{};sub('led'+ym,D('fam',ledKey(ym)),s=>{ST.led[ym]=(s.exists()&&s.data().items)||[]})}
 async function ledAdd(list){const by={};list.forEach(e=>{const ym=e.d.slice(0,7);(by[ym]=by[ym]||[]).push({id:'l'+uid(),at:Date.now(),by:ST.me,...e})});
   for(const ym of Object.keys(by)){let cur=[];try{const sn=await F.FS.getDoc(D('fam',ledKey(ym)));cur=(sn.exists()&&sn.data().items)||[]}catch(e){cur=(ST.led&&ST.led[ym])||[]}const add=[],near=(a,b)=>a.src!==b.src&&(a.src==='pay'||b.src==='pay')&&(a.kind||'out')==='out'&&(b.kind||'out')==='out'&&+a.amt===+b.amt&&Math.abs((+a.at||0)-(+b.at||0))<20*60000;by[ym].forEach(e=>{if(e.tx&&cur.some(c=>c.tx===e.tx))return;if((e.src==='sms'||e.src==='pay')&&[...cur,...add].some(c=>near(c,e)))return;add.push(e)});if(add.length)await save('',D('fam',ledKey(ym)),{items:[...cur,...add]})}}
-async function pullPay(){if(!isAdmin()||!window.AI_URL||pullPay.busy||Date.now()-(pullPay.last||0)<20000)return;pullPay.busy=1;pullPay.last=Date.now();
-  try{const tk=await F.auth.currentUser.getIdToken(),base=window.AI_URL.replace(/\/$/,'');const r=await fetch(base+'/pull',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tk},body:'{}'});if(!r.ok)return;const L=((await r.json()).items)||[];if(!L.length)return;
+async function pullPay(force){if(!isAdmin()||!window.AI_URL||pullPay.busy||(!force&&Date.now()-(pullPay.last||0)<20000))return;pullPay.busy=1;pullPay.last=Date.now();const stat=(o)=>{ST.payStat={at:Date.now(),...o};if(view()==='ledger')render(true)};
+  try{const tk=await F.auth.currentUser.getIdToken(),base=window.AI_URL.replace(/\/$/,'');const r=await fetch(base+'/pull',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tk},body:'{}'});if(!r.ok){let m='';try{m=(await r.json()).error||''}catch(e){}stat({err:'서버 응답 '+r.status+(m?' · '+m:'')});return}const L=((await r.json()).items)||[];if(!L.length){stat({n:0});if(force)toast('새로 들어온 입출금이 없어요');return}
     L.sort((a,b)=>a.at-b.at);
     await ledAdd(L.map(x=>{const sms=x.src==='sms',inn=x.kind==='in';return{d:ds(new Date(x.at)),at:+x.at||Date.now(),n:x.merchant||(sms?(inn?'입금':'출금'):'애플페이 결제'),amt:+x.amt||0,cat:inn?'입금':x.cat==='식재료'?'식재료':'그 외',src:sms?'sms':'pay',kind:inn?'in':'out',tx:x.id}}));
     const lb=L.filter(x=>x.bal!=null&&!isNaN(+x.bal)).pop();if(lb&&(!ST.cfg.bal||ST.cfg.bal.at<lb.at))await save('',D('fam','cfg'),{bal:{amt:+lb.bal,at:+lb.at,src:'sms'}},true);
-    await fetch(base+'/ack',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tk},body:JSON.stringify({ids:L.map(x=>x.id)})});const nS=L.filter(x=>x.src==='sms').length,nP=L.length-nS;toast([nS?`🏦 통장 입출금 ${nS}건`:'',nP?`💳 애플페이 결제 ${nP}건`:''].filter(Boolean).join(', ')+'을 가계부에 넣었어요')}catch(e){}finally{pullPay.busy=0}}
+    await fetch(base+'/ack',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tk},body:JSON.stringify({ids:L.map(x=>x.id)})});const nS=L.filter(x=>x.src==='sms').length,nP=L.length-nS;stat({n:L.length});toast([nS?`🏦 통장 입출금 ${nS}건`:'',nP?`💳 애플페이 결제 ${nP}건`:''].filter(Boolean).join(', ')+'을 가계부에 넣었어요')}catch(e){stat({err:'가져오기 실패 · '+((e&&(e.code||e.message))||e)})}finally{pullPay.busy=0}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(pullPay,1500)});
 function boughtModal(ids){const L=(ST.cart||[]).filter(c=>ids.includes(c.id));if(!L.length)return;ST.buyIds=ids;ST.buyWhere=ST.buyWhere||'마트';
   openModal(`<h3>🧾 가계부에 적을까요?</h3><span class="small mute">${L.map(c=>esc(c.n)).join(', ')}</span><label>쓴 돈 (원)<input id="buyAmt" type="number" inputmode="numeric" min="0" placeholder="예: 12800"></label>
@@ -697,7 +697,8 @@ function vLedger(){const t=today(),ym=ST.ledYM||t.slice(0,7);ledSub(ym);const pr
    ${BA?`<div style="font-size:34px;font-weight:800;line-height:1.1;color:${cur<0?'var(--p)':'var(--ok)'}">${cur<0?'-':''}${won(Math.abs(cur))}</div>
    <div class="row sp small"><span>${BA.src==='sms'?'🏦 통장 문자 기준':'직접 맞춘 잔고'} · ${fmtD(ds(new Date(BA.at)))} ${new Date(BA.at).toTimeString().slice(0,5)} ${won(BA.amt)}${spentS||inS?'에서':''}</span></div>
    <div class="row" style="gap:8px"><span class="pill">쓴 돈 −${won(spentS)} (${since.filter(e=>e.cat!=='입금').length}건)</span>${inS?`<span class="pill" style="background:var(--okbg)">들어온 돈 +${won(inS)}</span>`:''}</div>
-   ${BA.src==='sms'?'':`<span class="small mute">이체·월급·실물 카드 결제처럼 자동으로 안 들어오는 게 있으면 숫자가 달라져요. 그럴 땐 「잔고 맞추기」를 누르거나, 아래 「적기」에서 「입금」으로 적어 주세요.</span>`}`:''}</section>`:'';
+   ${BA.src==='sms'?'':`<span class="small mute">이체·월급·실물 카드 결제처럼 자동으로 안 들어오는 게 있으면 숫자가 달라져요. 그럴 땐 「잔고 맞추기」를 누르거나, 아래 「적기」에서 「입금」으로 적어 주세요.</span>`}`:''}
+   <div class="row sp" style="gap:6px;flex-wrap:nowrap"><span class="small mute">${ST.payStat?(ST.payStat.err?`<span style="color:var(--p)">⚠ ${esc(ST.payStat.err)}</span>`:`자동 기록 확인 ${new Date(ST.payStat.at).toTimeString().slice(0,5)} · ${ST.payStat.n?`새 ${ST.payStat.n}건 넣음`:'새로 온 것 없음'}`):'자동 기록 확인 전'}</span><button class="chip" data-a="payPull" style="min-height:32px;font-size:13px;white-space:nowrap">지금 가져오기</button></div></section>`:'';
   return`${budCard}<section class="card"><div class="row sp"><button class="btn sm ghost" data-a="ledMove" data-v="-1" aria-label="이전 달">‹</button><h3>${y}년 ${mo}월 가계부</h3><button class="btn sm ghost" data-a="ledMove" data-v="1" aria-label="다음 달">›</button></div>
    <div class="row" style="gap:8px"><span class="pill">이번 달 ${won(tot)}</span>${ym===t.slice(0,7)?`<span class="pill" style="background:var(--okbg)">이번 주 ${won(sum(wk))}</span>`:''}${P.length?`<span class="small mute">지난달 ${won(sum(P))}</span>`:''}</div>
    ${Object.keys(cats).length?`<div class="chips">${Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<span class="chip" style="cursor:default">${esc(k)} ${won(v)}</span>`).join('')}</div>`:''}
@@ -961,6 +962,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='rwAdd'){const n=val('rwN'),c=+val('rwC')||0;if(!n||!c)return toast('이름과 포인트를 적어 주세요');const rewards=[...(ST.cfg.rewards||[]),{id:'r'+uid(),name:n,cost:c}];$('#rwN').value='';await save('',D('fam','cfg'),{rewards},true);return render(true)}
   if(a==='rwDel'){return save('',D('fam','cfg'),{rewards:(ST.cfg.rewards||[]).filter(r=>r.id!==id)},true)}
   if(a==='rOk'||a==='rNo'){return F.FS.updateDoc(D('redeem',id),{status:a==='rOk'?'ok':'no',doneAt:Date.now(),doneBy:ST.me}).catch(()=>toast('저장이 안 됐어요'))}
+  if(a==='payPull'){pullPay.busy=0;return pullPay(true)}
   if(a==='budEdit'){ST.budEdit=!ST.budEdit;return render(true)}
   if(a==='balSave'){const v=Math.round(+val('balIn'));if(!val('balIn')||isNaN(v))return toast('잔액을 적어 주세요');await save('',D('fam','cfg'),{bal:{amt:v,at:Date.now()}},true);ST.budEdit=false;toast('잔고를 맞췄어요. 이제부터 결제하면 여기서 빠져요');return render(true)}
   if(a==='cfgSave'){await save('',D('fam','cfg'),{ownPt:Math.max(0,+val('cOwn')||0),ownMax:Math.max(0,+val('cMax')||0)},true);return toast('저장했어요')}
