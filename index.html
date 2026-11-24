@@ -240,7 +240,7 @@ window.famShop={list:()=>({ok:isAdmin(),req:ST.cartReq||null,items:(ST.cart||[])
   report:async o=>{if(!isAdmin())return'not-admin';const clean=a=>(Array.isArray(a)?a:[]).slice(0,40).map(x=>({n:String(x.n||'').slice(0,40),product:String(x.product||'').slice(0,80),price:+x.price||0,ok:!!x.ok}));
     await save('',D('fam','cart'),{shop:{at:Date.now(),coupang:clean(o&&o.coupang),kurly:clean(o&&o.kurly),total:+(o&&o.total)||0,notes:String((o&&o.notes)||'').slice(0,300)},req:null},true);return'saved'}};
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='54';
+const APPV='55';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -555,7 +555,7 @@ function todayStrip(sch,K,date){const pb=K?promiseBlocks(K,wdOf(date)):{g:[],a:[
 /* ---------- 달력 ---------- */
 const HOL={"2026-01-01": "신정", "2026-02-16": "설날 연휴", "2026-02-17": "설날", "2026-02-18": "설날 연휴", "2026-03-01": "삼일절", "2026-03-02": "대체공휴일", "2026-05-01": "노동절", "2026-05-05": "어린이날", "2026-05-24": "부처님오신날", "2026-05-25": "대체공휴일", "2026-06-03": "지방선거일", "2026-06-06": "현충일", "2026-07-17": "제헌절", "2026-08-15": "광복절", "2026-08-17": "대체공휴일", "2026-09-24": "추석 연휴", "2026-09-25": "추석", "2026-09-26": "추석 연휴", "2026-10-03": "개천절", "2026-10-05": "대체공휴일", "2026-10-09": "한글날", "2026-12-25": "성탄절", "2027-01-01": "신정", "2027-02-06": "설날 연휴", "2027-02-07": "설날", "2027-02-08": "설날 연휴", "2027-02-09": "대체공휴일", "2027-03-01": "삼일절", "2027-05-01": "노동절", "2027-05-03": "대체공휴일", "2027-05-05": "어린이날", "2027-05-13": "부처님오신날", "2027-06-06": "현충일", "2027-07-17": "제헌절", "2027-07-19": "대체공휴일", "2027-08-15": "광복절", "2027-08-16": "대체공휴일", "2027-09-14": "추석 연휴", "2027-09-15": "추석", "2027-09-16": "추석 연휴", "2027-10-03": "개천절", "2027-10-04": "대체공휴일", "2027-10-09": "한글날", "2027-10-11": "대체공휴일", "2027-12-25": "성탄절", "2027-12-27": "대체공휴일"};
 const repLabel=x=>`매주 ${MON.filter(w=>(x.days||[]).includes(w)).map(w=>WD[w]).join('·')}${x.from||x.to?` · ${x.from?x.from.slice(5).replace('-','/'):''}~${x.to?x.to.slice(5).replace('-','/'):''}`:''}`;
-const apptsFor=(M,date)=>((ST.sched[M]&&ST.sched[M].items)||[]).filter(x=>x.date?x.date===date:(x.days||[]).includes(wdOf(date))&&(!x.from||date>=x.from)&&(!x.to||date<=x.to)&&!(x.cat==='학원'&&HOL[date])).sort((a,b)=>(a.s||'').localeCompare(b.s||''));
+const apptsFor=(M,date)=>((ST.sched[M]&&ST.sched[M].items)||[]).filter(x=>x.date?x.date===date:(x.days||[]).includes(wdOf(date))&&(!x.from||date>=x.from)&&(!x.to||date<=x.to)&&!(x.cat==='학원'&&HOL[date])&&!(x.skip||[]).includes(date)).sort((a,b)=>(a.s||'').localeCompare(b.s||''));
 function vSchedAdmin(){const ks=kids();if(!ks.length)return'<div class="card"><p style="margin:0">아이가 아직 등록되지 않았어요.</p></div>';if(!ks.includes(ST.selKid))ST.selKid=ks[0];const K=ST.selKid;
   return`<div class="chips">${ks.map(k=>`<button class="chip ${k===K?'on':''}" data-a="selKid" data-k="${esc(k)}"><span class="dot" style="background:${color(k)}"></span>${esc(name(k))}</button>`).join('')}</div>${vCal(K,ks)}`}
 function vCal(EK,multi){const M=EK||ST.me,can=isAdmin()||M===ST.me,t=today();
@@ -578,7 +578,7 @@ function calEditModal(id){const M=isAdmin()?ST.selKid:ST.me,x=((ST.sched[M]&&ST.
    <label class="small mute" id="ceOne" ${ST.edRep?'hidden':''}>날짜<input id="ceD" type="date" value="${esc(x.date||ST.calSel||today())}"></label>
    <div id="ceRepBox" class="env" style="cursor:default" ${ST.edRep?'':'hidden'}><span class="small mute">반복할 요일</span><div class="chips">${MON.map(w=>`<button class="chip ${ST.edWds.includes(w)?'on':''}" data-a="ceWd" data-wd="${w}">${WD[w]}</button>`).join('')}</div>
     <div class="g2"><label class="small mute">시작하는 날<input id="ceFrom" type="date" value="${esc(x.from||'')}"></label><label class="small mute">끝나는 날 (비우면 계속)<input id="ceTo" type="date" value="${esc(x.to||'')}"></label></div></div>
-   <div class="row"><button class="btn" data-a="ceSave" data-id="${esc(id)}">저장</button><button class="btn ghost" data-a="closeM">닫기</button></div><button class="btn sm ghost" style="color:var(--p)" data-a="calDel" data-id="${esc(id)}">일정 지우기</button>`)}
+   <div class="row"><button class="btn" data-a="ceSave" data-id="${esc(id)}">저장</button><button class="btn ghost" data-a="closeM">닫기</button></div>${x.date?`<button class="btn sm ghost" style="color:var(--p)" data-a="calDel" data-id="${esc(id)}">일정 지우기</button>`:`<div class="sec">지우기</div><div class="row"><button class="btn sm ghost" style="color:var(--p)" data-a="calSkip" data-id="${esc(id)}">이번 일정만 (${esc(fmtD(ST.calSel||today()))})</button><button class="btn sm ghost" style="color:var(--p)" data-a="calDel" data-id="${esc(id)}">반복 일정 전체</button></div>`}`)}
 
 /* ---------- 나의 성장 ---------- */
 function growFacts(K){const t=today(),m=monday(t),days=[];let pd=0,pt=0,ontime=0,timed=0,late=0,moves=0,mins=0,books=0,box=0;
@@ -849,6 +849,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='calCat'){ST.calCat=b.dataset.v;document.querySelectorAll('[data-a=calCat]').forEach(x=>x.classList.toggle('on',x===b));return}
   if(a==='ceCat'){ST.edCat=b.dataset.v;document.querySelectorAll('[data-a=ceCat]').forEach(x=>x.classList.toggle('on',x===b));return}
   if(a==='calEdit'){return calEditModal(id)}
+  if(a==='calSkip'){$('#modal').innerHTML='';const M=isAdmin()?ST.selKid:ST.me,dt=ST.calSel||today(),items=JSON.parse(JSON.stringify((ST.sched[M]&&ST.sched[M].items)||[])),x=items.find(z=>z.id===id);if(!x)return;x.skip=[...new Set([...(x.skip||[]),dt])].sort();await save('',D('sched',M),{items});return toast(fmtD(dt)+' 일정만 지웠어요')}
   if(a==='ceRep'){ST.edRep=b.dataset.v==='1';document.querySelectorAll('[data-a=ceRep]').forEach(x=>x.classList.toggle('on',x===b));$('#ceRepBox').hidden=!ST.edRep;$('#ceOne').hidden=ST.edRep;return}
   if(a==='ceWd'){const w=+b.dataset.wd;ST.edWds=ST.edWds.includes(w)?ST.edWds.filter(x=>x!==w):[...ST.edWds,w];b.classList.toggle('on',ST.edWds.includes(w));return}
   if(a==='ceSave'){const M=isAdmin()?ST.selKid:ST.me,items=JSON.parse(JSON.stringify((ST.sched[M]&&ST.sched[M].items)||[])),x=items.find(z=>z.id===id);if(!x)return;const t2=val('ceT');if(!t2)return toast('일정 이름을 적어 주세요');
