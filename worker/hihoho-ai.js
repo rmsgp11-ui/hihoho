@@ -93,7 +93,7 @@ export default {
         if (kind === "none" || !amt){ await logIt("skip"); return plain({ ok: true, skip: true }); }
         const at = Date.now(), id = "tx" + at.toString(36) + Math.random().toString(36).slice(2, 6);
         const cat = kind === "in" ? "입금" : (o.cat === "식재료" ? "식재료" : "그 외");
-        await env.KV.put("tx:" + id, JSON.stringify({ id, at, amt, merchant: String(o.who || "").slice(0, 40), cat, kind, bal, src: "sms" }), { expirationTtl: 60 * 60 * 24 * 60 });
+        await env.KV.put("tx:" + id, JSON.stringify({ id, at, amt, merchant: String(o.who || "").slice(0, 40), cat, kind, bal, src: "sms", acct: String(b.acct ?? b.통장 ?? "").slice(0, 20) }), { expirationTtl: 60 * 60 * 24 * 60 });
         await logIt(kind + " " + amt); return plain({ ok: true, kind, amt, bal, cat });
       }
       const raw = String(b.amount ?? b.금액 ?? "");
@@ -107,10 +107,10 @@ export default {
         if (r.ok){ const d = await r.json(); const t = (d.content || []).map(c => c.text || "").join(""); if (t.includes("식재료")) cat = "식재료"; }
       } catch (e) {}
       const at = Date.now(), id = "tx" + at.toString(36) + Math.random().toString(36).slice(2, 6);
-      await env.KV.put("tx:" + id, JSON.stringify({ id, at, amt, merchant, card: String(b.card ?? b.카드 ?? "").slice(0, 30), cat }), { expirationTtl: 60 * 60 * 24 * 60 });
+      await env.KV.put("tx:" + id, JSON.stringify({ id, at, amt, merchant, card: String(b.card ?? b.카드 ?? "").slice(0, 30), cat, acct: String(b.acct ?? b.통장 ?? "").slice(0, 20) }), { expirationTtl: 60 * 60 * 24 * 60 });
       return plain({ ok: true, amt, merchant, cat });
     }
-    if (req.method !== "POST") return J({ ok: true, v: "5-sms" });
+    if (req.method !== "POST") return J({ ok: true, v: "6-acct" });
     if (req.headers.get("origin") !== ORIGIN) return J({ error: "origin" }, 403);
     let em;
     try { em = await verify((req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "")); } catch (e) { return J({ error: "auth" }, 401); }
