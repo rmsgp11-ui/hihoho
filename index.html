@@ -265,7 +265,7 @@ window.famShop={ledger:async a=>{if(!isAdmin())return'not-admin';await ledAdd((A
   report:async o=>{if(!isAdmin())return'not-admin';const clean=a=>(Array.isArray(a)?a:[]).slice(0,40).map(x=>({n:String(x.n||'').slice(0,40),product:String(x.product||'').slice(0,80),price:+x.price||0,ok:!!x.ok}));
     await save('',D('fam','cart'),{shop:{at:Date.now(),coupang:clean(o&&o.coupang),kurly:clean(o&&o.kurly),total:+(o&&o.total)||0,notes:String((o&&o.notes)||'').slice(0,300)},req:null},true);return'saved'}};
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='80';
+const APPV='81';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -412,8 +412,8 @@ function runWatch(K,t){const R=doneDoc(K,t).run||{},ids=Object.keys(R).filter(id
    ${me?`<button class="btn ok" data-a="${act}" data-id="${esc(id)}" style="justify-self:center;min-width:180px">■ 끝내기</button>`:'<span class="small mute">아이가 끝내기를 누르면 멈춰요</span>'}</section>`}).join('')}
 const hms=ms=>{ms=Math.max(0,ms);const h=Math.floor(ms/3600000),m=Math.floor(ms/60000)%60,s2=Math.floor(ms/1000)%60;return`${pad(h)}:${pad(m)}:${pad(s2)}`};
 setInterval(()=>{document.querySelectorAll('.stopw[data-s]').forEach(el=>{el.textContent=hms(+el.dataset.acc+(Date.now()-+el.dataset.s))})},1000);
-// 하교 시각(분). 지호: 월~목 2:40, 금 1:40. 그 밖엔 1시
-const SCHOOL_END={'지호':{1:880,2:880,3:880,4:880,5:820}};
+// 하교 시각(분). 지호: 월~목 2:40, 금 1:40 / 은호: 월·금 1:00, 화수목 1:30
+const SCHOOL_END={'지호':{1:880,2:880,3:880,4:880,5:820},'은호':{1:780,2:810,3:810,4:810,5:780}};
 const schoolEnd=(K,wd)=>((SCHOOL_END[name(K)]||{})[wd])||780;
 function timetable(K,t,sch,ro){const pb=promiseBlocks(K,wdOf(t),t),mine=K===ST.me,me=mine&&!ro,wd=wdOf(t),PPM=1.15;
   const SE=schoolEnd(K,wd);let rg=wd===0||wd===6?[[420,1320]]:[[420,490],[SE,1320]];
