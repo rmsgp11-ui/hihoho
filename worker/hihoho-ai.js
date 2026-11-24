@@ -69,6 +69,27 @@ export default {
       const tok = req.headers.get("x-token") || url.searchParams.get("t") || "";
       if (tok !== env.INGEST_TOKEN) return plain({ error: "token" }, 403);
       let b = {}; try { b = await req.json(); } catch (e) { try { b = Object.fromEntries(new URLSearchParams(await req.text())); } catch (x) {} }
+      if (b.sms || b.text || b.문자){
+        // 은행 입출금 문자 한 통을 받아 입금/출금·금액·상대·잔액을 뽑아 둠
+        const txt = String(b.sms || b.text || b.문자).replace(/\s+/g, " ").slice(0, 400);
+        const num = s => Math.round(Math.abs(parseFloat(String(s || "").replace(/[^0-9.]/g, "")) || 0));
+        let o = null;
+        try {
+          const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+            body: JSON.stringify({ model: MODEL, max_tokens: 150, system: "너는 은행 문자 해석기야. JSON 한 줄로만 답해.", messages: [{ role: "user", content: `아래는 은행/카드 알림 문자야.\n${txt}\n\n{"kind":"out|in|none","amt":숫자,"who":"가게나 보낸·받은 사람","bal":잔액숫자또는null,"cat":"식재료|그 외|입금"} 형식으로 답해. 출금·결제·이체 보냄=out, 입금·받음·환불=in, 입출금이 아니면(광고·인증번호·승인취소 안내 등) none. cat은 in이면 "입금", out이면 먹거리 사는 곳(마트·식품점·정육점·과일·빵집·반찬·편의점)이면 "식재료", 나머지는 "그 외".` }] }) });
+          if (r.ok){ const d = await r.json(); const t = (d.content || []).map(c => c.text || "").join(""); const m = t.match(/\{[\s\S]*\}/); if (m) o = JSON.parse(m[0]); }
+        } catch (e) {}
+        if (!o){ // AI가 안 될 때 간단 규칙
+          const am = txt.match(/([0-9][0-9,]*)\s*원/), bl = txt.match(/잔액\s*:?\s*([0-9][0-9,]*)/);
+          o = { kind: /입금|받음|환불/.test(txt) ? "in" : /출금|결제|승인|이체|보냄/.test(txt) ? "out" : "none", amt: am ? am[1] : 0, who: "", bal: bl ? bl[1] : null };
+        }
+        const kind = o.kind === "in" ? "in" : o.kind === "out" ? "out" : "none", amt = num(o.amt), bal = o.bal == null || o.bal === "" ? null : num(o.bal);
+        if (kind === "none" || !amt) return plain({ ok: true, skip: true });
+        const at = Date.now(), id = "tx" + at.toString(36) + Math.random().toString(36).slice(2, 6);
+        const cat = kind === "in" ? "입금" : (o.cat === "식재료" ? "식재료" : "그 외");
+        await env.KV.put("tx:" + id, JSON.stringify({ id, at, amt, merchant: String(o.who || "").slice(0, 40), cat, kind, bal, src: "sms" }), { expirationTtl: 60 * 60 * 24 * 60 });
+        return plain({ ok: true, kind, amt, bal, cat });
+      }
       const raw = String(b.amount ?? b.금액 ?? "");
       const amt = Math.round(Math.abs(parseFloat(raw.replace(/[^0-9.\-]/g, "")) || 0));
       const merchant = String(b.merchant ?? b.가맹점 ?? "").slice(0, 60).trim();
@@ -83,7 +104,7 @@ export default {
       await env.KV.put("tx:" + id, JSON.stringify({ id, at, amt, merchant, card: String(b.card ?? b.카드 ?? "").slice(0, 30), cat }), { expirationTtl: 60 * 60 * 24 * 60 });
       return plain({ ok: true, amt, merchant, cat });
     }
-    if (req.method !== "POST") return J({ ok: true, v: "3-pay" });
+    if (req.method !== "POST") return J({ ok: true, v: "4-sms" });
     if (req.headers.get("origin") !== ORIGIN) return J({ error: "origin" }, 403);
     let em;
     try { em = await verify((req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "")); } catch (e) { return J({ error: "auth" }, 401); }
