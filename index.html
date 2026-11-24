@@ -265,7 +265,7 @@ window.famShop={ledger:async a=>{if(!isAdmin())return'not-admin';await ledAdd((A
   report:async o=>{if(!isAdmin())return'not-admin';const clean=a=>(Array.isArray(a)?a:[]).slice(0,40).map(x=>({n:String(x.n||'').slice(0,40),product:String(x.product||'').slice(0,80),price:+x.price||0,ok:!!x.ok}));
     await save('',D('fam','cart'),{shop:{at:Date.now(),coupang:clean(o&&o.coupang),kurly:clean(o&&o.kurly),total:+(o&&o.total)||0,notes:String((o&&o.notes)||'').slice(0,300)},req:null},true);return'saved'}};
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='74';
+const APPV='75';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -541,7 +541,10 @@ function vHome(){const ks=kids(),wait=ST.redeem.filter(r=>r.status==='wait'),u=u
 async function migrateTimer(){if(ST.migDone||ST.cfg.migTimer)return;ST.migDone=1;let n=0;for(const K of kids()){const items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));let ch=false;
     items.forEach(it=>{if(it.auto)return;if(it.proof&&/리딩\s*게이트/i.test(it.t))return;if(it.proof||!it.timer){applyMode(it,'timer');ch=true;n++}});if(ch)await save('',D('tpl',K),{items},true)}
   await save('',D('fam','cfg'),{migTimer:true},true);if(n)toast(`리딩게이트 말고 약속 ${n}개를 타이머 방식(포인트 한 번에)으로 바꿨어요`)}
-function vTasks(){const ks=kids();if(ST.ready&&Object.keys(ST.tpl).length)setTimeout(migrateTimer,300);if(!ks.length)return'<div class="card"><p style="margin:0">아이가 아직 등록되지 않았어요.</p></div>';
+async function migMath(){if(ST.migMathDone||ST.cfg.migMath)return;ST.migMathDone=1;let n=0;const RE=/디딤돌|최상위|왕수학|연산왕|수해력/;for(const K of kids()){const items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));let ch=false;
+  items.forEach(it=>{if(it.auto||!RE.test(it.t||''))return;if(it.proof||!it.timer){applyMode(it,'timer');ch=true;n++}});if(ch)await save('',D('tpl',K),{items},true)}
+  await save('',D('fam','cfg'),{migMath:true},true);toast(n?`디딤돌·최상위·왕수학·연산왕·수해력 약속 ${n}개를 스톱워치(타이머) 방식으로 바꿨어요`:'수학 문제집 약속은 이미 모두 스톱워치(타이머) 방식이에요')}
+function vTasks(){const ks=kids();if(ST.ready&&Object.keys(ST.tpl).length){setTimeout(migrateTimer,300);setTimeout(migMath,600)}if(!ks.length)return'<div class="card"><p style="margin:0">아이가 아직 등록되지 않았어요.</p></div>';
   if(!ks.includes(ST.selKid))ST.selKid=ks[0];const K=ST.selKid,date=ST.selDate||today();subPlan(K,date);
   const tpl=(ST.tpl[K]&&ST.tpl[K].items)||[],plan=(ST.plan[K]&&ST.plan[K][date]&&ST.plan[K][date].items)||[],t=today(),ti=itemsFor(K,t),d=doneDoc(K,t);
   const dayChips=(sel,act,id)=>MON.map(wd=>`<button class="chip ${sel.includes(wd)?'on':''}" data-a="${act}" data-wd="${wd}" ${id?`data-id="${esc(id)}"`:''}>${WD[wd]}</button>`).join('');
