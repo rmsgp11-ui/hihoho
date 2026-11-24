@@ -68,10 +68,16 @@ export default {
       if (!env.KV || !env.INGEST_TOKEN) return plain({ error: "not_ready" }, 500);
       const tok = req.headers.get("x-token") || url.searchParams.get("t") || "";
       if (tok !== env.INGEST_TOKEN) return plain({ error: "token" }, 403);
-      let b = {}; try { b = await req.json(); } catch (e) { try { b = Object.fromEntries(new URLSearchParams(await req.text())); } catch (x) {} }
-      if (b.sms || b.text || b.문자){
+      const rawBody = await req.text().catch(() => "");
+      let b = {}; try { b = JSON.parse(rawBody); } catch (e) { try { b = Object.fromEntries(new URLSearchParams(rawBody)); if (!Object.keys(b).some(k => /amount|금액|sms|text|문자/.test(k))) b = { sms: rawBody }; } catch (x) { b = { sms: rawBody }; } }
+      if (!b || typeof b !== "object" || Array.isArray(b)) b = { sms: typeof b === "string" ? b : JSON.stringify(b) };
+      const flat = v => v == null ? "" : typeof v === "string" ? v : Array.isArray(v) ? v.map(flat).join(" ") : typeof v === "object" ? Object.values(v).map(flat).join(" ") : String(v);
+      let smsTxt = flat(b.sms ?? b.text ?? b.문자 ?? "");
+      if (!smsTxt && !(b.amount ?? b.금액)){ const any = Object.values(b).map(flat).find(v => /원/.test(v)); if (any) smsTxt = any; }
+      const logIt = async (res) => { try { await env.KV.put("log:last", JSON.stringify({ at: Date.now(), keys: Object.keys(b).slice(0, 8), len: rawBody.length, smsLen: smsTxt.length, res }), { expirationTtl: 60 * 60 * 24 * 7 }); } catch (e) {} };
+      if (smsTxt){
         // 은행 입출금 문자 한 통을 받아 입금/출금·금액·상대·잔액을 뽑아 둠
-        const txt = String(b.sms || b.text || b.문자).replace(/\s+/g, " ").slice(0, 400);
+        const txt = smsTxt.replace(/\s+/g, " ").slice(0, 400);
         const num = s => Math.round(Math.abs(parseFloat(String(s || "").replace(/[^0-9.]/g, "")) || 0));
         let o = null;
         try {
@@ -84,16 +90,16 @@ export default {
           o = { kind: /입금|받음|환불/.test(txt) ? "in" : /출금|결제|승인|이체|보냄/.test(txt) ? "out" : "none", amt: am ? am[1] : 0, who: "", bal: bl ? bl[1] : null };
         }
         const kind = o.kind === "in" ? "in" : o.kind === "out" ? "out" : "none", amt = num(o.amt), bal = o.bal == null || o.bal === "" ? null : num(o.bal);
-        if (kind === "none" || !amt) return plain({ ok: true, skip: true });
+        if (kind === "none" || !amt){ await logIt("skip"); return plain({ ok: true, skip: true }); }
         const at = Date.now(), id = "tx" + at.toString(36) + Math.random().toString(36).slice(2, 6);
         const cat = kind === "in" ? "입금" : (o.cat === "식재료" ? "식재료" : "그 외");
         await env.KV.put("tx:" + id, JSON.stringify({ id, at, amt, merchant: String(o.who || "").slice(0, 40), cat, kind, bal, src: "sms" }), { expirationTtl: 60 * 60 * 24 * 60 });
-        return plain({ ok: true, kind, amt, bal, cat });
+        await logIt(kind + " " + amt); return plain({ ok: true, kind, amt, bal, cat });
       }
       const raw = String(b.amount ?? b.금액 ?? "");
       const amt = Math.round(Math.abs(parseFloat(raw.replace(/[^0-9.\-]/g, "")) || 0));
       const merchant = String(b.merchant ?? b.가맹점 ?? "").slice(0, 60).trim();
-      if (!amt) return plain({ error: "amount", got: raw.slice(0, 40) }, 400);
+      if (!amt){ await logIt("empty"); return plain({ error: "empty", keys: Object.keys(b).slice(0, 8), len: rawBody.length }, 400); }
       let cat = "그 외";
       try {
         const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
@@ -104,7 +110,7 @@ export default {
       await env.KV.put("tx:" + id, JSON.stringify({ id, at, amt, merchant, card: String(b.card ?? b.카드 ?? "").slice(0, 30), cat }), { expirationTtl: 60 * 60 * 24 * 60 });
       return plain({ ok: true, amt, merchant, cat });
     }
-    if (req.method !== "POST") return J({ ok: true, v: "4-sms" });
+    if (req.method !== "POST") return J({ ok: true, v: "5-sms" });
     if (req.headers.get("origin") !== ORIGIN) return J({ error: "origin" }, 403);
     let em;
     try { em = await verify((req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "")); } catch (e) { return J({ error: "auth" }, 401); }
@@ -116,7 +122,8 @@ export default {
       const list = await env.KV.list({ prefix: "tx:" }); const items = [];
       for (const k of list.keys){ const v = await env.KV.get(k.name); if (v) { try { items.push(JSON.parse(v)); } catch (e) {} } }
       if ((await req.clone().json().catch(() => ({}))).ack) for (const k of list.keys) await env.KV.delete(k.name);
-      return J({ items });
+      let log = null; try { log = JSON.parse(await env.KV.get("log:last") || "null"); } catch (e) {}
+      return J({ items, log });
     }
     if (url.pathname === "/ack"){
       if (!env.KV) return J({ error: "no_kv" }, 500);
