@@ -265,7 +265,7 @@ window.famShop={ledger:async a=>{if(!isAdmin())return'not-admin';await ledAdd((A
   report:async o=>{if(!isAdmin())return'not-admin';const clean=a=>(Array.isArray(a)?a:[]).slice(0,40).map(x=>({n:String(x.n||'').slice(0,40),product:String(x.product||'').slice(0,80),price:+x.price||0,ok:!!x.ok}));
     await save('',D('fam','cart'),{shop:{at:Date.now(),coupang:clean(o&&o.coupang),kurly:clean(o&&o.kurly),total:+(o&&o.total)||0,notes:String((o&&o.notes)||'').slice(0,300)},req:null},true);return'saved'}};
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='75';
+const APPV='76';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -380,7 +380,7 @@ function linkFor(K,i){if(i.lu)return i.lu;const m={dohyung:'/dohyung/',gugudan:'
 function startItem(K,id,noPic){const t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it)return;if(it.proof&&!noPic)return startProofModal(id);const url=it.proof?'':linkFor(K,it);
   if(url){try{window.open(url,'_blank','noopener')}catch(e){}try{localStorage.setItem('fam-pending',JSON.stringify({K,id,d:t,at:Date.now()}))}catch(e){}}
   return writeDone(K,t,d=>{d.run=d.run||{};const r=d.run[id]=d.run[id]||{segs:[]};r.segs=r.segs||[];if(!r.cur)r.cur=Date.now()}).then(()=>toast(url?`시작! 「${it.t}」 끝나고 돌아오면 자동으로 멈춰요`:'시작! 끝나면 ■ 끝을 눌러 줘'))}
-async function endRun(K,id,quiet){const t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it)return toast('약속을 찾지 못했어요 (E1)');let mins=0,ok=false;const was=(doneDoc(K,t).run||{})[id];if(!was||!was.cur){if(it.proof&&quiet!==2)return proofModal(id,0);return toast('이미 멈춰 있어요 (E2)')}
+async function endRun(K,id,quiet){const t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it){await writeDone(K,t,d=>{const r=(d.run||{})[id];if(r&&r.cur){r.segs=(r.segs||[]).map(sg);r.segs.push({s:r.cur,e:Date.now()});r.cur=null}});return toast('멈췄어요')}let mins=0,ok=false;const was=(doneDoc(K,t).run||{})[id];if(!was||!was.cur){if(it.proof&&quiet!==2)return proofModal(id,0);return toast('이미 멈춰 있어요 (E2)')}
   await writeDone(K,t,d=>{d.run=d.run||{};const r=d.run[id];if(!r||!r.cur)return;r.segs=r.segs||[];r.segs=r.segs.map(sg);r.segs.push({s:r.cur,e:Date.now()});r.cur=null;ok=true;mins=Math.round(runMs(r)/60000);if(!it.proof&&!it.auto&&!d.p[id])d.p[id]={pt:+it.pt||0,at:Date.now()}});
   try{const pd=JSON.parse(localStorage.getItem('fam-pending')||'null');if(pd&&pd.id===id)localStorage.removeItem('fam-pending')}catch(e){}
   if(quiet===2)return;if(!ok&&!it.proof)return toast('멈추지 못했어요 (E3)');if(it.proof)return proofModal(id,mins);toast(it.auto?`${mins}분 했어! 앱에서 끝냈으면 자동으로 체크돼요`:`끝! +${+it.pt||0} 포인트`)}
@@ -407,9 +407,9 @@ function dayClock(K,t,sch,c){const pb=promiseBlocks(K,wdOf(t));if(K===ST.me)pb.g
   s+=`<circle cx="${cx}" cy="${cx}" r="34" fill="var(--card)" stroke="var(--line)" stroke-width="2"/><text x="${cx}" y="${cx-5}" class="dcnt">${c.pd}/${c.pt}</text><text x="${cx}" y="${cx+17}" class="dsub">약속</text></svg>`;
   return s}
 function runWatch(K,t){const R=doneDoc(K,t).run||{},ids=Object.keys(R).filter(id=>R[id]&&R[id].cur);if(!ids.length)return'';const me=K===ST.me;
-  return ids.map(id=>{const it=itemsFor(K,t).find(x=>x.id===id)||{t:'약속'},r=R[id],acc=runMs(r)-(Date.now()-r.cur);return`<section class="card" style="gap:10px;text-align:center;border-color:#ff9f80"><div class="row" style="gap:8px;justify-content:center"><span class="pill" style="background:#ff9f80;color:#3a2a1c">⏱ 하는 중</span><b class="jua" style="font-size:22px">${esc(it.t)}</b></div>
+  const own=doneDoc(K,t).own||[];return ids.map(id=>{const pi=itemsFor(K,t).find(x=>x.id===id),oi=own.find(x=>x.id===id),it=pi||oi||{t:'하던 것'},act=pi?'tEnd':oi?'ownEnd':'runStop',r=R[id],acc=runMs(r)-(Date.now()-r.cur);return`<section class="card" style="gap:10px;text-align:center;border-color:#ff9f80"><div class="row" style="gap:8px;justify-content:center"><span class="pill" style="background:#ff9f80;color:#3a2a1c">⏱ 하는 중</span><b class="jua" style="font-size:22px">${esc(it.t)}</b></div>
    <b class="stopw" data-acc="${acc}" data-s="${r.cur}" style="display:block;font-size:44px;font-variant-numeric:tabular-nums;letter-spacing:1px;line-height:1.2;justify-self:center">${hms(acc+(Date.now()-r.cur))}</b>
-   ${me?`<button class="btn ok" data-a="tEnd" data-id="${esc(id)}" style="justify-self:center;min-width:180px">■ 끝내기</button>`:'<span class="small mute">아이가 끝내기를 누르면 멈춰요</span>'}</section>`}).join('')}
+   ${me?`<button class="btn ok" data-a="${act}" data-id="${esc(id)}" style="justify-self:center;min-width:180px">■ 끝내기</button>`:'<span class="small mute">아이가 끝내기를 누르면 멈춰요</span>'}</section>`}).join('')}
 const hms=ms=>{ms=Math.max(0,ms);const h=Math.floor(ms/3600000),m=Math.floor(ms/60000)%60,s2=Math.floor(ms/1000)%60;return`${pad(h)}:${pad(m)}:${pad(s2)}`};
 setInterval(()=>{document.querySelectorAll('.stopw[data-s]').forEach(el=>{el.textContent=hms(+el.dataset.acc+(Date.now()-+el.dataset.s))})},1000);
 function timetable(K,t,sch){const pb=promiseBlocks(K,wdOf(t)),me=K===ST.me,wd=wdOf(t),PPM=1.15;
@@ -990,6 +990,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='ownTap'){const d=doneDoc(ST.me,today()),o=(d.own||[]).find(x=>x.id===id);if(!o)return;const r=(d.run||{})[id]||{};
     return openModal(`<h3>${esc(o.t)}</h3><span class="mute">내 계획 · ${esc(o.at||'')} · ${o.dur||30}분${o.done?' · 끝냄':''}</span><div class="row">${o.done?`<button class="btn ghost" data-a="ownTick" data-id="${esc(id)}">안 한 걸로 되돌리기</button>`:r.cur?`<button class="btn ok" data-a="ownEnd" data-id="${esc(id)}">■ 끝내기</button>`:`<button class="btn" data-a="ownStart" data-id="${esc(id)}">▶ 시작</button><button class="btn ghost" data-a="ownTick" data-id="${esc(id)}">✓ 했어요</button>`}</div><div class="row"><button class="btn ghost" data-a="ownDel" data-id="${esc(id)}">지우기</button><button class="btn ghost" data-a="closeM">닫기</button></div>`)}
   if(a==='ownStart'){$('#modal').innerHTML='';return writeDone(ST.me,today(),d=>{d.run=d.run||{};const r=d.run[id]=d.run[id]||{segs:[]};r.segs=r.segs||[];r.cur=Date.now()}).then(()=>toast('시작! 끝나면 ■ 끝내기를 눌러 줘'))}
+  if(a==='runStop'){return writeDone(ST.me,today(),d=>{const r=(d.run||{})[id];if(r&&r.cur){r.segs=(r.segs||[]).map(sg);r.segs.push({s:r.cur,e:Date.now()});r.cur=null}}).then(()=>toast('멈췄어요'))}
   if(a==='ownEnd'){$('#modal').innerHTML='';return writeDone(ST.me,today(),d=>{const r=(d.run||{})[id];if(r&&r.cur){r.segs=(r.segs||[]).map(sg);r.segs.push({s:r.cur,e:Date.now()});r.cur=null}const o=d.own.find(x=>x.id===id);if(o){o.done=true;o.at2=Date.now()}}).then(()=>toast('끝! 잘했어'))}
   if(a==='calMove'){const[y,m]=(ST.calYM||today().slice(0,7)).split('-').map(Number);const d=new Date(y,m-1+(+b.dataset.v),1);ST.calYM=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;ST.calSel='';return render(true)}
   if(a==='calCat'){ST.calCat=b.dataset.v;document.querySelectorAll('[data-a=calCat]').forEach(x=>x.classList.toggle('on',x===b));return}
