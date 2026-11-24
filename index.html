@@ -265,7 +265,7 @@ window.famShop={ledger:async a=>{if(!isAdmin())return'not-admin';await ledAdd((A
   report:async o=>{if(!isAdmin())return'not-admin';const clean=a=>(Array.isArray(a)?a:[]).slice(0,40).map(x=>({n:String(x.n||'').slice(0,40),product:String(x.product||'').slice(0,80),price:+x.price||0,ok:!!x.ok}));
     await save('',D('fam','cart'),{shop:{at:Date.now(),coupang:clean(o&&o.coupang),kurly:clean(o&&o.kurly),total:+(o&&o.total)||0,notes:String((o&&o.notes)||'').slice(0,300)},req:null},true);return'saved'}};
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='77';
+const APPV='78';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -412,7 +412,7 @@ function runWatch(K,t){const R=doneDoc(K,t).run||{},ids=Object.keys(R).filter(id
    ${me?`<button class="btn ok" data-a="${act}" data-id="${esc(id)}" style="justify-self:center;min-width:180px">■ 끝내기</button>`:'<span class="small mute">아이가 끝내기를 누르면 멈춰요</span>'}</section>`}).join('')}
 const hms=ms=>{ms=Math.max(0,ms);const h=Math.floor(ms/3600000),m=Math.floor(ms/60000)%60,s2=Math.floor(ms/1000)%60;return`${pad(h)}:${pad(m)}:${pad(s2)}`};
 setInterval(()=>{document.querySelectorAll('.stopw[data-s]').forEach(el=>{el.textContent=hms(+el.dataset.acc+(Date.now()-+el.dataset.s))})},1000);
-function timetable(K,t,sch){const pb=promiseBlocks(K,wdOf(t)),me=K===ST.me,wd=wdOf(t),PPM=1.15;
+function timetable(K,t,sch,ro){const pb=promiseBlocks(K,wdOf(t)),me=K===ST.me&&!ro,wd=wdOf(t),PPM=1.15;
   let rg=wd===0||wd===6?[[420,1320]]:[[420,490],[780,1320]];
   const all=[...sch.map(x=>({s:toMin(x.s),e:x.e?toMin(x.e):toMin(x.s)+60})),...pb.g.map(x=>({s:toMin(x.s),e:toMin(x.e)})),...pb.a.map(x=>({s:toMin(x.s),e:toMin(x.e)}))].map(x=>({s:x.s,e:x.e<=x.s?Math.min(1440,x.s+60):x.e}));
   all.forEach(x=>{if(!rg.some(r=>x.s>=r[0]&&x.e<=r[1]))rg.push([Math.floor(x.s/60)*60,Math.min(1440,Math.ceil(x.e/60)*60)])});
@@ -424,9 +424,9 @@ function timetable(K,t,sch){const pb=promiseBlocks(K,wdOf(t)),me=K===ST.me,wd=wd
     const H=(ra[1]-ra[0])*PPM;let lines='';for(let m=Math.ceil(ra[0]/30)*30;m<=ra[1];m+=30){const y=((m-ra[0])*PPM).toFixed(1);lines+=`<i class="tl ${m%60?'':'hr'}" style="top:${y}px"></i>${m%60||m===ra[1]?'':`<em style="top:${y}px">${(Math.floor(m/60)%12)||12}${m===720?'<small>낮</small>':''}</em>`}`}
     const plan=sch.map((x,i)=>blk(x,ra,'sch',PAST[i%PAST.length])).join('')+pb.g.map(x=>blk(x,ra,`pl${x.own?' mine':''}${x.run?' run':''}${x.done?' done':''}`,'',me?` data-a="${x.own?'ownTap':'clkTap'}" data-id="${esc(x.id)}" role="button"`:'')).join('');
     const act=pb.a.map(x=>blk({...x,t:x.t},ra,`ac${x.run?' run':''}`,'',me&&x.run?` data-a="${x.own?'ownTap':'clkTap'}" data-id="${esc(x.id)}" role="button"`:'')).join('');
-    out+=`<div class="ttbl" style="height:${H.toFixed(1)}px">${lines}<div class="tcol p">${plan}</div><div class="tcol a">${act}</div>${nm>=ra[0]&&nm<=ra[1]?`<i class="tnow" style="top:${((nm-ra[0])*PPM).toFixed(1)}px"></i>`:''}</div>`});
-  return`<section class="card" style="gap:8px"><div class="row sp"><h3>오늘 타임테이블</h3>${me?'<button class="btn sm" data-a="ownPlan">+ 내 계획</button>':''}</div><div class="thead"><span></span><span>계획</span><span>실행</span></div>${out}
-   ${me?'<p class="small mute" style="margin:0">계획을 누르면 시작·끝내기·미루기·인증을 할 수 있어요. 초록색은 내가 넣은 계획이라 고치거나 지울 수 있어요. 🔒 회색은 부모님이 정한 약속이에요.</p>':''}</section>`}
+    out+=`<div class="ttbl" style="height:${H.toFixed(1)}px">${lines}<div class="tcol p">${plan}</div><div class="tcol a">${act}</div>${!ro&&nm>=ra[0]&&nm<=ra[1]?`<i class="tnow" style="top:${((nm-ra[0])*PPM).toFixed(1)}px"></i>`:''}</div>`});
+  return`<section class="card" style="gap:8px"><div class="row sp"><div class="chips" style="flex-wrap:nowrap"><button class="chip ${ro?'':'on'}" data-a="ttDay" data-v="0">오늘</button><button class="chip ${ro?'on':''}" data-a="ttDay" data-v="1">내일 · ${fmtD(ro?t:addDays(t,1)).replace(/^\d+월 /,'')}</button></div>${me?'<button class="btn sm" data-a="ownPlan">+ 내 계획</button>':''}</div>${ro&&!out.includes('tblk')?'<div class="empty">내일은 정해진 일정이 없어요</div>':''}<div class="thead"><span></span><span>계획</span><span>실행</span></div>${out}
+   ${ro?'<p class="small mute" style="margin:0">내일 계획을 미리 보는 화면이에요.</p>':''}${me?'<p class="small mute" style="margin:0">계획을 누르면 시작·끝내기·미루기·인증을 할 수 있어요. 초록색은 내가 넣은 계획이라 고치거나 지울 수 있어요. 🔒 회색은 부모님이 정한 약속이에요.</p>':''}</section>`}
 function heroNow(K,t,sch){const pb=promiseBlocks(K,wdOf(t)),nm=nowMin(),run=pb.g.find(x=>x.run),cur=sch.find(x=>{const a=toMin(x.s),b=x.e?toMin(x.e):a+60;return nm>=a&&nm<(b<=a?b+1440:b)}),nx=[...sch,...pb.g.filter(x=>!x.done)].filter(x=>toMin(x.s)>nm).sort((a,b)=>toMin(a.s)-toMin(b.s))[0];
   return`${run&&K===ST.me?`<div class="row" style="justify-content:inherit"><span class="pill" style="background:#ff9f80;color:#3a2a1c">하는 중 · ${esc(run.t)} <b class="tmr" data-acc="${runMs((doneDoc(K,t).run||{})[run.id])-(Date.now()-((doneDoc(K,t).run||{})[run.id]||{}).cur)}" data-s="${((doneDoc(K,t).run||{})[run.id]||{}).cur}"></b></span><button class="btn sm ok" data-a="tEnd" data-id="${esc(run.id)}">■ 끝내기</button></div>`:''}<span class="small">${run?`<b style="color:#e8553a">하는 중 · ${esc(run.t)}</b>`:cur?`지금 · <b>${esc(cur.t)}</b>`:'지금 · 자유 시간'}${nx?` <span class="mute">· 다음 ${esc(nx.s)} ${esc(nx.t)}</span>`:''}</span>${pb.g.length?'<span class="small mute">아래 타임테이블의 회색 칸을 눌러 시작해요.</span>':''}`}
 function todayClock(K,t,sch){const pb=promiseBlocks(K,wdOf(t));pb.g.forEach(x=>x.tap=1);const items=[...sch,...pb.g,...pb.a];if(!items.length)return'';
@@ -503,7 +503,7 @@ function vToday(){const K=ST.me,t=today(),items=itemsFor(K,t),d=doneDoc(K,t),c=d
   return`<section class="card"><div class="hero">${ring(c.pd,c.pt)}<div style="display:grid;gap:8px"><span class="mute">${fmtD(t)}</span><h1>${esc(name(K))}의 오늘</h1>
    <div class="row"><span class="pill">${COIN}${p.bal} 포인트</span><span class="pill" style="background:var(--okbg)">오늘 한 일 ${c.all}개</span></div></div></div>
    ${allDone?`<div class="done-msg"><span class="jua" style="font-size:22px">오늘 약속 다 지켰어!</span> 스스로 해냈어. 정말 멋져!</div>`:c.pt?`<p class="mute" style="margin:0">약속 ${c.pt-c.pd}개 남았어. 하나씩 지켜 보자!</p>`:''}</section>
-  ${runWatch(K,t)}${timetable(K,t,sch)}
+  ${runWatch(K,t)}${ST.ttTmr?(()=>{const t2=addDays(t,1);return timetable(K,t2,apptsFor(K,t2),true)})():timetable(K,t,sch)}
   ${(()=>{const un=items.filter(i=>!tmOf(d,i));return un.length?`<section class="card"><div class="sec">${LOCK} 시간 안 정한 약속</div><div class="list">${un.map(i=>taskRow(K,i,d,t,true)).join('')}</div></section>`:(items.length?'':'<section class="card"><div class="empty">오늘은 정한 약속이 없어요</div></section>')})()}
 
   ${linkBtns(K)}`}
@@ -1042,6 +1042,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='fbOpen'){ST.fbOpen=id;return render(true)}
   if(a==='goTasks'){ST.selKid=k;location.hash='tasks';return}
   if(a==='newDay'){const wd=+b.dataset.wd;ST.newDays=ST.newDays.includes(wd)?ST.newDays.filter(x=>x!==wd):[...ST.newDays,wd];b.classList.toggle('on',ST.newDays.includes(wd));return}
+  if(a==='ttDay'){ST.ttTmr=b.dataset.v==='1';return render(true)}
   if(a==='seedGo'||a==='seedNo'){const S=SEEDS.find(x=>x.id===id);if(!S)return;if(a==='seedGo'){const K=kids().find(k=>name(k)===S.kid);if(!K)return toast(S.kid+'를 찾지 못했어요');const rep=$('#seedRep')&&$('#seedRep').checked,bases=new Set(S.items.map(x=>seedBase(x[0])));let items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));if(rep)items=items.filter(o=>!bases.has(seedBase(o.t)));
     S.items.forEach(([t,ds,at,du,pt])=>{if(items.some(o=>o.t===t&&o.at===at&&String(o.days)===String(ds)))return;const nw={id:'t'+uid(),t,pt,days:ds.slice(),lu:'',at,dur:du};applyMode(nw,'timer');items.push(nw)});await save('',D('tpl',K),{items},true)}
     await save('',D('fam','cfg'),{seeds:{...(ST.cfg.seeds||{}),[id]:Date.now()}},true);toast(a==='seedGo'?`${S.kid}의 계획표를 넣었어요`:'넣지 않았어요');return render(true)}
