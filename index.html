@@ -265,7 +265,7 @@ window.famShop={ledger:async a=>{if(!isAdmin())return'not-admin';await ledAdd((A
   report:async o=>{if(!isAdmin())return'not-admin';const clean=a=>(Array.isArray(a)?a:[]).slice(0,40).map(x=>({n:String(x.n||'').slice(0,40),product:String(x.product||'').slice(0,80),price:+x.price||0,ok:!!x.ok}));
     await save('',D('fam','cart'),{shop:{at:Date.now(),coupang:clean(o&&o.coupang),kurly:clean(o&&o.kurly),total:+(o&&o.total)||0,notes:String((o&&o.notes)||'').slice(0,300)},req:null},true);return'saved'}};
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='81';
+const APPV='82';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -418,13 +418,13 @@ const schoolEnd=(K,wd)=>((SCHOOL_END[name(K)]||{})[wd])||780;
 function timetable(K,t,sch,ro){const pb=promiseBlocks(K,wdOf(t),t),mine=K===ST.me,me=mine&&!ro,wd=wdOf(t),PPM=1.15;
   const SE=schoolEnd(K,wd);let rg=wd===0||wd===6?[[420,1320]]:[[420,490],[SE,1320]];
   const all=[...sch.map(x=>({s:toMin(x.s),e:x.e?toMin(x.e):toMin(x.s)+60})),...pb.g.map(x=>({s:toMin(x.s),e:toMin(x.e)})),...pb.a.map(x=>({s:toMin(x.s),e:toMin(x.e)}))].map(x=>({s:x.s,e:x.e<=x.s?Math.min(1440,x.s+60):x.e}));
-  all.forEach(x=>{if(!rg.some(r=>x.s>=r[0]&&x.e<=r[1]))rg.push([Math.floor(x.s/60)*60,Math.min(1440,Math.ceil(x.e/60)*60)])});
+  all.forEach(x=>{if(x.s>=1320)return;const e=Math.min(1320,x.e);if(!rg.some(r=>x.s>=r[0]&&e<=r[1]))rg.push([Math.floor(x.s/60)*60,Math.min(1320,Math.ceil(e/60)*60)])});
   rg.sort((a,b)=>a[0]-b[0]);const R=[];rg.forEach(r=>{const l=R[R.length-1];if(l&&r[0]<=l[1])l[1]=Math.max(l[1],r[1]);else R.push(r.slice())});
   const nm=nowMin(),hm=m=>`${m>=720?'오후':'오전'} ${(Math.floor(m/60)%12)||12}${m%60?':'+pad(m%60):'시'}`;
   const blk=(x,ra,cls,col,extra)=>{const a=Math.max(ra[0],toMin(x.s)),e0=toMin(x.e||x.s)<=toMin(x.s)?toMin(x.s)+60:toMin(x.e),b=Math.min(ra[1],e0);if(b<=a)return'';const h=Math.max(24,(b-a)*PPM);
     return`<div class="tblk ${cls}" style="top:${((a-ra[0])*PPM).toFixed(1)}px;height:${h.toFixed(1)}px;${col?'background:'+col+';':''}"${extra||''}><b>${esc(x.t)}</b>${h>=36?`<span>${esc(x.s)}${x.e?'~'+esc(x.e):''}</span>`:''}</div>`};
   let out='';R.forEach((ra,ri)=>{if(ri>0){const gp=[R[ri-1][1],ra[0]];out+=`<div class="tgap">${wd>0&&wd<6&&gp[0]<=490&&ra[0]>=SE?'🏫 학교':'⋯'} <span class="small mute">${hm(gp[0])} ~ ${hm(gp[1])}</span></div>`}
-    const H=(ra[1]-ra[0])*PPM;let lines='';for(let m=Math.ceil(ra[0]/30)*30;m<=ra[1];m+=30){const y=((m-ra[0])*PPM).toFixed(1);lines+=`<i class="tl ${m%60?'':'hr'}" style="top:${y}px"></i>${m%60||m===ra[1]?'':`<em style="top:${y}px">${(Math.floor(m/60)%12)||12}${m===720?'<small>낮</small>':''}</em>`}`}
+    const H=(ra[1]-ra[0])*PPM;let lines='';for(let m=Math.ceil(ra[0]/30)*30;m<=ra[1];m+=30){const y=((m-ra[0])*PPM).toFixed(1);lines+=`<i class="tl ${m%60?'':'hr'}" style="top:${y}px"></i>${m%60||(m===ra[1]&&m!==1320)?'':`<em style="top:${y}px">${(Math.floor(m/60)%12)||12}${m===720?'<small>낮</small>':''}</em>`}`}
     const plan=sch.map((x,i)=>blk(x,ra,'sch',PAST[i%PAST.length])).join('')+pb.g.map(x=>blk(x,ra,`pl${x.own?' mine':''}${x.run?' run':''}${x.done?' done':''}`,'',me||(mine&&x.own)?` data-a="${x.own?'ownTap':'clkTap'}" data-id="${esc(x.id)}" data-d="${t}" role="button"`:'')).join('');
     const act=pb.a.map(x=>blk({...x,t:x.t},ra,`ac${x.run?' run':''}`,'',me&&x.run?` data-a="${x.own?'ownTap':'clkTap'}" data-id="${esc(x.id)}" role="button"`:'')).join('');
     out+=`<div class="ttbl" style="height:${H.toFixed(1)}px">${lines}<div class="tcol p">${plan}</div><div class="tcol a">${act}</div>${!ro&&nm>=ra[0]&&nm<=ra[1]?`<i class="tnow" style="top:${((nm-ra[0])*PPM).toFixed(1)}px"></i>`:''}</div>`});
