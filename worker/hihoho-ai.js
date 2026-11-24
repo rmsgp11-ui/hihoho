@@ -2,7 +2,9 @@
 // - 가족 구글 계정(Firebase 로그인)만 사용 가능
 // - 우리 주소(rmsgp11-ui.github.io)에서 온 요청만 받음
 // - Claude API 키는 Cloudflare 비밀 변수 ANTHROPIC_API_KEY 에만 저장 (코드에 없음)
-// - 학습 문제 만들기·피드백만 (문제집 지문 사진 읽기 포함) 하고 JSON으로만 답함, 한 사람당 하루 횟수 제한
+// - 학습 문제 만들기·피드백만 (문제집 지문 사진 읽기 포함)
+// - /ingest : 아이폰 단축어(애플페이 거래)가 보낸 결제를 KV에 잠시 보관 (비밀 변수 INGEST_TOKEN 필요)
+// - /pull   : 보호자 앱이 보관된 결제를 가져가 가계부에 적음 (KV 바인딩 이름: KV) 하고 JSON으로만 답함, 한 사람당 하루 횟수 제한
 
 const ORIGIN = "https://rmsgp11-ui.github.io";
 const PROJECT = "study-ho";
@@ -15,6 +17,7 @@ const FAMILY = [
   "7ec7b9f4de41bc54dca769f62327a55d27927fcc47b6e44b24e4b5aad5117e4d",
   "8d9479376ec9cd02ae3d2e09886d032530078fc34346173d96177f1177ae7b33",
 ];
+const ADMIN = [FAMILY[0], FAMILY[1]];
 const SYSTEM = `너는 한국 초등학생 가족이 쓰는 학습 앱(국어·영어 훈련, 아이 학습 피드백) 안에서만 일하는 선생님이다.
 요청받은 학습 문제 만들기, 아이 답안에 대한 피드백, 보호자용 학습 피드백만 한다.
 항상 요청에 적힌 형식(JSON)으로만 답하고, 그 밖의 말은 쓰지 않는다.
@@ -59,12 +62,48 @@ export default {
     const cors = { "Access-Control-Allow-Origin": ORIGIN, "Access-Control-Allow-Headers": "authorization, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Max-Age": "86400", "Vary": "Origin" };
     const J = (o, st = 200) => new Response(JSON.stringify(o), { status: st, headers: { ...cors, "content-type": "application/json; charset=utf-8" } });
     if (req.method === "OPTIONS") return new Response(null, { headers: cors });
-    if (req.method !== "POST") return J({ ok: true, v: "2-image" });
+    const url = new URL(req.url);
+    if (url.pathname === "/ingest"){
+      const plain = (o, st = 200) => new Response(JSON.stringify(o), { status: st, headers: { "content-type": "application/json; charset=utf-8" } });
+      if (!env.KV || !env.INGEST_TOKEN) return plain({ error: "not_ready" }, 500);
+      const tok = req.headers.get("x-token") || url.searchParams.get("t") || "";
+      if (tok !== env.INGEST_TOKEN) return plain({ error: "token" }, 403);
+      let b = {}; try { b = await req.json(); } catch (e) { try { b = Object.fromEntries(new URLSearchParams(await req.text())); } catch (x) {} }
+      const raw = String(b.amount ?? b.금액 ?? "");
+      const amt = Math.round(Math.abs(parseFloat(raw.replace(/[^0-9.\-]/g, "")) || 0));
+      const merchant = String(b.merchant ?? b.가맹점 ?? "").slice(0, 60).trim();
+      if (!amt) return plain({ error: "amount", got: raw.slice(0, 40) }, 400);
+      let cat = "그 외";
+      try {
+        const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+          body: JSON.stringify({ model: MODEL, max_tokens: 50, messages: [{ role: "user", content: `가족 가계부. 결제한 곳: "${merchant}". 마트·식품점·정육점·과일가게·빵집·반찬가게·편의점처럼 먹거리를 사는 곳이면 "식재료", 그 밖(식당, 학원, 병원, 옷, 생활용품, 교통 등)이면 "그 외". 단어 하나만 답해.` }] }) });
+        if (r.ok){ const d = await r.json(); const t = (d.content || []).map(c => c.text || "").join(""); if (t.includes("식재료")) cat = "식재료"; }
+      } catch (e) {}
+      const at = Date.now(), id = "tx" + at.toString(36) + Math.random().toString(36).slice(2, 6);
+      await env.KV.put("tx:" + id, JSON.stringify({ id, at, amt, merchant, card: String(b.card ?? b.카드 ?? "").slice(0, 30), cat }), { expirationTtl: 60 * 60 * 24 * 60 });
+      return plain({ ok: true, amt, merchant, cat });
+    }
+    if (req.method !== "POST") return J({ ok: true, v: "3-pay" });
     if (req.headers.get("origin") !== ORIGIN) return J({ error: "origin" }, 403);
     let em;
     try { em = await verify((req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "")); } catch (e) { return J({ error: "auth" }, 401); }
     if (!FAMILY.includes(await sha(em))) return J({ error: "family" }, 403);
     if (!rate(em)) return J({ error: "rate_limited" }, 429);
+    if (url.pathname === "/pull"){
+      if (!env.KV) return J({ error: "no_kv" }, 500);
+      if (!ADMIN.includes(await sha(em))) return J({ error: "not_admin" }, 403);
+      const list = await env.KV.list({ prefix: "tx:" }); const items = [];
+      for (const k of list.keys){ const v = await env.KV.get(k.name); if (v) { try { items.push(JSON.parse(v)); } catch (e) {} } }
+      if ((await req.clone().json().catch(() => ({}))).ack) for (const k of list.keys) await env.KV.delete(k.name);
+      return J({ items });
+    }
+    if (url.pathname === "/ack"){
+      if (!env.KV) return J({ error: "no_kv" }, 500);
+      if (!ADMIN.includes(await sha(em))) return J({ error: "not_admin" }, 403);
+      let b = {}; try { b = await req.json(); } catch (e) {}
+      for (const id of (b.ids || []).slice(0, 200)) await env.KV.delete("tx:" + String(id));
+      return J({ ok: true });
+    }
     if (!env.ANTHROPIC_API_KEY) return J({ error: "no_key" }, 500);
     let b; try { b = await req.json(); } catch (e) { return J({ error: "body" }, 400); }
     const prompt = String(b.prompt || "");
