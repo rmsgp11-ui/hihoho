@@ -266,7 +266,7 @@ window.famShop={ledger:async a=>{if(!isAdmin())return'not-admin';await ledAdd((A
   report:async o=>{if(!isAdmin())return'not-admin';const clean=a=>(Array.isArray(a)?a:[]).slice(0,40).map(x=>({n:String(x.n||'').slice(0,40),product:String(x.product||'').slice(0,80),price:+x.price||0,ok:!!x.ok}));
     await save('',D('fam','cart'),{shop:{at:Date.now(),coupang:clean(o&&o.coupang),kurly:clean(o&&o.kurly),total:+(o&&o.total)||0,notes:String((o&&o.notes)||'').slice(0,300)},req:null},true);return'saved'}};
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='93';
+const APPV='94';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -592,13 +592,18 @@ async function migMath(){if(ST.migMathDone||ST.cfg.migMath)return;ST.migMathDone
 const SEEDS=[{id:'jiho-2611',kid:'지호',title:'지호 공부 계획표',items:[
  ['고전시가활용정점',[1,3,5],'15:40',30,8],['추론비판독해의 힘',[2,4],'15:40',30,8],['추론비판독해의 힘',[6],'10:00',30,8],
  ['연산왕',[2,4],'16:30',30,8],['연산왕',[6],'11:20',30,8],['왕수학 (6문제)',[1,3,5],'15:00',40,15],
- ['최상위',[2,4],'15:00',40,15],['최상위',[6],'10:30',40,15],['디딤돌 (응용)',[1,3,5],'19:00',30,10],['디딤돌 (응용)',[2,4],'17:00',30,10]]}];
+ ['최상위',[2,4],'15:00',40,15],['최상위',[6],'10:30',40,15],['디딤돌 (응용)',[1,3,5],'19:00',30,10],['디딤돌 (응용)',[2,4],'17:00',30,10]]},
+ {id:'eunho-2611',kid:'은호',title:'은호 공부 계획표',replaceAll:1,reflow:1,items:[
+ ['디딤돌 (개념+유형)',[1,3,5],'15:00',40,15],['뿌리깊은 독해',[1,3,5],'15:40',30,8],
+ ['최상위수학',[2,4],'15:00',40,15],['빠작',[2,4],'15:40',30,8],['연산왕',[2,4],'16:30',30,8],
+ ['뿌리깊은 독해',[6],'10:00',30,8],['최상위수학',[6],'10:30',40,15],['연산왕',[6],'11:20',30,8],
+ ['요약독해의 힘',[0,1,2,3,4,5,6],'19:00',20,8,'sum']]}];
 const seedBase=t=>String(t||'').replace(/\(.*?\)/g,'').replace(/\s+/g,'');
-function seedCards(){if(!isAdmin())return'';const done=ST.cfg.seeds||{};return SEEDS.filter(S=>!done[S.id]).map(S=>{const K=kids().find(k=>name(k)===S.kid);if(!K)return'';const old=((ST.tpl[K]&&ST.tpl[K].items)||[]),bases=new Set(S.items.map(x=>seedBase(x[0]))),rep=old.filter(o=>bases.has(seedBase(o.t)));
+function seedCards(){if(!isAdmin())return'';const done=ST.cfg.seeds||{};return SEEDS.filter(S=>!done[S.id]).map(S=>{const K=kids().find(k=>name(k)===S.kid);if(!K)return'';const old=((ST.tpl[K]&&ST.tpl[K].items)||[]),bases=new Set(S.items.map(x=>seedBase(x[0]))),rep=old.filter(o=>S.replaceAll?!o.auto:bases.has(seedBase(o.t)));
   const rows=[...S.items].sort((a,b)=>Math.min(...a[1])-Math.min(...b[1])||a[2].localeCompare(b[2]));
-  return`<section class="card" style="border-color:var(--p);gap:10px"><h3>📋 ${esc(S.title)}</h3><span class="small mute">Claude가 정리했어요. 모두 스톱워치(타이머) 방식이에요. 확인하고 「넣기」를 눌러 주세요.</span>
-   <div style="display:grid;grid-template-columns:auto 1fr auto auto;gap:6px 10px;font-size:14px;align-items:center"><b class="small mute">요일</b><b class="small mute">약속</b><b class="small mute">시간</b><b class="small mute">점수</b>${rows.map(([t,ds,at,du,pt])=>`<span>${ds.map(d=>WD[d]).join('')}</span><span>${esc(t)}</span><span class="small" style="white-space:nowrap">${at}~${(()=>{const m=toMin(at)+du;return pad(Math.floor(m/60))+':'+pad(m%60)})()}</span><b class="small" style="text-align:right">${pt}</b>`).join('')}</div>
-   ${rep.length?`<label class="small row" style="gap:6px;flex-wrap:nowrap"><input type="checkbox" id="seedRep" checked style="width:auto;min-height:0"> 지금 있는 같은 약속 ${rep.length}개(${esc([...new Set(rep.map(o=>o.t))].join(', '))})는 지우고 이걸로 바꾸기</label>`:''}
+  return`<section class="card" style="border-color:var(--p);gap:10px"><h3>📋 ${esc(S.title)}</h3><span class="small mute">Claude가 정리했어요. 모두 스톱워치(타이머) 방식이고, 📝는 끝낼 때 글 사진·한 줄 요약을 AI 선생님이 확인해요.${S.reflow?' 넣으면 학습 링크(구구단·도형·영어) 약속은 빈 시간으로 다시 옮겨요.':''} 확인하고 「넣기」를 눌러 주세요.</span>
+   <div style="display:grid;grid-template-columns:auto 1fr auto auto;gap:6px 10px;font-size:14px;align-items:center"><b class="small mute">요일</b><b class="small mute">약속</b><b class="small mute">시간</b><b class="small mute">점수</b>${rows.map(([t,ds,at,du,pt,md])=>`<span>${ds.length===7?'매일':ds.map(d=>WD[d]).join('')}</span><span>${md==='sum'?'📝 ':''}${esc(t)}</span><span class="small" style="white-space:nowrap">${at}~${(()=>{const m=toMin(at)+du;return pad(Math.floor(m/60))+':'+pad(m%60)})()}</span><b class="small" style="text-align:right">${pt}</b>`).join('')}</div>
+   ${rep.length?`<label class="small row" style="gap:6px;flex-wrap:nowrap"><input type="checkbox" id="seedRep" checked style="width:auto;min-height:0"> 지금 있는 ${S.replaceAll?'공부':'같은'} 약속 ${rep.length}개(${esc([...new Set(rep.map(o=>o.t))].join(', '))})는 지우고 이걸로 바꾸기</label>`:''}
    <div class="row"><button class="btn" data-a="seedGo" data-id="${S.id}">${esc(S.kid)}에게 ${S.items.length}개 넣기</button><button class="btn ghost" data-a="seedNo" data-id="${S.id}">안 넣기</button></div></section>`}).join('')}
 /* ---------- 학습 링크 약속을 빈 시간(저녁 9시 전)에 매일 자동 배치: 엄마가 확인하고 넣기 ---------- */
 const LINKPLAN2={id:'links-eng-2611',title:'📚 영어교실 매일 약속',kids:{'지호':[{n:'영어교실',auto:'english',dur:20,pt:5}],'은호':[{n:'영어교실',auto:'english',dur:20,pt:5}]}};
@@ -1117,8 +1122,11 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='linkPlanGo'||a==='linkPlanNo'){const PL=id===LINKPLAN2.id?LINKPLAN2:LINKPLAN;if(a==='linkPlanGo'){let n=0;for(const[nm,list]of Object.entries(PL.kids)){const K=kids().find(k=>name(k)===nm);if(!K)continue;const rows=linkPlanRows(K,list,PL),autos=list.map(l=>l.auto);
       let items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[])).filter(i=>!autos.includes(i.auto));rows.forEach(r=>{const nw={id:'t'+uid(),t:r.n,pt:r.pt,days:r.days.slice().sort(),lu:'',at:r.at,dur:r.dur};applyMode(nw,r.auto);items.push(nw);n++});await save('',D('tpl',K),{items},true)}
       toast(`${PL===LINKPLAN2?'영어교실':'학습 링크'} 약속 ${n}개를 넣었어요`)}else toast('넣지 않았어요');await save('',D('fam','cfg'),{seeds:{...(ST.cfg.seeds||{}),[PL.id]:Date.now()}},true);return render(true)}
-  if(a==='seedGo'||a==='seedNo'){const S=SEEDS.find(x=>x.id===id);if(!S)return;if(a==='seedGo'){const K=kids().find(k=>name(k)===S.kid);if(!K)return toast(S.kid+'를 찾지 못했어요');const rep=$('#seedRep')&&$('#seedRep').checked,bases=new Set(S.items.map(x=>seedBase(x[0])));let items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));if(rep)items=items.filter(o=>!bases.has(seedBase(o.t)));
-    S.items.forEach(([t,ds,at,du,pt])=>{if(items.some(o=>o.t===t&&o.at===at&&String(o.days)===String(ds)))return;const nw={id:'t'+uid(),t,pt,days:ds.slice(),lu:'',at,dur:du};applyMode(nw,/고전시가/.test(t)?'sum':'timer');items.push(nw)});await save('',D('tpl',K),{items},true)}
+  if(a==='seedGo'||a==='seedNo'){const S=SEEDS.find(x=>x.id===id);if(!S)return;if(a==='seedGo'){const K=kids().find(k=>name(k)===S.kid);if(!K)return toast(S.kid+'를 찾지 못했어요');const rep=$('#seedRep')&&$('#seedRep').checked,bases=new Set(S.items.map(x=>seedBase(x[0])));let items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));if(rep)items=items.filter(o=>S.replaceAll?!!o.auto:!bases.has(seedBase(o.t)));
+    S.items.forEach(([t,ds,at,du,pt,md])=>{if(items.some(o=>o.t===t&&o.at===at&&String(o.days)===String(ds)))return;const nw={id:'t'+uid(),t,pt,days:ds.slice(),lu:'',at,dur:du};applyMode(nw,md||(/고전시가/.test(t)?'sum':'timer'));items.push(nw)});
+    if(S.reflow){const PLS=[LINKPLAN,LINKPLAN2],list=PLS.flatMap(P=>(P.kids[S.kid]||[])).filter(l=>items.some(o=>o.auto===l.auto)),autos=list.map(l=>l.auto);if(list.length){const keep={...(ST.tpl[K]||{})};const base=items.filter(o=>!autos.includes(o.auto));ST.tpl[K]={...keep,items:base};const PLx={kids:{[S.kid]:list}};const rows=linkPlanRows(K,list,PLx);ST.tpl[K]=keep;
+      items=[...base,...rows.map(r=>{const nw={id:'t'+uid(),t:r.n,pt:r.pt,days:r.days.slice().sort(),lu:'',at:r.at,dur:r.dur};applyMode(nw,r.auto);return nw})]}}
+    await save('',D('tpl',K),{items},true)}
     await save('',D('fam','cfg'),{seeds:{...(ST.cfg.seeds||{}),[id]:Date.now()}},true);toast(a==='seedGo'?`${S.kid}의 계획표를 넣었어요`:'넣지 않았어요');return render(true)}
   if(a==='tplAdd'){const t=val('tplT'),p=+val('tplP')||0;if(!t)return toast('약속 내용을 적어 주세요');if(!ST.newDays.length)return toast('요일을 하나 이상 골라 주세요');const who=(ST.addKids||[ST.selKid]).filter(k=>kids().includes(k));if(!who.length)return toast('누가 할지 골라 주세요');const nw={t,pt:p,days:ST.newDays.slice(),lu:val('tplLu'),at:val('tplAt'),dur:+val('tplDur')||(val('tplAt')?30:0)};applyMode(nw,val('tplAuto'));
     for(const K of who){const items=[...((ST.tpl[K]&&ST.tpl[K].items)||[]),{id:'t'+uid(),...nw}];await save('',D('tpl',K),{items},true)}$('#tplT').value='';toast(who.map(name).join(', ')+'에게 약속을 넣었어요');return render(true)}
