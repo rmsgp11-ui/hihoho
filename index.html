@@ -266,7 +266,7 @@ window.famShop={ledger:async a=>{if(!isAdmin())return'not-admin';await ledAdd((A
   report:async o=>{if(!isAdmin())return'not-admin';const clean=a=>(Array.isArray(a)?a:[]).slice(0,40).map(x=>({n:String(x.n||'').slice(0,40),product:String(x.product||'').slice(0,80),price:+x.price||0,ok:!!x.ok}));
     await save('',D('fam','cart'),{shop:{at:Date.now(),coupang:clean(o&&o.coupang),kurly:clean(o&&o.kurly),total:+(o&&o.total)||0,notes:String((o&&o.notes)||'').slice(0,300)},req:null},true);return'saved'}};
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='89';
+const APPV='90';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -359,9 +359,9 @@ function vJoin(){const c=ST.color||COLORS[Object.keys(ST.members).length%COLORS.
   <button class="btn" data-a="join">시작하기</button></div>`}
 
 const linkOpts=(K,v)=>`<option value="">확인 방법에 맞춰 자동 (앱 약속은 그 앱)</option>${[...new Map(kids().flatMap(k=>allLinks(k)).map(l=>[l.u,l])).values()].map(l=>`<option value="${esc(l.u)}" ${v===l.u?'selected':''}>${esc(l.n)}</option>`).join('')}`;
-const modeOf=i=>i.proof?'proof':i.timer?'timer':(i.auto||'');
-const applyMode=(it,v)=>{it.proof=v==='proof';it.timer=v==='timer';it.auto=v==='proof'||v==='timer'?'':v;if((it.proof||it.timer)&&!it.dur)it.dur=30};
-const autoOpts=v=>`<option value="timer" ${v==='timer'||v===undefined?'selected':''}>타이머로 시간 재기 (끝내면 체크, 포인트 한 번에)</option>${Object.entries(AUTO).map(([k,t])=>`<option value="${k}" ${v===k?'selected':''}>앱 자동: ${t}</option>`).join('')}<option value="proof" ${v==='proof'?'selected':''}>리딩게이트: 타이머 + 시작·결과 사진 (포인트 1권·2권 반씩)</option><option value="" ${v===''?'selected':''}>직접 체크 (타이머 없이)</option>`;
+const modeOf=i=>i.proof?'proof':i.sum?'sum':i.timer?'timer':(i.auto||'');
+const applyMode=(it,v)=>{it.proof=v==='proof';it.sum=v==='sum';it.timer=v==='timer'||v==='sum';it.auto=v==='proof'||v==='timer'||v==='sum'?'':v;if((it.proof||it.timer)&&!it.dur)it.dur=30};
+const autoOpts=v=>`<option value="timer" ${v==='timer'||v===undefined?'selected':''}>타이머로 시간 재기 (끝내면 체크, 포인트 한 번에)</option>${Object.entries(AUTO).map(([k,t])=>`<option value="${k}" ${v===k?'selected':''}>앱 자동: ${t}</option>`).join('')}<option value="sum" ${v==='sum'?'selected':''}>타이머 + 끝낼 때 글 사진·한 줄 요약 (AI 선생님이 맞다고 하면 포인트)</option><option value="proof" ${v==='proof'?'selected':''}>리딩게이트: 타이머 + 시작·결과 사진 (포인트 1권·2권 반씩)</option><option value="" ${v===''?'selected':''}>직접 체크 (타이머 없이)</option>`;
 function taskBtn(K,i,d,canTick){const on=isDone(d,i),au=autoOn(d,i)&&!(d.p&&d.p[i.id]);return`<button class="task ${on?'on':''}" data-a="tick" data-k="${esc(K)}" data-id="${esc(i.id)}" ${canTick?'':'disabled'}><span class="bx"></span><span class="tt">${esc(i.t)}${au?'<br><span class="small" style="color:var(--ok)">앱에서 끝내서 자동 체크</span>':i.auto&&!on?`<br><span class="small mute">${AUTO[i.auto]||''} 자동 체크</span>`:''}</span>${LOCK}<span class="pt">+${+i.pt||0}</span></button>`}
 /* ---------- 약속 시간 · 타이머 · 미루기 · 인증 ---------- */
 const addMin=(hm,m)=>{const t=toMin(hm)+m;return pad(Math.floor(t/60)%24)+':'+pad(t%60)};
@@ -387,11 +387,11 @@ function linkFor(K,i){if(i.lu)return i.lu;const m={dohyung:'/dohyung/',gugudan:'
 function startItem(K,id,noPic){const t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it)return;if(it.proof&&!noPic)return startProofModal(id);const url=it.proof?'':linkFor(K,it);
   if(url){try{window.open(url,'_blank','noopener')}catch(e){}try{localStorage.setItem('fam-pending',JSON.stringify({K,id,d:t,at:Date.now()}))}catch(e){}}
   return writeDone(K,t,d=>{d.run=d.run||{};const r=d.run[id]=d.run[id]||{segs:[]};r.segs=r.segs||[];if(!r.cur)r.cur=Date.now()}).then(()=>toast(url?`시작! 「${it.t}」 끝나고 돌아오면 자동으로 멈춰요`:'시작! 끝나면 ■ 끝을 눌러 줘'))}
-const needReview=it=>!!it.timer&&!it.proof&&!it.auto&&ST.cfg.reviewOff!==true;
+const needReview=it=>!!it.timer&&!it.proof&&!it.sum&&!it.auto&&ST.cfg.reviewOff!==true;
 async function endRun(K,id,quiet){const t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it){await writeDone(K,t,d=>{const r=(d.run||{})[id];if(r&&r.cur){r.segs=(r.segs||[]).map(sg);r.segs.push({s:r.cur,e:Date.now()});r.cur=null}});return toast('멈췄어요')}let mins=0,ok=false;const was=(doneDoc(K,t).run||{})[id];if(!was||!was.cur){if(it.proof&&quiet!==2)return proofModal(id,0);return toast('이미 멈춰 있어요 (E2)')}
-  await writeDone(K,t,d=>{d.run=d.run||{};const r=d.run[id];if(!r||!r.cur)return;r.segs=r.segs||[];r.segs=r.segs.map(sg);r.segs.push({s:r.cur,e:Date.now()});r.cur=null;ok=true;mins=Math.round(runMs(r)/60000);if(!it.proof&&!it.auto&&!d.p[id]){if(needReview(it)){d.chk=d.chk||{};d.chk[id]={st:'wait',kind:'timer',mins,note:`${mins}분 했어요`,at:Date.now()}}else d.p[id]={pt:+it.pt||0,at:Date.now()}}});
+  await writeDone(K,t,d=>{d.run=d.run||{};const r=d.run[id];if(!r||!r.cur)return;r.segs=r.segs||[];r.segs=r.segs.map(sg);r.segs.push({s:r.cur,e:Date.now()});r.cur=null;ok=true;mins=Math.round(runMs(r)/60000);if(it.sum&&!d.p[id]){d.chk=d.chk||{};d.chk[id]={st:'sum',mins,at:Date.now()}}else if(!it.proof&&!it.auto&&!d.p[id]){if(needReview(it)){d.chk=d.chk||{};d.chk[id]={st:'wait',kind:'timer',mins,note:`${mins}분 했어요`,at:Date.now()}}else d.p[id]={pt:+it.pt||0,at:Date.now()}}});
   try{const pd=JSON.parse(localStorage.getItem('fam-pending')||'null');if(pd&&pd.id===id)localStorage.removeItem('fam-pending')}catch(e){}
-  if(quiet===2)return;if(!ok&&!it.proof)return toast('멈추지 못했어요 (E3)');if(it.proof)return proofModal(id,mins);if(!it.auto&&needReview(it)){push(Object.keys(ST.members).filter(e=>ST.members[e].role==='admin'),'확인해 주세요',`${name(K)}가 「${it.t}」를 ${mins}분 하고 끝냈어요. 오답까지 했는지 확인해 주세요`,true).catch(()=>{});return toast(`끝! ${mins}분 했어. 오답까지 다 했으면 부모님이 확인하면 +${+it.pt||0} 포인트`)}toast(it.auto?`${mins}분 했어! 앱에서 끝냈으면 자동으로 체크돼요`:`끝! +${+it.pt||0} 포인트`)}
+  if(quiet===2)return;if(!ok&&!it.proof)return toast('멈추지 못했어요 (E3)');if(it.proof)return proofModal(id,mins);if(it.sum){if(!quiet&&K===ST.me)setTimeout(()=>sumModal(id),300);return}if(!it.auto&&needReview(it)){push(Object.keys(ST.members).filter(e=>ST.members[e].role==='admin'),'확인해 주세요',`${name(K)}가 「${it.t}」를 ${mins}분 하고 끝냈어요. 오답까지 했는지 확인해 주세요`,true).catch(()=>{});return toast(`끝! ${mins}분 했어. 오답까지 다 했으면 부모님이 확인하면 +${+it.pt||0} 포인트`)}toast(it.auto?`${mins}분 했어! 앱에서 끝냈으면 자동으로 체크돼요`:`끝! +${+it.pt||0} 포인트`)}
 function bookPts(d,id,i,n,detail){const P=+i.pt||0,h=Math.ceil(P/2);if(n===1&&!d.p[id])d.p[id]={pt:h,at:Date.now(),proof:detail};else if(n===2&&d.p[id])d.p[id].pt=P}
 function proofModal(id,mins){const r=(doneDoc(ST.me,today()).run||{})[id]||{},bk=r.bk||{};openModal(`<h3>🏁 끝 인증</h3><p style="margin:0">${mins?mins+'분 동안 했어! ':''}${bk.title?`「${esc(bk.title)}」의 `:''}<b>학습 결과 화면</b>(점수·완료 표시)을 찍거나 캡처해서 올려 줘.</p>
    <div class="exbox"><span class="small mute">이렇게 찍어요 (예시: MY PAGE → Study Results에서 그 책 줄)</span><img src="img/rg_end.jpg" alt="결과 화면 예시" class="exsvg" style="border-radius:8px"><span class="small mute">책 제목, 점수(%), PASS, 오늘 날짜가 보이게 찍어요</span></div>
@@ -453,16 +453,18 @@ const mmss=ms=>{const m=Math.floor(ms/60000),s=Math.floor(ms/1000)%60;return m+'
 function taskRow(K,i,d,date,canAct){const tm=tmOf(d,i);if(!tm&&!i.proof&&!i.timer)return taskBtn(K,i,d,canAct);
   const on=isDone(d,i),out=d.out&&d.out[i.id],r=(d.run||{})[i.id]||{},ck=(d.chk||{})[i.id],me=K===ST.me,isT=date===today(),ms=runMs(r),du=+i.dur||30;
   const late=isT&&!on&&!out&&!r.cur&&!ms&&tm&&nowMin()>toMin(tm)+10;
-  const meta=[tm?`🕓 ${tm}${i.dur?` · ${i.dur}분`:''}${d.re&&d.re[i.id]&&i.at&&d.re[i.id]!==i.at?` <span class="mute">(원래 ${esc(i.at)})</span>`:''}`:'',i.proof?'⏱️ 타이머 + 📷 인증':i.timer?'⏱️ 타이머로 재기':'',i.from?`<span class="mute">${esc(i.from.slice(5).replace('-','/'))}에서 미룬 약속</span>`:''].filter(Boolean).join(' · ');
+  const meta=[tm?`🕓 ${tm}${i.dur?` · ${i.dur}분`:''}${d.re&&d.re[i.id]&&i.at&&d.re[i.id]!==i.at?` <span class="mute">(원래 ${esc(i.at)})</span>`:''}`:'',i.proof?'⏱️ 타이머 + 📷 인증':i.sum?'⏱️ 타이머 + 📝 한 줄 요약':i.timer?'⏱️ 타이머로 재기':'',i.from?`<span class="mute">${esc(i.from.slice(5).replace('-','/'))}에서 미룬 약속</span>`:''].filter(Boolean).join(' · ');
   let st='';if(out)st=`<span class="mute">미룸 → ${esc(fmtD(out.to))} ${esc(out.at||'')}</span>`;else if(on){const seg=(r.segs||[]).map(sg);st=seg.length?`<span style="color:var(--ok)">실제 ${hmOf(seg[0].s)}~${hmOf(seg[seg.length-1].e)} (${Math.round(ms/60000)}분)</span>`:''}
-  else if(ck&&ck.st==='wait')st=`<span style="color:var(--p)">부모님 확인을 기다리는 중${ck.note?' · '+esc(ck.note):''}</span>`;else if(ck&&ck.st==='no')st=`<span style="color:var(--p)">${ck.kind==='timer'?'다시 해 보자':'인증이 안 됐어요'}${ck.note?': '+esc(ck.note):''}</span>`;
+  else if(ck&&ck.st==='sum')st=`<span style="color:var(--p)">${ck.mins||0}분 했어요 · 글 사진과 한 줄 요약이 남았어요</span>`;else if(ck&&ck.st==='wait')st=`<span style="color:var(--p)">부모님 확인을 기다리는 중${ck.note?' · '+esc(ck.note):''}</span>`;else if(ck&&ck.st==='no')st=`<span style="color:var(--p)">${ck.kind==='timer'?'다시 해 보자':'인증이 안 됐어요'}${ck.note?': '+esc(ck.note):''}</span>`;
   else if(r.cur)st=`<span style="color:var(--ok)">${r.bk&&r.bk.title?'「'+esc(r.bk.title)+'」 ':''}진행 중 <b class="tmr" data-acc="${ms-(Date.now()-r.cur)}" data-s="${r.cur}">${mmss(ms)}</b></span>`;else if(ms)st=`<span class="mute">타이머 ${mmss(ms)}</span>`;else if(late)st='<span style="color:var(--p)">시작 시간이 지났어요</span>';
+  if(i.sum&&on&&(d.sum||{})[i.id])st+=`${st?'<br>':''}<span style="color:var(--ok)">${'⭐'.repeat(Math.max(1,Math.min(3,+d.sum[i.id].stars||1)))} 요약: ${esc(d.sum[i.id].text||'')}</span>`;
   const books=((d.pf||{})[i.id]||[]),need=i.proof&&((r.segs||[]).length>books.length)&&!(ck&&ck.st==='wait');
   if(i.proof&&books.length)st=`<span style="color:var(--ok)">인증 ${books.length}번${books.length?': '+books.map(x=>esc(x.detail||'완료')).join(', '):''}</span>`+(r.cur?` · <span style="color:var(--ok)">진행 중 <b class="tmr" data-acc="${ms-(Date.now()-r.cur)}" data-s="${r.cur}">${mmss(ms)}</b></span>`:'');
   let act='';if(me&&isT&&i.proof&&on&&canAct){act+=r.cur?`<button class="btn sm ok" data-a="tEnd" data-id="${esc(i.id)}">■ 끝내기</button>`:`<button class="btn sm ghost" data-a="tStart" data-id="${esc(i.id)}">▶ 한 권 더</button>`;if(need&&!r.cur)act+=`<button class="btn sm" data-a="proofM" data-id="${esc(i.id)}">📷 인증 사진</button>`}
   if(me&&isT&&!on&&!out&&canAct){
     act+=r.cur?`<button class="btn sm ok" data-a="tEnd" data-id="${esc(i.id)}">■ 끝내기</button>`:`<button class="btn sm${late?'':' ghost'}" data-a="tStart" data-id="${esc(i.id)}">▶ ${ms?'이어서':'시작'}</button>`;
     if(need&&!r.cur)act+=`<button class="btn sm" data-a="proofM" data-id="${esc(i.id)}">📷 인증 사진</button>`;
+    if(i.sum&&ck&&ck.st==='sum'&&!r.cur)act=`<button class="btn sm ok" data-a="sumOpen" data-id="${esc(i.id)}">📝 요약하고 끝내기</button>`+act;
     if(tm&&!r.cur&&!ms)act+=`<button class="btn sm ghost" data-a="tMove" data-id="${esc(i.id)}">미루기</button>`}
   if(isAdmin()&&ck&&ck.st==='wait'&&!on)act+=ck.kind==='timer'?`<button class="btn sm ok" data-a="chkOk" data-k="${esc(K)}" data-d="${date}" data-id="${esc(i.id)}">✓ 오답까지 완료</button>`:`<button class="btn sm" data-a="chkView" data-k="${esc(K)}" data-d="${date}" data-id="${esc(i.id)}">📷 사진 보고 확인</button>`;
   return`<div class="trow ${on?'on':''} ${out?'out':''}"><button class="task ${on?'on':''}" data-a="tick" data-k="${esc(K)}" data-id="${esc(i.id)}" ${canAct&&!i.proof&&!i.timer&&!out?'':'disabled'}><span class="bx"></span><span class="tt">${esc(i.t)}<br><span class="small">${meta}</span>${st?`<br><span class="small">${st}</span>`:''}</span>${LOCK}<span class="pt">${i.proof?`+${Math.ceil((+i.pt||0)/2)}×2`:'+'+(+i.pt||0)}</span></button>${act?`<div class="row" style="gap:6px">${act}</div>`:''}</div>`}
@@ -471,6 +473,35 @@ function shrinkPhoto(file,mx,q){return new Promise((res,rej)=>{const img=new Ima
 async function aiImage(file,prompt){const pic=await shrinkPhoto(file);const tk=await F.auth.currentUser.getIdToken();
   const r=await fetch(window.AI_URL,{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tk},body:JSON.stringify({tier:'quick',image:{media_type:'image/jpeg',data:pic.split(',')[1]},prompt})});
   if(!r.ok){let ec='';try{ec=(await r.json()).error||''}catch(x){}throw{code:'ai_'+r.status+(ec?'_'+ec:'')}}const s2=((await r.json()).text)||'',a=s2.indexOf('{'),b=s2.lastIndexOf('}');return JSON.parse(s2.slice(a,b+1))}
+/* ---------- 고전시가 등: 끝낼 때 글 사진 + 한 줄 요약 → AI 선생님 피드백 → 맞으면 포인트 ---------- */
+function korWeak(K){try{const f=learnFacts(K).ko;if(!f)return'';const sk=[['어휘',f.voc],['세부 내용 찾기',f.detail],['단서로 추론하기',f.clue],['핵심어 찾기',f.keys],['바르게 옮겨 쓰기',f.copy]].filter(x=>x[1]!=null).sort((a,b)=>a[1]-b[1]);
+  const kb=(learnFacts(K).kb||[]).slice(0,3).map(x=>x.k&&x.k.tip).filter(Boolean);
+  return `국어훈련장 최근 정답률(낮은 순): ${sk.map(x=>x[0]+' '+x[1]+'%').join(', ')}.${f.miss&&f.miss.length?` 최근 틀린 낱말: ${f.miss.join(', ')}.`:''}${kb.length?` 최근 문제집 요약 때 받은 조언: ${kb.join(' / ')}`:''}`}catch(e){return''}}
+function sumModal(id){const K=ST.me,t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it)return;if(!ST.learn[K])loadLearn(K).catch(()=>{});ST.sumId=id;
+  const S=ST.sumS&&ST.sumS.id===id?ST.sumS:(ST.sumS={id,file:null,prev:'',text:'',fb:null,busy:0});
+  const fb=S.fb;openModal(`<h3>📝 ${esc(it.t)} · 한 줄 요약</h3>
+   <p class="small" style="margin:0">오늘 공부한 <b>글을 사진으로 찍고</b>, 무슨 내용인지 <b>한 문장</b>으로 써 봐. 선생님이 맞게 썼는지 봐 줄게!</p>
+   <label class="btn ghost" style="justify-content:center">${S.prev?'📷 다시 찍기':'📷 글 사진 찍기'}<input id="sumPic" type="file" accept="image/*" capture="environment" hidden></label>
+   ${S.prev?`<img src="${S.prev}" alt="찍은 글" style="max-width:100%;max-height:180px;object-fit:contain;border-radius:10px;border:1px solid var(--line)">`:''}
+   <textarea id="sumTx" rows="3" maxlength="200" placeholder="예: 이 시조는 ○○가 ○○한 마음을 노래했다.">${esc(S.text||'')}</textarea>
+   ${fb?`<div class="env" style="cursor:default;gap:6px;align-items:flex-start;text-align:left;padding:12px;${fb.ok?'border-color:var(--ok)':'border-color:var(--p)'}"><b>${'⭐'.repeat(Math.max(1,Math.min(3,+fb.stars||1)))} ${fb.ok?'잘했어!':'조금만 고쳐 보자'}</b>${fb.good?`<span class="small">👍 ${esc(fb.good)}</span>`:''}${fb.tip?`<span class="small">💡 ${esc(fb.tip)}</span>`:''}${fb.ok&&fb.better?`<span class="small mute">더 멋지게 쓰면: ${esc(fb.better)}</span>`:''}</div>`:''}
+   <div class="row">${fb&&fb.ok?`<button class="btn ok" data-a="sumDone" data-id="${esc(id)}">+${+it.pt||0} 포인트 받기</button>`:`<button class="btn" data-a="sumSend" data-id="${esc(id)}" ${S.busy?'disabled':''}>${S.busy?'선생님이 읽는 중…':fb?'고쳐서 다시 보내기':'선생님께 보내기'}</button>`}<button class="btn ghost" data-a="closeM">나중에</button></div>`);
+  const pic=$('#sumPic');if(pic)pic.onchange=async()=>{const f=pic.files&&pic.files[0];if(!f)return;S.text=val('sumTx');S.file=f;S.fb=null;try{S.prev=await shrinkPhoto(f,600,.6)}catch(e){S.prev=''}sumModal(id)}}
+async function sumSend(id){const K=ST.me,t=today(),it=itemsFor(K,t).find(x=>x.id===id),S=ST.sumS;if(!it||!S)return;S.text=val('sumTx').trim();
+  if(!S.file)return toast('먼저 공부한 글을 사진으로 찍어 줘');if(S.text.length<5)return toast('한 문장으로 요약을 써 줘');
+  S.busy=1;sumModal(id);const weak=korWeak(K),G=GRADE[hashOf(K)]||'';
+  try{const v=await aiImage(S.file,`너는 ${G||'초등학생'} 아이의 다정한 국어 선생님이야. 사진은 아이가 오늘 「${it.t}」 문제집에서 공부한 글(주로 고전시가)이다.
+아이가 쓴 한 문장 요약: "${S.text}"
+${weak?`이 아이의 국어 약점 정보: ${weak}\n피드백은 이 약점(특히 가장 낮은 영역)을 키우는 방향으로 한 가지만 짚어 줘.`:''}
+판단 기준: 요약이 사진 속 글의 중심 내용(누가/무엇을, 어떤 마음·생각)을 대체로 담고 한 문장이면 ok=true. 초등학생 수준으로 너그럽게 보되, 글과 상관없거나 제목만 옮겨 적었거나 너무 짧으면 ok=false.
+사진에 글이 안 보이면 ok=false, photo=false.
+말투: 아이에게 직접 하는 반말, 짧고 따뜻하게. 고전시가의 옛말은 쉬운 말로 풀어 줘.
+JSON만 출력: {"ok":true/false,"photo":true/false,"stars":1~3,"gist":"글의 중심 내용 한 문장","good":"잘한 점 한 문장","tip":"더 나아지는 방법 한 문장","better":"ok일 때만: 아이 요약을 다듬은 예시 한 문장 (ok=false면 빈 문자열, 정답을 알려 주지 말고 tip으로 힌트만)"}`);
+    S.fb={ok:!!v.ok,stars:+v.stars||(v.ok?2:1),good:String(v.good||''),tip:String(v.photo===false?'사진에 글이 잘 안 보여. 밝은 곳에서 글이 꽉 차게 다시 찍어 줘.':(v.tip||'')),better:String(v.better||''),gist:String(v.gist||'')}}
+  catch(e){S.fb=null;toast('선생님이 지금 답을 못 했어요. 잠시 뒤 다시 보내 줘')}finally{S.busy=0;if(ST.sumId===id&&$('#modal').innerHTML)sumModal(id)}}
+async function sumDone(id){const K=ST.me,t=today(),it=itemsFor(K,t).find(x=>x.id===id),S=ST.sumS;if(!it||!S||!S.fb||!S.fb.ok)return;
+  await writeDone(K,t,d=>{if(!d.p[id])d.p[id]={pt:+it.pt||0,at:Date.now()};if(d.chk)delete d.chk[id];d.sum=d.sum||{};d.sum[id]={text:S.text,...S.fb,at:Date.now()}});
+  if(S.file)keepPhoto(K,t,id,'e',S.file);$('#modal').innerHTML='';ST.sumS=null;toast(`잘했어! +${+it.pt||0} 포인트`)}
 function startProofModal(id){const K=ST.me,it=itemsFor(K,today()).find(x=>x.id===id);if(!it)return;const url=linkFor(K,it);
   openModal(`<h3>📖 시작 인증</h3><p style="margin:0">「${esc(it.t)}」 책을 시작한 화면을 찍거나 캡처해서 올려 줘. <b>책 제목</b>이 보이면 돼요. 올리면 타이머가 시작돼요.</p>
    <div class="exbox"><span class="small mute">이렇게 찍어요 (예시: 책 제목과 Start!가 보이게)</span><img src="img/rg_start.jpg" alt="시작 화면 예시" class="exsvg" style="border-radius:8px"></div>
@@ -552,6 +583,8 @@ function vHome(){const ks=kids(),wait=ST.redeem.filter(r=>r.status==='wait'),u=u
 async function migrateTimer(){if(ST.migDone||ST.cfg.migTimer)return;ST.migDone=1;let n=0;for(const K of kids()){const items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));let ch=false;
     items.forEach(it=>{if(it.auto)return;if(it.proof&&/리딩\s*게이트/i.test(it.t))return;if(it.proof||!it.timer){applyMode(it,'timer');ch=true;n++}});if(ch)await save('',D('tpl',K),{items},true)}
   await save('',D('fam','cfg'),{migTimer:true},true);if(n)toast(`리딩게이트 말고 약속 ${n}개를 타이머 방식(포인트 한 번에)으로 바꿨어요`)}
+async function migSum(){if(ST.migSumDone||ST.cfg.migSum)return;ST.migSumDone=1;let n=0;for(const K of kids()){const items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));let ch=false;items.forEach(it=>{if(/고전시가/.test(it.t||'')&&!it.sum){applyMode(it,'sum');ch=true;n++}});if(ch)await save('',D('tpl',K),{items},true)}
+  await save('',D('fam','cfg'),{migSum:true},true);if(n)toast(`고전시가 약속 ${n}개를 「사진+한 줄 요약」 방식으로 바꿨어요`)}
 async function migMath(){if(ST.migMathDone||ST.cfg.migMath)return;ST.migMathDone=1;let n=0;const RE=/디딤돌|최상위|왕수학|연산왕|수해력/;for(const K of kids()){const items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));let ch=false;
   items.forEach(it=>{if(it.auto||!RE.test(it.t||''))return;if(it.proof||!it.timer){applyMode(it,'timer');ch=true;n++}});if(ch)await save('',D('tpl',K),{items},true)}
   await save('',D('fam','cfg'),{migMath:true},true);toast(n?`디딤돌·최상위·왕수학·연산왕·수해력 약속 ${n}개를 스톱워치(타이머) 방식으로 바꿨어요`:'수학 문제집 약속은 이미 모두 스톱워치(타이머) 방식이에요')}
@@ -567,7 +600,7 @@ function seedCards(){if(!isAdmin())return'';const done=ST.cfg.seeds||{};return S
    <div style="display:grid;grid-template-columns:auto 1fr auto auto;gap:6px 10px;font-size:14px;align-items:center"><b class="small mute">요일</b><b class="small mute">약속</b><b class="small mute">시간</b><b class="small mute">점수</b>${rows.map(([t,ds,at,du,pt])=>`<span>${ds.map(d=>WD[d]).join('')}</span><span>${esc(t)}</span><span class="small" style="white-space:nowrap">${at}~${(()=>{const m=toMin(at)+du;return pad(Math.floor(m/60))+':'+pad(m%60)})()}</span><b class="small" style="text-align:right">${pt}</b>`).join('')}</div>
    ${rep.length?`<label class="small row" style="gap:6px;flex-wrap:nowrap"><input type="checkbox" id="seedRep" checked style="width:auto;min-height:0"> 지금 있는 같은 약속 ${rep.length}개(${esc([...new Set(rep.map(o=>o.t))].join(', '))})는 지우고 이걸로 바꾸기</label>`:''}
    <div class="row"><button class="btn" data-a="seedGo" data-id="${S.id}">${esc(S.kid)}에게 ${S.items.length}개 넣기</button><button class="btn ghost" data-a="seedNo" data-id="${S.id}">안 넣기</button></div></section>`}).join('')}
-function vTasks(){const ks=kids();if(ST.ready&&Object.keys(ST.tpl).length){setTimeout(migrateTimer,300);setTimeout(migMath,600)}if(!ks.length)return'<div class="card"><p style="margin:0">아이가 아직 등록되지 않았어요.</p></div>';
+function vTasks(){const ks=kids();if(ST.ready&&Object.keys(ST.tpl).length){setTimeout(migrateTimer,300);setTimeout(migMath,600);setTimeout(migSum,900)}if(!ks.length)return'<div class="card"><p style="margin:0">아이가 아직 등록되지 않았어요.</p></div>';
   if(!ks.includes(ST.selKid))ST.selKid=ks[0];const K=ST.selKid,date=ST.selDate||today();subPlan(K,date);
   const tpl=(ST.tpl[K]&&ST.tpl[K].items)||[],plan=(ST.plan[K]&&ST.plan[K][date]&&ST.plan[K][date].items)||[],t=today(),ti=itemsFor(K,t),d=doneDoc(K,t);
   const dayChips=(sel,act,id)=>MON.map(wd=>`<button class="chip ${sel.includes(wd)?'on':''}" data-a="${act}" data-wd="${wd}" ${id?`data-id="${esc(id)}"`:''}>${WD[wd]}</button>`).join('');
@@ -1001,6 +1034,9 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
     if(nowDone&&K===ST.me){const c=dayCount(K,t);toast(c.pd===c.pt?'오늘 약속 다 지켰어! 정말 멋져!':`+${+it.pt||0} 포인트! 잘했어`)}return}
   if(a==='tStart'){$('#modal').innerHTML='';return startItem(ST.me,id)}
   if(a==='tEnd'){$('#modal').innerHTML='';return endRun(ST.me,id)}
+  if(a==='sumOpen'){return sumModal(id)}
+  if(a==='sumSend'){return sumSend(id)}
+  if(a==='sumDone'){return sumDone(id)}
   if(a==='clkTap'){const K=ST.me,t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it||isAdmin())return;const d=doneDoc(K,t);
     return openModal(`<h3>${esc(it.t)}</h3><div class="list">${taskRow(K,it,d,t,true)}</div><button class="btn ghost" data-a="closeM">닫기</button>`)}
   if(a==='tMove'){return moveModal(id)}
@@ -1059,7 +1095,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='reviewSet'){await save('',D('fam','cfg'),{reviewOff:b.dataset.v==='1'},true);ST.cfg.reviewOff=b.dataset.v==='1';return render(true)}
   if(a==='ttDay'){ST.ttTmr=b.dataset.v==='1';return render(true)}
   if(a==='seedGo'||a==='seedNo'){const S=SEEDS.find(x=>x.id===id);if(!S)return;if(a==='seedGo'){const K=kids().find(k=>name(k)===S.kid);if(!K)return toast(S.kid+'를 찾지 못했어요');const rep=$('#seedRep')&&$('#seedRep').checked,bases=new Set(S.items.map(x=>seedBase(x[0])));let items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));if(rep)items=items.filter(o=>!bases.has(seedBase(o.t)));
-    S.items.forEach(([t,ds,at,du,pt])=>{if(items.some(o=>o.t===t&&o.at===at&&String(o.days)===String(ds)))return;const nw={id:'t'+uid(),t,pt,days:ds.slice(),lu:'',at,dur:du};applyMode(nw,'timer');items.push(nw)});await save('',D('tpl',K),{items},true)}
+    S.items.forEach(([t,ds,at,du,pt])=>{if(items.some(o=>o.t===t&&o.at===at&&String(o.days)===String(ds)))return;const nw={id:'t'+uid(),t,pt,days:ds.slice(),lu:'',at,dur:du};applyMode(nw,/고전시가/.test(t)?'sum':'timer');items.push(nw)});await save('',D('tpl',K),{items},true)}
     await save('',D('fam','cfg'),{seeds:{...(ST.cfg.seeds||{}),[id]:Date.now()}},true);toast(a==='seedGo'?`${S.kid}의 계획표를 넣었어요`:'넣지 않았어요');return render(true)}
   if(a==='tplAdd'){const t=val('tplT'),p=+val('tplP')||0;if(!t)return toast('약속 내용을 적어 주세요');if(!ST.newDays.length)return toast('요일을 하나 이상 골라 주세요');const who=(ST.addKids||[ST.selKid]).filter(k=>kids().includes(k));if(!who.length)return toast('누가 할지 골라 주세요');const nw={t,pt:p,days:ST.newDays.slice(),lu:val('tplLu'),at:val('tplAt'),dur:+val('tplDur')||(val('tplAt')?30:0)};applyMode(nw,val('tplAuto'));
     for(const K of who){const items=[...((ST.tpl[K]&&ST.tpl[K].items)||[]),{id:'t'+uid(),...nw}];await save('',D('tpl',K),{items},true)}$('#tplT').value='';toast(who.map(name).join(', ')+'에게 약속을 넣었어요');return render(true)}
