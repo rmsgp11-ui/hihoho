@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>영어교실</title>
+<meta name="theme-color" content="#ffc23a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="../config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: 초등학생이 매일 여는 다정한 영어 교실, 군더더기 없이
+   IDEA: 도장을 모으는 101일 출석부 + 단어 카드 + 문장 퍼즐
+   PICTURE: 오늘의 수업 카드와 101칸 여정 지도, 문제 화면은 큰 카드 하나
+   COLOUR and TYPE: 햇살 노랑 바탕, 남색 잉크, 파랑 보조, 코랄 강조 / Jua + Fredoka
+   LAYOUT: 한 줄 세로 흐름, 폰 우선, 최대 640px */
+:root{color-scheme:light dark;--bg:light-dark(#fff1bd,#15182a);--card:light-dark(#fff,#232741);--ink:light-dark(#1d2340,#f3efe2);--mut:light-dark(#585d7d,#aeb2cb);--blue:light-dark(#2f5bff,#86a2ff);--coral:light-dark(#ff4f5a,#ff7d85);--sun:#ffc23a;--ok:light-dark(#18924f,#55d48f);--line:light-dark(#1d2340,#05060f);--soft:light-dark(#eef2ff,#2d3252);--dim:light-dark(#efe3b4,#2b2f4a)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 Jua,system-ui,sans-serif;overflow-x:clip;word-break:keep-all;overflow-wrap:break-word}
+.wrap{max-width:640px;margin:0 auto;padding:20px max(4vw,16px) 48px}
+.en{font-family:Fredoka,system-ui,sans-serif;font-weight:500}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.card{background:var(--card);border:2.5px solid var(--line);border-radius:20px;box-shadow:0 5px 0 var(--line);padding:18px}
+header{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+header svg{flex:none;width:60px;height:60px}
+h1{font-size:clamp(30px,8vw,40px);line-height:1.05;margin:0;font-weight:400;text-wrap:balance}
+.sub{color:var(--mut);font-size:15px;margin:4px 0 0}
+.total{margin-left:auto;text-align:center;font-size:14px;color:var(--mut);flex:none}
+.total b{display:block;font-size:26px;color:var(--ink);font-weight:400}
+.who{display:block;width:100%;min-height:44px;margin:0 0 12px;border:2px dashed var(--line);border-radius:14px;background:none;font-size:16px;color:var(--mut)}
+.who b{color:var(--ink);font-weight:400}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 18px;background:var(--card);border:2.5px solid var(--line);border-radius:18px;padding:5px}
+.tabs button{min-height:46px;border:0;border-radius:13px;background:none;font-size:17px}
+.tabs .on{background:var(--blue);color:#fff}
+.lesson .dayt{font-size:46px;margin:0 0 12px;font-weight:400;line-height:1.05}
+.steps{list-style:none;padding:0;margin:0 0 18px;display:grid;gap:12px;counter-reset:s}
+.steps li{display:grid;grid-template-columns:38px minmax(0,1fr);column-gap:12px;align-items:center;counter-increment:s}
+.steps li:before{content:counter(s);grid-row:span 2;width:38px;height:38px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;border:2px solid var(--line)}
+.steps b{font-weight:400;font-size:19px;line-height:1.2}.steps span{font-size:14px;color:var(--mut);line-height:1.3}
+.lvh{margin:22px 0 10px;font-size:19px;font-weight:400}
+.daymap{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:5px}
+.daymap i{aspect-ratio:1;border-radius:6px;background:var(--dim);font-style:normal;font-size:11px;display:grid;place-items:center;color:var(--mut)}
+.daymap .dn{background:var(--sun);color:#1d2340}.daymap .cur{background:var(--coral);color:#fff;outline:2px solid var(--line)}
+.note{margin-top:22px;font-size:15px;color:var(--mut)}.note b{color:var(--ink);font-weight:400}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.back{border:2.5px solid var(--line);border-radius:14px;min-width:44px;height:44px;font-size:18px;padding:0 12px;background:var(--card);flex:none}
+.top h2{font-size:21px;margin:0;font-weight:400;line-height:1.2}
+.chips{display:flex;gap:6px;margin:0 0 12px}.chips span{flex:1;text-align:center;font-size:13px;padding:5px 0;border-radius:10px;background:var(--dim);color:var(--mut)}
+.chips .now{background:var(--blue);color:#fff}.chips .ok{background:var(--sun);color:#1d2340}
+.rule{background:var(--soft);border-radius:14px;padding:12px 14px;margin:0 0 16px;font-size:16px}
+.rule b{color:var(--coral);font-weight:400}
+.pats{display:grid;gap:10px;margin-bottom:16px}
+.pat{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:2.5px solid var(--line);border-radius:16px;padding:12px 14px;min-height:56px;font-size:19px}
+.pat b,.spk-en b{font-weight:600;color:var(--coral);text-decoration:underline 3px;text-underline-offset:4px}
+.pat small{display:block;font-family:Jua,sans-serif;font-size:14px;color:var(--mut)}
+.spk{flex:none;width:36px;height:36px;border-radius:50%;background:var(--blue);display:grid;place-items:center}
+.spk svg{width:18px;height:18px;fill:#fff}
+.big{display:block;width:100%;min-height:56px;border:2.5px solid var(--line);border-radius:18px;background:var(--coral);color:#fff;font-size:21px;box-shadow:0 5px 0 var(--line);margin-top:4px}
+.big:active{transform:translateY(3px);box-shadow:0 2px 0 var(--line)}
+.big.alt{background:var(--card);color:var(--ink)}
+.link{display:block;margin:12px auto 0;background:none;border:0;color:var(--mut);text-decoration:underline;font-size:14px;min-height:44px}
+.bar{height:12px;border-radius:8px;background:var(--dim);overflow:hidden;margin-bottom:14px;border:2px solid var(--line)}
+.bar i{display:block;height:100%;background:var(--blue);transition:width .3s}
+.ask{font-size:18px;margin:0 0 12px}.ask small{display:block;color:var(--mut);font-size:14px}
+.sent{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 14px}
+.tok{min-height:48px;min-width:44px;padding:4px 14px;border:2.5px solid var(--line);border-radius:14px;background:var(--soft);font-family:Fredoka,sans-serif;font-weight:500;font-size:22px}
+.tok.bad{background:var(--coral);color:#fff;text-decoration:line-through}.tok.fix{background:var(--ok);color:#fff}
+.tok.shake{animation:sh .35s}
+.pun{font-family:Fredoka,sans-serif;font-size:24px}
+.hint{font-size:16px;color:var(--mut);margin:-4px 0 12px}
+.opts{display:grid;gap:10px}
+.opt{min-height:52px;text-align:left;padding:10px 16px;border:2.5px solid var(--line);border-radius:16px;background:var(--card);font-size:18px}
+.opt.en{font-size:21px}.opt.no{opacity:.45;text-decoration:line-through}
+.opt.right{background:var(--ok);color:#fff;opacity:1;text-decoration:none}.opt.wrongc{background:var(--coral);color:#fff;opacity:1}
+.none{margin-top:6px;min-height:48px;border:2.5px dashed var(--line);border-radius:14px;background:none;width:100%;font-size:17px}
+.msg{min-height:26px;margin:14px 0 0;font-size:17px}.msg.good{color:var(--ok)}.msg.oops{color:var(--coral)}
+.say{display:flex;align-items:center;gap:10px;font-size:21px;background:var(--soft);border:none;border-radius:14px;padding:10px 14px;text-align:left;width:100%}
+.wcard{text-align:center}
+.wbig{display:block;width:100%;border:0;background:none;font-family:Fredoka,sans-serif;font-weight:600;font-size:clamp(44px,14vw,72px);line-height:1.1;padding:16px 0 6px;overflow-wrap:anywhere}
+.mean{font-size:24px;min-height:38px;margin:4px 0 16px}.mean.hid{color:var(--mut);font-size:18px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.sbtn{min-height:50px;border:2.5px solid var(--line);border-radius:14px;background:var(--soft);font-size:17px;display:flex;align-items:center;justify-content:center;gap:8px}
+.rep{width:100%;min-height:50px;border:2.5px dashed var(--line);border-radius:14px;background:none;font-size:17px}
+.rep.full{border-style:solid;background:var(--ok);color:#fff}
+.spkbig{display:grid;place-items:center;width:110px;height:110px;margin:6px auto 18px;border-radius:50%;background:var(--blue);border:3px solid var(--line);box-shadow:0 5px 0 var(--line)}
+.spkbig .spk{width:auto;height:auto;background:none}.spkbig svg{width:54px;height:54px}
+.meanbig{text-align:center;font-size:28px;margin:6px 0 16px;line-height:1.3}
+.srow{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px;font-size:22px}
+.srow button{border:0;background:none;padding:0}
+.slots{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:16px}
+.slot{width:34px;height:46px;border-bottom:4px solid var(--line);display:grid;place-items:center;font-family:Fredoka,sans-serif;font-size:28px;font-weight:600}
+.tiles{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:10px}
+.tile{min-width:48px;height:52px;border:2.5px solid var(--line);border-radius:12px;background:var(--sun);color:#1d2340;font-size:26px;box-shadow:0 3px 0 var(--line);padding:0 12px}
+.tile.word{font-size:20px}
+.tile:disabled{opacity:.25;box-shadow:none}
+.build{min-height:64px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px;border:2.5px dashed var(--line);border-radius:14px;margin-bottom:14px}
+.chip{background:var(--soft);border:2px solid var(--line);border-radius:10px;padding:4px 10px;font-size:20px}
+.spk-en{font-size:clamp(26px,7vw,34px);line-height:1.3;margin:8px 0 6px}
+.res{text-align:center}
+.res .stars{justify-content:center;margin:10px 0}.res .stars svg{width:48px;height:48px}
+.res h2{font-size:30px;margin:6px 0 0;font-weight:400}
+.stars{flex:none;display:flex;gap:1px}.stars svg{width:20px;height:20px;fill:var(--dim)}.stars svg.on{fill:var(--sun);stroke:var(--line);stroke-width:1.2}
+.stamp{display:block;width:150px;height:150px;margin:0 auto 6px}
+.wlist{display:grid;gap:8px;margin:16px 0;text-align:left}
+.wlist>div,.wlist button{display:flex;gap:10px;align-items:center;border:0;border-radius:14px;background:var(--soft);padding:10px 14px;text-align:left;font-size:16px;width:100%}
+.wlist b{font-family:Fredoka,sans-serif;font-weight:600;font-size:19px;color:var(--ok)}.wlist s{color:var(--coral)}
+.row{display:grid;gap:12px}
+.list{display:grid;gap:12px}
+.stage{display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);border:2.5px solid var(--line);border-radius:18px;box-shadow:0 4px 0 var(--line);padding:10px 14px;min-height:68px;width:100%}
+.stage.now{background:light-dark(#ffe6a0,#3a3352)}
+.num{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--blue);color:#fff;font-size:19px;border:2.5px solid var(--line)}
+.st{flex:1;display:grid}.tt{font-size:17px;line-height:1.25}.ex{font-size:14px;color:var(--mut)}
+.packs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.pack{position:relative;text-align:left;border:2.5px solid var(--line);border-radius:16px;background:var(--card);padding:10px 12px;min-height:64px;box-shadow:0 4px 0 var(--line);display:grid;gap:7px}
+.pack.now{background:light-dark(#ffe6a0,#3a3352)}
+.dots{display:flex;gap:3px}.dots i{flex:1;height:8px;border-radius:4px;background:var(--dim)}
+.dots .b1,.dots .b2,.dots .b3{background:var(--blue)}.dots .b4,.dots .b5,.dots .b6{background:var(--sun)}
+.legend{font-size:14px;color:var(--mut);display:flex;flex-wrap:wrap;gap:12px;margin:0 0 12px}
+.legend i{display:inline-block;width:18px;height:8px;border-radius:4px;margin-right:4px;vertical-align:middle;background:var(--dim)}.legend .b1{background:var(--blue)}.legend .b4{background:var(--sun)}
+.frm{display:flex;gap:8px}.frm input{flex:1;min-height:50px;font:16px Jua,system-ui,sans-serif;padding:0 14px;border:2.5px solid var(--line);border-radius:14px;background:var(--soft);color:var(--ink)}.frm .sbtn{padding:0 18px}
+textarea{width:100%;min-height:280px;font:15px/1.5 system-ui,sans-serif;padding:12px;border:2.5px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink)}
+.mic{display:flex;flex-direction:column;align-items:center;gap:8px;margin:4px auto 6px;border:0;background:none;font-size:17px}
+.mic .ring{display:grid;place-items:center;width:104px;height:104px;border-radius:50%;background:var(--coral);border:3px solid var(--line);box-shadow:0 5px 0 var(--line)}
+.mic svg{width:46px;height:46px;fill:#fff}
+.mic.on .ring{background:var(--ok);animation:pulse 1.2s infinite}
+.mic:disabled .ring{background:var(--sun)}.mic:disabled{opacity:1;cursor:default}
+.heard{min-height:30px;font-size:20px;color:var(--mut);margin:6px 0 2px}
+.score{font-family:Fredoka,sans-serif;font-size:22px;margin:4px 0}.score .hw{color:var(--ok)}.score .mw{color:var(--coral);text-decoration:underline 2px}
+.big:disabled{opacity:.45;box-shadow:none;cursor:default}
+@keyframes pulse{50%{transform:scale(1.06)}}
+@keyframes sh{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes pop{from{transform:scale(.6) rotate(-20deg);opacity:0}}
+.stamp{animation:pop .45s}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media(max-width:380px){.tok{font-size:20px;padding:4px 10px}.tabs button{font-size:15px}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const WV=[["a","하나의",1],["about","~에 대하여",1],["all","모든",1],["an","하나",1],["and","그리고",1],["are","~ 이다",1],["burn","태우다, 타다",1],["pants","바지",1],["goodbye","안녕(헤어질 때)",1],["high","높은",1],["as","~처럼",2],["at","~에",2],["be","~이다, 있다",2],["been","~였다(be의 과거분사)",2],["but","그러나",2],["by","~ 옆에, ~에 의해",2],["bubble","거품",2],["twice","두 번",2],["slow","느린",2],["kitchen","부엌",2],["called","불리는",3],["can","~할 수 있다",3],["come","오다",3],["could","~할 수 있었다",3],["day","날, 낮",3],["did","했다",3],["cycle","자전거를 타다, 순환",3],["gesture","몸짓",3],["busy","바쁜",3],["type","종류, 타자 치다",3],["do","하다",4],["down","아래로",4],["each","각각의",4],["find","찾다",4],["first","먼저",4],["for","~을 위해",4],["business","사업, 일",4],["prince","왕자",4],["diary","일기",4],["understand","이해하다",4],["from","~로부터",5],["get","얻다, 받다",5],["go","가다",5],["has","가지다",5],["have","가지다",5],["had","가졌다",5],["fantastic","환상적인",5],["prize","상",5],["parent","부모",5],["concert","음악회",5],["he","그는",6],["her","그녀를, 그녀의",6],["him","그를",6],["his","그의",6],["how","어떻게",6],["I","나는",6],["tiger","호랑이",6],["afternoon","오후",6],["wedding","결혼식",6],["customer","손님",6],["if","만약 ~라면",7],["in","~ 안에",7],["into","~ 안으로",7],["is","이다",7],["it","그것",7],["like","좋아하다",7],["clock","시계",7],["dentist","치과 의사",7],["brand","상표",7],["wet","젖은",7],["long","긴",8],["look","보다",8],["made","만들었다",8],["make","만들다",8],["many","많은",8],["may","~해도 된다",8],["zoo","동물원",8],["against","~에 반대하여",8],["airplane","비행기",8],["hero","영웅",8],["more","더 많은",9],["my","나의",9],["no","아니요",9],["not","~ 아니다",9],["now","지금",9],["number","숫자",9],["science","과학",9],["yes","네",9],["advise","조언하다",9],["handsome","잘생긴",9],["of","~의",10],["oil","기름",10],["on","~ 위에",10],["one","하나",10],["or","또는",10],["other","다른",10],["date","날짜",10],["join","함께하다, 가입하다",10],["countryside","시골",10],["goal","목표, 골",10],["out","밖으로",11],["part","부분",11],["people","사람들",11],["said","말했다",11],["see","보다",11],["she","그녀는",11],["clerk","점원",11],["P.M.","오후",11],["human","인간",11],["humor","유머",11],["sit","앉다",12],["so","그래서, 매우",12],["some","약간의, 몇몇의",12],["than","~보다",12],["that","저것",12],["the","그",12],["bone","뼈",12],["bird","새",12],["curtain","커튼",12],["watermelon","수박",12],["their","그들의",13],["them","그들을",13],["then","그다음에, 그때",13],["there","거기에",13],["these","이것들",13],["they","그들은",13],["ago","~ 전에",13],["nice","좋은, 친절한",13],["cow","소",13],["flag","깃발",13],["this","이것",14],["time","시간",14],["to","~로, ~에게",14],["two","둘, 2",14],["up","위로",14],["use","사용하다",14],["fail","실패하다",14],["fact","사실",14],["nurse","간호사",14],["add","더하다",14],["was","~이었다",15],["water","물",15],["way","길, 방법",15],["we","우리는",15],["were","~이었다(여럿)",15],["what","무엇",15],["wife","아내",15],["corner","모퉁이",15],["luck","운",15],["sale","판매, 할인",15],["when","언제",16],["which","어떤, 어느",16],["who","누구",16],["will","~할 것이다",16],["with","~와 함께",16],["words","단어들",16],["cloud","구름",16],["kid","아이",16],["duck","오리",16],["fox","여우",16],["would","~할 것이다(will의 과거)",17],["write","쓰다",17],["you","너",17],["your","너의",17],["after","~ 후에",17],["again","다시",17],["pocket","주머니",17],["comedy","코미디",17],["grandfather","할아버지",17],["telephone","전화",17],["air","공기",18],["also","또한",18],["America","미국",18],["animal","동물",18],["another","또 하나의",18],["answer","대답, 대답하다",18],["couple","한 쌍, 커플",18],["exam","시험",18],["exit","출구",18],["drop","떨어뜨리다, 방울",18],["any","어떤",19],["around","주위에",19],["ask","묻다",19],["away","멀리, 떨어져",19],["back","뒤, 등",19],["because","왜냐하면",19],["classroom","교실",19],["cheap","값싼",19],["egg","달걀",19],["airline","항공사",19],["before","~ 전에",20],["big","큰",20],["boy","소년",20],["came","왔다",20],["change","바꾸다, 변화",20],["different","다른",20],["return","돌아오다",20],["headache","두통",20],["might","~일지도 모른다",20],["queen","여왕",20],["does","하다",21],["end","끝",21],["even","~조차, 심지어",21],["follow","따르다",21],["form","모양",21],["found","찾았다",21],["honey","꿀",21],["living room","거실",21],["finish","끝내다",21],["divide","나누다",21],["give","주다",22],["good","좋은",22],["great","훌륭한, 큰",22],["hand","손",22],["help","돕다",22],["here","여기에",22],["rabbit","토끼",22],["boss","사장, 대장",22],["pick","고르다, 따다",22],["wear","입다",22],["home","집",23],["house","집",23],["just","그냥, 방금",23],["kind","친절한",23],["know","알다",23],["land","땅",23],["thank","고마워하다",23],["textbook","교과서",23],["clip","클립",23],["church","교회",23],["large","큰",24],["learn","배우다",24],["letter","편지, 글자",24],["line","선, 줄",24],["little","작은",24],["live","살다",24],["ear","귀",24],["word","단어",24],["shop","가게",24],["discuss","토론하다",24],["man","남자",25],["me","나를",25],["means","의미하다, 뜻하다",25],["men","남자들",25],["most","대부분의",25],["mother","어머니",25],["hobby","취미",25],["castle","성",25],["lesson","수업",25],["airport","공항",25],["move","움직이다",26],["much","많은",26],["must","~해야 한다",26],["name","이름",26],["need","필요하다",26],["new","새로운",26],["hate","싫어하다",26],["brain","뇌",26],["shock","충격",26],["friend","친구",26],["off","떨어져, 꺼진",27],["old","나이 든, 오래된",27],["only","오직, 유일한",27],["our","우리의",27],["over","~ 위에, 끝난",27],["page","쪽",27],["breakfast","아침밥",27],["hungry","배고픈",27],["decide","결정하다",27],["shy","수줍은",27],["picture","그림, 사진",28],["place","장소",28],["play","놀다",28],["point","점, 가리키다",28],["put","놓다, 두다",28],["read","읽다",28],["cousin","사촌",28],["coin","동전",28],["flower","꽃",28],["act","행동하다",28],["right","오른쪽의, 옳은",29],["same","같은",29],["say","말하다",29],["sentence","문장",29],["should","~해야 한다",29],["set","놓다, 세트",29],["salt","소금",29],["company","회사",29],["soccer","축구",29],["year","해, 년",29],["show","보여주다",30],["small","작은",30],["sound","소리",30],["spell","철자, 철자하다",30],["still","여전히",30],["study","공부하다",30],["teen","십대",30],["birth","탄생",30],["aloud","소리 내어",30],["chain","사슬",30],["such","그러한, 매우",31],["take","가져가다, 잡다",31],["tell","말하다",31],["things","물건들",31],["think","생각하다",31],["three","셋, 3",31],["future","미래",31],["question","질문",31],["button","단추, 버튼",31],["hurry","서두르다",31],["through","통하여",32],["too","너무, ~도",32],["try","노력하다, 해 보다",32],["turn","돌다, 돌리다",32],["us","우리를, 우리에게",32],["very","매우",32],["yesterday","어제",32],["accent","억양, 말투",32],["leaf","나뭇잎",32],["triangle","삼각형",32],["want","원하다",33],["well","잘",33],["went","갔다",33],["where","어디에",33],["why","왜",33],["work","일하다",33],["push","밀다",33],["sock","양말",33],["pear","배(과일)",33],["jeans","청바지",33],["world","세계",34],["years","해, 년(여러 해)",34],["left","왼쪽의",34],["don't","하지 않다",34],["few","몇몇의, 거의 없는",34],["along","~을 따라",34],["skin","피부",34],["habit","습관",34],["elementary","초등의",34],["speak","말하다",34],["close","닫다",35],["something","무언가, 어떤것",35],["seem","~인것같다",35],["next","다음의",35],["hard","단단한, 열심히",35],["open","열다",35],["beach","해변",35],["bathroom","욕실, 화장실",35],["delicious","맛있는",35],["pretty","예쁜",35],["begin","시작하다",36],["life","생명, 인생",36],["always","항상",36],["those","저것들",36],["both","둘 다",36],["paper","종이",36],["under","~ 아래에",36],["cinema","영화관",36],["anger","화, 분노",36],["sick","아픈",36],["together","함께",37],["got","받았다, 얻었다",37],["often","자주",37],["run","달리다",37],["important","중요한",37],["until","~까지",37],["noon","정오, 낮 12시",37],["beauty","아름다움",37],["design","디자인",37],["frog","개구리",37],["children","아이들, 어린이",38],["side","옆, 쪽",38],["feet","발(양발)",38],["car","자동차",38],["night","밤",38],["walk","걷다",38],["check","확인하다",38],["note","메모",38],["gift","선물",38],["drink","마시다",38],["white","흰",39],["sea","바다",39],["began","시작했다",39],["grow","자라다",39],["took","가져갔다, 데려갔다",39],["river","강",39],["memory","기억",39],["lie","거짓말, 눕다",39],["glad","기쁜",39],["forget","잊다",39],["four","넷, 4",40],["carry","나르다",40],["once","한번, 한때",40],["book","책",40],["hear","듣다",40],["stop","멈추다",40],["ring","반지",40],["below","~ 아래에",40],["earth","지구",40],["finger","손가락",40],["without","~없이",41],["second","두번째의",41],["late","늦은",41],["miss","놓치다, 그리워하다",41],["idea","생각, 아이디어",41],["enough","충분한",41],["however","하지만",41],["birthday","생일",41],["puzzle","퍼즐",41],["fever","열",41],["eat","먹다",42],["face","얼굴",42],["watch","보다, 손목시계",42],["far","멀리",42],["real","진짜의, 정말로",42],["almost","거의",42],["cap","모자",42],["true","진짜의, 사실인",42],["guess","추측하다",42],["group","무리, 모둠",42],["let","~하게해주다",43],["above","~보다 위에",43],["girl","소녀",43],["sometimes","때때로, 가끔",43],["mountains","산들",43],["cut","자르다",43],["palace","궁전",43],["joy","기쁨",43],["contest","대회",43],["branch","나뭇가지",43],["young","어린, 젊은",44],["talk","이야기하다",44],["soon","곧, 조만간",44],["list","목록, 명단",44],["song","노래",44],["being","~인 것, 존재",44],["elephant","코끼리",44],["adventure","모험",44],["stone","돌",44],["power","힘",44],["leave","떠나다",45],["family","가족",45],["It's","이것은~이다",45],["street","거리",45],["inside","안에, 안쪽",45],["green","초록색의",45],["file","파일, 서류철",45],["between","~ 사이에",45],["block","블록, 덩어리",45],["city","도시",45],["warm","따뜻한",46],["am","~이다",46],["fine","좋은, 괜찮은",46],["pair","한쌍",46],["eggs","달걀들",46],["body","몸",46],["bomb","폭탄",46],["start","시작하다",46],["die","죽다",46],["last","마지막의",46],["music","음악",47],["color","색깔",47],["stand","서다",47],["sun","해, 태양",47],["questions","질문들",47],["fish","물고기",47],["keep","계속하다, 지키다",47],["rainbow","무지개",47],["country","나라, 시골",47],["please","부디, 제발",47],["area","지역",48],["mark","표시, 표시하다",48],["dog","개",48],["horse","말",48],["birds","새들",48],["problem","문제",48],["crown","왕관",48],["bite","물다",48],["carrot","당근",48],["puppy","강아지",48],["room","방",49],["knew","알았다",49],["piece","조각, 부분",49],["told","말했다",49],["usually","보통, 대개",49],["didn't","하지않았다",49],["toy","장난감",49],["free","자유로운, 무료의",49],["newspaper","신문",49],["error","실수",49],["friends","친구들",50],["easy","쉬운",50],["heard","들었다",50],["order","주문하다, 순서",50],["red","빨간",50],["door","문",50],["thirst","목마름",50],["double","두 배의",50],["bridge","다리",50],["forever","영원히",50],["become","~이 되다",51],["top","꼭대기",51],["ship","배",51],["across","가로질러, 건너서",51],["today","오늘",51],["during","~ 동안",51],["sour","신, 시큼한",51],["heart","심장, 마음",51],["curious","궁금한",51],["enter","들어가다",51],["short","짧은, 키가 작은",52],["better","더나은, 더좋은",52],["best","최고의",52],["low","낮은",52],["hours","시간(여러 시간)",52],["black","검은",52],["rich","부자인",52],["season","계절",52],["crowd","군중, 사람들",52],["subway","지하철",52],["products","제품들",53],["whole","전체, 모든",53],["remember","기억하다",53],["early","일찍, 이른",53],["waves","파도",53],["listen","듣다",53],["address","주소",53],["cover","덮다",53],["nature","자연",53],["park","공원",53],["wind","바람",54],["rock","바위",54],["space","우주, 공간",54],["covered","덮인",54],["fast","빠른, 빨리",54],["hold","잡다, 들다",54],["wash","씻다",54],["bottom","맨 아래, 바닥",54],["smart","똑똑한",54],["nothing","아무것도 없음",54],["toward","~ 쪽으로",55],["five","다섯",55],["step","걸음, 단계",55],["morning","아침",55],["passed","지나갔다, 통과했다",55],["hundred","백, 100",55],["favorite","가장 좋아하는",55],["homework","숙제",55],["basket","바구니",55],["angel","천사",55],["pattern","패턴, 유형",56],["table","탁자, 식탁",56],["north","북쪽",56],["slowly","천천히, 느리게",56],["money","돈",56],["map","지도",56],["bug","벌레",56],["vegetable","채소",56],["cookie","쿠키",56],["stress","스트레스",56],["farm","농장",57],["pulled","당겼다",57],["draw","그리다",57],["voice","목소리",57],["cold","추운, 감기",57],["cried","울었다, 소리쳤다",57],["score","점수",57],["umbrella","우산",57],["worry","걱정하다",57],["weekend","주말",57],["plan","계획",58],["south","남쪽",58],["sing","노래하다",58],["ground","땅",58],["fall","떨어지다, 가을",58],["king","왕",58],["control","조절하다",58],["hello","안녕(만날 때)",58],["dialogue","대화",58],["candy","사탕",58],["town","마을",59],["I'll","나는 ~할것이다",59],["certain","확실한",59],["field","들판",59],["travel","여행하다",59],["wood","나무, 목재",59],["kill","죽이다",59],["doll","인형",59],["husband","남편",59],["story","이야기",59],["fire","불",60],["road","길, 도로",60],["wait","기다리다",60],["strong","강한",60],["feel","느끼다",60],["stood","섰다",60],["heaven","천국, 하늘",60],["restroom","화장실",60],["glue","풀, 접착제",60],["already","이미, 벌써",60],["behind","~ 뒤에",61],["boat","배, 보트",61],["game","게임, 경기",61],["deep","깊은",61],["full","가득 찬, 배부른",61],["among","~중에",61],["spoon","숟가락",61],["tape","테이프",61],["library","도서관",61],["pink","분홍색의",61],["cannot","~할 수 없다",62],["six","여섯",62],["dark","어두운",62],["ball","공",62],["special","특별한",62],["love","사랑, 사랑하다",62],["tomorrow","내일",62],["cry","울다",62],["bat","방망이, 박쥐",62],["peace","평화",62],["legs","다리(양다리)",63],["meet","만나다",63],["tall","키가 큰",63],["Africa","아프리카",63],["ocean","바다, 대양",63],["We'll","우리는 ~할 것이다",63],["academy","학원, 학교",63],["arrive","도착하다",63],["agree","동의하다",63],["school","학교",63],["stay","머무르다",64],["ten","열",64],["rain","비",64],["evening","저녁",64],["clothes","옷",64],["paint","칠하다, 물감",64],["calm","차분한",64],["aunt","이모, 고모",64],["nation","국가",64],["god","신",64],["similar","비슷한",65],["arms","팔(양팔)",65],["size","크기",65],["third","3번째의",65],["race","경주",65],["person","사람",65],["climb","오르다",65],["baseball","야구",65],["chance","기회",65],["tree","나무",65],["flowers","꽃들",66],["weather","날씨",66],["hot","뜨거운, 더운",66],["wish","바라다",66],["hole","구멍",66],["train","기차",66],["student","학생",66],["history","역사",66],["bill","계산서",66],["focus","집중하다",66],["round","둥근, 동그란",67],["smell","냄새, 냄새 맡다",67],["winter","겨울",67],["became","~이 되었다",67],["raised","올렸다",67],["class","수업, 반",67],["fool","바보",67],["neck","목",67],["near","가까운",67],["strawberry","딸기",67],["moon","달",68],["island","섬",68],["filled","~으로 가득찬",68],["sat","앉았다",68],["bed","침대",68],["grass","풀, 잔디",68],["art","미술, 예술",68],["invite","초대하다",68],["borrow","빌리다",68],["dolphin","돌고래",68],["ahead","앞에, 앞으로",69],["dry","마른, 말리다",69],["shape","형태, 모양",69],["smiled","미소 지었다",69],["broken","고장난, 부러진",69],["wheels","바퀴들",69],["fat","뚱뚱한",69],["restaurant","식당",69],["bread","빵",69],["accident","사고",69],["front","앞",70],["beautiful","아름다운",70],["months","달, 개월(여러 달)",70],["ready","준비된",70],["heavy","무거운",70],["bear","곰",70],["dad","아빠",70],["crazy","미친, 열광하는",70],["cash","현금",70],["holiday","휴일",70],["blue","파란",71],["circle","원, 동그라미",71],["brought","가져왔다",71],["build","짓다",71],["teacher","선생님",71],["sister","여자 형제",71],["adult","어른",71],["congratulate","축하하다",71],["mail","우편",71],["tail","꼬리",71],["drive","운전하다",72],["heat","열, 더위",72],["beside","~ 옆에",72],["half","반, 절반",72],["forest","숲",72],["Let's","~하자",72],["care","돌봄, 조심",72],["battle","전투",72],["quick","빠른",72],["condition","상태",72],["wide","넓은",73],["buy","사다",73],["born","태어나다",73],["rest","쉬다",73],["pushed","밀었다",73],["picked","골랐다",73],["fill","채우다",73],["eye","눈",73],["fry","튀기다",73],["pencil","연필",73],["gave","주었다",74],["can't","할수없다",74],["machine","기계",74],["west","서쪽",74],["bought","샀다",74],["son","아들",74],["poor","가난한",74],["giraffe","기린",74],["brake","브레이크",74],["cute","귀여운",74],["died","죽었다",75],["milk","우유",75],["soft","부드러운",75],["desert","사막",75],["truck","트럭",75],["cat","고양이",75],["lion","사자",75],["football","축구, 미식축구",75],["swim","수영하다",75],["calendar","달력",75],["past","지나서, 과거",76],["happy","행복한",76],["sky","하늘",76],["cows","소들(복수형)",76],["wall","벽",76],["store","가게",76],["scissors","가위",76],["potato","감자",76],["fly","날다",76],["tonight","오늘 밤",76],["catch","잡다",77],["window","창문",77],["seeds","씨앗들",77],["doesn't","~하지않다",77],["felt","느꼈다",77],["farmers","농부들(복수형)",77],["cost","비용, 값",77],["bottle","병",77],["smile","미소, 웃다",77],["club","동아리, 클럽",77],["yellow","노란",78],["present","선물",78],["difficult","어려운",78],["summer","여름",78],["rope","밧줄",78],["isn't","~이지않다",78],["sorry","미안한",78],["hope","희망, 바라다",78],["blood","피",78],["call","부르다, 전화하다",78],["wild","야생의",79],["fresh","신선한",79],["bright","밝은",79],["dead","죽은",79],["baby","아기",79],["sugar","설탕",79],["example","예, 보기",79],["hang","걸다",79],["age","나이",79],["eraser","지우개",79],["case","상자, 경우",80],["week","주, 일주일",80],["less","덜한, 적게",80],["bring","가져오다",80],["clear","맑은, 분명한",80],["built","지었다",80],["fix","고치다",80],["danger","위험",80],["grape","포도",80],["tour","여행, 관광",80],["dance","춤, 춤추다",81],["exercise","운동",81],["brother","남자 형제",81],["job","직업, 일",81],["finished","끝냈다",81],["gone","가 버린(go의 과거분사)",81],["dirty","더러운",81],["tower","탑",81],["base","기초, 바닥",81],["helicopter","헬리콥터",81],["lay","놓다, (알을) 낳다",82],["held","잡았다",82],["cross","건너다",82],["metal","금속, 합금",82],["ice","얼음",82],["sleep","자다",82],["culture","문화",82],["bee","벌",82],["wake","깨다",82],["guy","남자, 녀석",82],["jumped","뛰었다",83],["floor","바닥, 층",83],["hill","언덕",83],["outside","밖의, 외부의",83],["spring","봄, 용수철",83],["lake","호수",83],["mountain","산",83],["snow","눈",83],["never","절대 ~않다",83],["every","모든",83],["hair","머리카락",84],["gold","금",84],["quiet","조용한",84],["middle","가운데",84],["count","세다, 숫자",84],["rolled","굴렀다",84],["engine","엔진",84],["speed","속도",84],["mirror","거울",84],["thing","물건, 것",84],["melody","멜로디, 선율",85],["trip","여행",85],["fight","싸우다",85],["beat","이기다, 두드리다",85],["fingers","손가락",85],["climbed","올랐다",85],["bath","목욕",85],["A.M.","오전",85],["gentleman","신사",85],["honest","정직한",85],["foot","발",86],["ears","귀(양쪽 귀)",86],["glass","유리, 유리잔",86],["grew","자랐다",86],["brown","갈색의",86],["You're","너는 ~이다",86],["zebra","얼룩말",86],["safe","안전한",86],["cage","새장, 우리",86],["test","시험",86],["sent","보냈다",87],["key","열쇠",87],["bad","나쁜",87],["save","구하다, 아끼다",87],["alone","혼자",87],["east","동쪽",87],["introduce","소개하다",87],["teach","가르치다",87],["wrong","틀린",87],["office","사무실",87],["choose","고르다",88],["touch","만지다",88],["mouth","입",88],["seven","일곱",88],["blow","불다",88],["famous","유명한",88],["daughter","딸",88],["grey","회색의",88],["engineer","기술자",88],["hospital","병원",88],["wings","날개",89],["branches","나뭇가지들",89],["thick","두꺼운",89],["bell","종",89],["fun","재미, 재미있는",89],["thin","얇은, 마른",89],["kick","차다",89],["shoe","신발",89],["monkey","원숭이",89],["battery","건전지",89],["fruit","과일",90],["send","보내다",90],["eight","여덟",90],["meat","고기",90],["lifted","들어 올렸다",90],["hat","모자",90],["copy","복사하다, 베끼다",90],["supper","저녁 식사",90],["cotton","솜, 면",90],["desk","책상",90],["sell","팔다",91],["shoulder","어깨",91],["sharp","날카로운",91],["shoes","신발, 구두",91],["nose","코",91],["afraid","무서워하는",91],["factory","공장",91],["guide","안내하다, 안내자",91],["tooth","이, 치아",91],["head","머리",91],["huge","거대한",92],["march","3월, 행진하다",92],["win","이기다",92],["seat","좌석, 앉다",92],["rise","오르다",92],["stick","막대기",92],["dish","접시",92],["giant","거인",92],["knife","칼",92],["roof","지붕",92],["party","모임, 파티, 그룹",93],["woman","여자",93],["bank","은행",93],["pay","돈을 내다",93],["clean","깨끗한, 청소하다",93],["visit","방문하다",93],["hour","시간",93],["clever","영리한",93],["pass","지나가다, 건네주다",93],["ugly","못생긴",93],["garden","정원",94],["caught","잡았다",94],["fell","떨어졌다",94],["team","팀",94],["captain","선장, 주장",94],["child","아이",94],["marry","결혼하다",94],["band","밴드, 악단",94],["skirt","치마",94],["light","빛, 가벼운",94],["break","깨다, 부수다",95],["uncle","삼촌",95],["lady","숙녀",95],["insects","곤충들",95],["hit","치다, 때리다",95],["sand","모래",95],["believe","믿다",95],["father","아버지",95],["chair","의자",95],["police","경찰",95],["doctor","의사",96],["cook","요리하다, 요리사",96],["bones","뼈들",96],["soldiers","군인들",96],["enjoy","즐기다",96],["taste","맛, 맛보다",96],["mouse","쥐",96],["bicycle","자전거",96],["cart","수레, 카트",96],["sad","슬픈",96],["mad","화난",97],["dinner","저녁 식사",97],["mind","마음",97],["board","판, 칠판",97],["leg","다리",97],["brave","용감한",97],["war","전쟁",97],["death","죽음",97],["bowl","그릇",97],["lunch","점심",97],["ant","개미",98],["collect","모으다",98],["arm","팔",98],["food","음식",98],["museum","박물관",98],["month","달, 월",98],["balloon","풍선",98],["welcome","환영하다",98],["picnic","소풍",98],["pig","돼지",98],["college","대학",99],["boot","장화, 부츠",99],["mathematics","수학",99],["bake","(빵을) 굽다",99],["ghost","유령",99],["lip","입술",99],["bedroom","침실",99],["cool","시원한, 멋진",99],["basic","기본의",99],["gate","문, 대문",99],["glove","장갑",100],["bean","콩",100],["alright","괜찮은",100],["cloth","천",100],["hunt","사냥하다",100],["background","배경",100],["movie","영화",100],["fan","선풍기, 팬",100],["beef","소고기",100],["lazy","게으른",100],["weight","무게",101],["basketball","농구",101],["apple","사과",101],["print","인쇄하다",101],["fog","안개",101],["brush","솔, 붓",101],["dream","꿈",101]];
+</script>
+<script>
+/* 문법 단원: t 제목, k 대표 문장, r 규칙, p 패턴[영어(강조), 뜻], f 고치기[문장, 틀린 위치(-1=맞는 문장), 고칠 말(정답 먼저), 이유(정답 먼저), 힌트], o 문장 만들기[뜻, 문장, 함정 단어] */
+const GU=[
+{t:'a / an · 여러 개(-s)',k:'an apple, two cats',r:'하나일 땐 <b>a<\/b>, 모음(a, e, i, o, u) 소리로 시작하면 <b>an<\/b>. 여러 개면 명사 끝에 <b>-s<\/b>, s·x·ch·sh로 끝나면 <b>-es<\/b>!',
+p:[['I have <b>a<\/b> dog.','나는 개가 한 마리 있어.'],['It is <b>an<\/b> apple.','그것은 사과야.'],['I see three <b>cats<\/b>.','나는 고양이 세 마리를 봐.'],['We need two <b>boxes<\/b>.','우리는 상자 두 개가 필요해.']],
+f:[['I have a egg.',2,['an','two','many'],['egg는 모음 e로 시작해서 an','달걀이 작아서','I가 주인공이라서']],
+['She has two bag.',3,['bags','bages','a bag'],['둘이면 여러 개라서 -s','가방이 무거워서','She가 한 명이라서']],
+['I want an orange.',-1,[],['orange는 모음 o로 시작해서 an이 맞아','오렌지에는 늘 a를 써서','want 다음엔 the를 써서']],
+['We need three dishs.',3,['dishes','dish','dishies'],['sh로 끝나면 -es를 붙여','접시가 깨져서','We가 여럿이라서']]],
+o:[['나는 연필 두 자루가 있어.','I have two pencils.','pencil'],['그것은 우산이야.','It is an umbrella.','a'],['나는 버스 한 대를 봐.','I see a bus.','an']]},
+
+{t:'I am · He is · They are',k:'She is my sister.',r:'I는 <b>am<\/b>, he·she·it(한 명, 하나)은 <b>is<\/b>, you·we·they(여럿)는 <b>are<\/b>!',
+p:[['<b>I am<\/b> ten.','나는 열 살이야.'],['<b>She is<\/b> my sister.','그녀는 내 여동생이야.'],['<b>They are<\/b> happy.','그들은 행복해.'],['<b>It is<\/b> cold.','추워.']],
+f:[['He are tall.',1,['is','am','be'],['He는 한 명이라서 is','키가 커서','tall이 형용사라서']],
+['I is hungry.',1,['am','are','be'],['I에는 늘 am','배가 고파서','hungry가 기분이라서']],
+['We are friends.',-1,[],['We는 여럿이라서 are가 맞아','We에는 am을 써서','friends가 여럿이라서 is']],
+['The dog are cute.',2,['is','am','be'],['개 한 마리(it)라서 is','개가 귀여워서','The가 있어서']]],
+o:[['그는 우리 아빠야.','He is my dad.','are'],['우리는 학생이야.','We are students.','is'],['나는 배고파.','I am hungry.','is']]},
+
+{t:'be동사 아니다 · 묻기',k:'Is she a nurse?',r:'아니라고 할 땐 be동사 뒤에 <b>not<\/b> (isn\'t, aren\'t). 물어볼 땐 be동사를 <b>맨 앞<\/b>으로!',
+p:[['He <b>is not<\/b> sad.','그는 슬프지 않아.'],['They <b>aren\'t<\/b> here.','그들은 여기 없어.'],['<b>Is<\/b> she a nurse?','그녀는 간호사니?'],['<b>Are<\/b> you okay? Yes, I am.','너 괜찮니? 응, 괜찮아.']],
+f:[['Is they your books?',0,['Are','Am','Do'],['they는 여럿이라서 Are','책이 많아서','물어볼 땐 늘 Is']],
+['He are not a cook.',1,['is','am','do'],['He는 한 명이라서 is','not이 있어서','cook이 직업이라서']],
+['Are you hungry?',-1,[],['you에는 are를 쓰고, 물어볼 땐 맨 앞에 와서 맞아','you에는 is를 써서','물어볼 땐 Do를 써서']],
+['Am he your brother?',0,['Is','Are','Do'],['he는 한 명이라서 Is','형이 한 명이라서 Am','물어볼 땐 Am을 써서']]],
+o:[['그녀는 키가 크지 않아.','She is not tall.','do'],['너 피곤하니?','Are you tired?','Is'],['그것은 내 가방이 아니야.','It is not my bag.','are']]},
+
+{t:'this · that · these · those',k:'These are my shoes.',r:'가까운 하나는 <b>this<\/b>, 먼 하나는 <b>that<\/b>. 가까운 여럿은 <b>these<\/b>, 먼 여럿은 <b>those<\/b>!',
+p:[['<b>This<\/b> is my pen.','이것은 내 펜이야.'],['<b>That<\/b> is a bird.','저것은 새야.'],['<b>These<\/b> are my shoes.','이것들은 내 신발이야.'],['<b>Those<\/b> are stars.','저것들은 별이야.']],
+f:[['This are my books.',0,['These','That','It'],['books가 여럿이라서 These','책이 가까워서 This','are 앞엔 늘 This']],
+['Those is a tree.',0,['That','These','They'],['a tree는 하나라서 That','나무가 멀어서 Those','is 앞엔 Those']],
+['These are my friends.',-1,[],['friends가 여럿이고 가까워서 These가 맞아','친구는 한 명이라 This','are 앞에는 That']],
+['That are cookies.',0,['Those','This','It'],['cookies가 여럿이고 멀어서 Those','쿠키가 맛있어서','are 앞엔 That']]],
+o:[['이것은 내 고양이야.','This is my cat.','These'],['저것들은 사과야.','Those are apples.','That'],['이것들은 내 연필이야.','These are my pencils.','This']]},
+
+{t:'my · your · his · her (~의)',k:'Her name is Mina.',r:'“~의”는 <b>my<\/b>(나의), <b>your<\/b>(너의), <b>his<\/b>(그의), <b>her<\/b>(그녀의), <b>our<\/b>(우리의), <b>their<\/b>(그들의). 이름 뒤엔 <b>\'s<\/b>!',
+p:[['This is <b>my<\/b> bag.','이건 내 가방이야.'],['<b>Her<\/b> name is Mina.','그녀의 이름은 미나야.'],['<b>Their<\/b> house is big.','그들의 집은 커.'],['This is <b>Tom\'s<\/b> cap.','이건 톰의 모자야.']],
+f:[['This is I book.',2,['my','me','mine'],['“나의”는 my','책이 하나라서','This가 있어서']],
+['She is he sister.',2,['his','him','she'],['“그의”는 his','sister가 여자라서','She가 주인공이라서']],
+['Our teacher is kind.',-1,[],['“우리의”는 our라서 맞아','“우리의”는 we','선생님은 한 명이라 my']],
+['They love they dog.',2,['their','them','there'],['“그들의”는 their','they가 여럿이라서','개가 귀여워서']]],
+o:[['그녀의 고양이는 하얘.','Her cat is white.','She'],['이것은 내 방이야.','This is my room.','I'],['그들의 공은 빨개.','Their ball is red.','They']]},
+
+{t:'He likes · She goes (-s)',k:'He likes pizza.',r:'한 명(He, She, Tom)이 하는 일이면 <b>동사에 -s<\/b>. ch·sh·o로 끝나면 <b>-es<\/b>(goes, watches), 자음+y는 <b>-ies<\/b>(studies), have는 <b>has<\/b>!',
+p:[['I <b>like<\/b> pizza.','나는 피자를 좋아해.'],['He <b>likes<\/b> pizza.','그는 피자를 좋아해.'],['She <b>goes<\/b> to school.','그녀는 학교에 가.'],['Tom <b>has<\/b> a bike.','톰은 자전거가 있어.']],
+f:[['He play soccer.',1,['plays','playes','playing'],['He는 한 명이라서 plays','축구가 재밌어서','어제 한 일이라서']],
+['She have a cat.',1,['has','haves','having'],['She는 한 명이라 have는 has로 바뀌어','고양이가 하나라서','have는 안 바뀌어서']],
+['My dad watchs TV.',2,['watches','watch','watching'],['한 명이고 ch로 끝나면 -es','TV가 하나라서','dad가 남자라서']],
+['They live in Seoul.',-1,[],['They는 여럿이라서 -s 없이 live가 맞아','They도 lives를 써서','Seoul이 도시라서']]],
+o:[['그녀는 매일 책을 읽어.','She reads books every day.','read'],['우리는 우유를 마셔.','We drink milk.','drinks'],['그는 영어를 공부해.','He studies English.','study']]},
+
+{t:'don\'t · doesn\'t (안 해요)',k:'She doesn\'t eat meat.',r:'아니라고 할 땐 <b>don\'t<\/b> + 동사. He, She, It(한 명)은 <b>doesn\'t<\/b> + 동사 원래 모양!',
+p:[['I <b>don\'t<\/b> like carrots.','나는 당근을 안 좋아해.'],['She <b>doesn\'t<\/b> eat meat.','그녀는 고기를 안 먹어.'],['We <b>don\'t<\/b> have homework.','우리는 숙제가 없어.']],
+f:[['He don\'t like milk.',1,['doesn\'t','isn\'t','not'],['He는 한 명이라서 doesn\'t','우유가 싫어서','like가 동사라서 isn\'t']],
+['She doesn\'t plays the piano.',2,['play','playing','played'],['doesn\'t 뒤엔 동사 원래 모양','She가 한 명이라서 -s','피아노가 하나라서']],
+['I don\'t know.',-1,[],['I는 don\'t + 동사라서 맞아','I는 doesn\'t를 써서','know 뒤에 -s가 필요해서']],
+['They doesn\'t swim.',1,['don\'t','isn\'t','aren\'t'],['They는 여럿이라서 don\'t','수영을 못해서','swim이 운동이라서']]],
+o:[['나는 고양이가 없어.','I don\'t have a cat.','doesn\'t'],['그는 커피를 안 마셔.','He doesn\'t drink coffee.','drinks'],['우리는 TV를 안 봐.','We don\'t watch TV.','doesn\'t']]},
+
+{t:'Do you ~? · Does he ~?',k:'Do you like dogs?',r:'물어볼 땐 <b>Do<\/b> + 주어 + 동사? He, She, It이면 <b>Does<\/b> + 주어 + 동사 원래 모양?',
+p:[['<b>Do<\/b> you like dogs? Yes, I do.','너는 개를 좋아하니? 응, 좋아해.'],['<b>Does<\/b> she play tennis? No, she doesn\'t.','그녀는 테니스를 치니? 아니, 안 쳐.'],['<b>Do<\/b> they live here?','그들은 여기 사니?']],
+f:[['Do he like apples?',0,['Does','Is','Are'],['he는 한 명이라서 Does','사과가 여럿이라서','물어볼 땐 Do만 써서']],
+['Does she plays soccer?',2,['play','playing','played'],['Does 뒤엔 동사 원래 모양','she가 한 명이라서 -s','축구가 운동이라서']],
+['Does it rain a lot here?',-1,[],['it은 하나라서 Does, 뒤엔 rain(원래 모양)이 맞아','it에는 Do를 써서','rain 뒤에 -s가 필요해서']],
+['Are you have a pet?',0,['Do','Does','Is'],['have는 일반동사라서 Do','you에는 Are를 써서','애완동물이 하나라서']]],
+o:[['너는 우유를 좋아하니?','Do you like milk?','Does'],['그는 버스를 타니?','Does he take a bus?','takes'],['그들은 축구를 하니?','Do they play soccer?','Are']]},
+
+{t:'can (할 수 있어요)',k:'I can swim.',r:'<b>can<\/b> + 동사 원래 모양 = ~할 수 있다. 못 하면 <b>can\'t<\/b>. 물어볼 땐 <b>Can<\/b>을 맨 앞에!',
+p:[['I <b>can swim<\/b>.','나는 수영할 수 있어.'],['She <b>can\'t ride<\/b> a bike.','그녀는 자전거를 못 타.'],['<b>Can<\/b> you <b>help<\/b> me?','나 좀 도와줄 수 있니?']],
+f:[['He can runs fast.',2,['run','running','ran'],['can 뒤엔 동사 원래 모양','He가 한 명이라서 -s','빨라서']],
+['She cans sing.',1,['can','is','are'],['can에는 -s를 안 붙여','She가 한 명이라서 cans','노래를 잘해서']],
+['Can you play the piano?',-1,[],['Can이 맨 앞, 뒤엔 play(원래 모양)라서 맞아','Can 뒤에 plays를 써서','물어볼 땐 Do를 써서']],
+['We can\'t played outside.',2,['play','plays','playing'],['can\'t 뒤엔 동사 원래 모양','어제 일이라서','We가 여럿이라서']]],
+o:[['나는 높이 뛸 수 있어.','I can jump high.','jumps'],['그는 수영을 못 해.','He can\'t swim.','swims'],['너는 이것을 읽을 수 있니?','Can you read this?','Do']]},
+
+{t:'~해라 · ~하지 마 · ~하자',k:'Let\'s play outside.',r:'“~해라”는 <b>동사로 시작<\/b>. “~하지 마”는 <b>Don\'t<\/b> + 동사. “~하자”는 <b>Let\'s<\/b> + 동사!',
+p:[['<b>Open<\/b> the door.','문을 열어.'],['<b>Be<\/b> quiet, please.','조용히 해 주세요.'],['<b>Don\'t run<\/b> here.','여기서 뛰지 마.'],['<b>Let\'s play<\/b> outside.','밖에서 놀자.']],
+f:[['Opens the window.',0,['Open','Opening','Opened'],['명령할 땐 동사 원래 모양으로 시작','창문이 하나라서','-s를 붙여야 공손해서']],
+['Let\'s goes home.',1,['go','going','went'],['Let\'s 뒤엔 동사 원래 모양','집이 하나라서','Let\'s에 s가 있어서']],
+['Don\'t touch it.',-1,[],['Don\'t + 동사 원래 모양이라서 맞아','Doesn\'t를 써야 해서','touch 뒤에 -es가 필요해서']],
+['Not be late.',0,['Don\'t','No','Doesn\'t'],['“~하지 마”는 Don\'t로 시작','늦으면 안 되니까 Not','be 앞엔 No']]],
+o:[['손을 씻어.','Wash your hands.','Washes'],['여기서 먹지 마.','Don\'t eat here.','Doesn\'t'],['같이 노래하자.','Let\'s sing together.','sings']]},
+
+{t:'There is · There are (~이 있어요)',k:'There are five apples.',r:'“~이 있다”는 하나면 <b>There is<\/b>, 여러 개면 <b>There are<\/b>!',
+p:[['<b>There is<\/b> a cat on the sofa.','소파 위에 고양이가 있어.'],['<b>There are<\/b> five apples.','사과가 다섯 개 있어.'],['<b>Is there<\/b> a park near here?','이 근처에 공원이 있니?']],
+f:[['There is two dogs.',1,['are','am','be'],['dogs가 여럿이라서 are','개가 귀여워서','There 뒤엔 늘 is']],
+['There are a pencil.',1,['is','am','be'],['a pencil은 하나라서 is','연필이 길어서','There 뒤엔 늘 are']],
+['There are many trees.',-1,[],['trees가 여럿이라서 are가 맞아','many 앞엔 is','나무는 셀 수 없어서']],
+['Are there a bank here?',0,['Is','Am','Do'],['a bank는 하나라서 Is there','은행이 커서','물어볼 땐 Do']]],
+o:[['책상 위에 책이 있어.','There is a book on the desk.','are'],['방에 의자가 세 개 있어.','There are three chairs in the room.','is'],['상자 안에 고양이가 있니?','Is there a cat in the box?','Are']]},
+
+{t:'지금 ~하고 있어요 (-ing)',k:'She is running.',r:'“지금 ~하고 있다”는 <b>be동사 + 동사-ing<\/b>. e로 끝나면 e를 빼고(make→<b>making<\/b>), run·swim은 끝 글자를 한 번 더(<b>running<\/b>)!',
+p:[['I <b>am reading<\/b> a book.','나는 책을 읽고 있어.'],['She <b>is running<\/b>.','그녀는 달리고 있어.'],['They <b>are eating<\/b> lunch.','그들은 점심을 먹고 있어.'],['<b>Are<\/b> you <b>sleeping<\/b>?','너 자고 있니?']],
+f:[['He is play a game.',2,['playing','plays','played'],['is 뒤에 -ing를 붙여야 “하고 있다”','게임이 하나라서','He가 한 명이라서 -s']],
+['We is singing.',1,['are','am','be'],['We는 여럿이라서 are','노래가 하나라서','-ing 앞엔 늘 is']],
+['She is makeing a cake.',2,['making','makes','make'],['e로 끝나면 e를 빼고 -ing','케이크가 하나라서','She가 한 명이라서']],
+['The baby is sleeping.',-1,[],['is + sleeping이라 “자고 있다”가 맞아','baby 뒤엔 are','-ing 앞엔 be동사를 안 써서']]],
+o:[['나는 그림을 그리고 있어.','I am drawing a picture.','draw'],['그는 수영하고 있어.','He is swimming.','swims'],['그들은 축구를 하고 있니?','Are they playing soccer?','Do']]},
+
+{t:'What · Who · Where · When · How · Why',k:'Where do you live?',r:'무엇 <b>What<\/b>, 누구 <b>Who<\/b>, 어디 <b>Where<\/b>, 언제 <b>When<\/b>, 어떻게 <b>How<\/b>, 왜 <b>Why<\/b>. 대답을 먼저 보고 골라요!',
+p:[['<b>What<\/b> is your name?','네 이름이 뭐니?'],['<b>Where<\/b> do you live?','너는 어디에 사니?'],['<b>How<\/b> are you?','기분이 어때?'],['<b>Why<\/b> are you sad?','너는 왜 슬프니?']],
+f:[['Who is your bag?',0,['Where','When','Why'],['대답이 장소라서 Where','대답이 시간이라서','대답이 이유라서'],"대답: It's under the desk."],
+['Where is that boy?',0,['Who','When','How'],['대답이 누구인지라서 Who','대답이 장소라서','대답이 기분이라서'],'대답: He is my brother.'],
+['When are you happy?',0,['Why','Where','Who'],['대답이 이유(Because)라서 Why','대답이 장소라서','대답이 사람이라서'],'대답: Because I got a gift.'],
+['How old are you?',-1,[],['나이를 물을 땐 How old라서 맞아','나이는 What으로 물어서','대답이 장소라서'],"대답: I'm ten."]],
+o:[['너는 무엇을 좋아하니?','What do you like?','Who'],['너의 생일은 언제니?','When is your birthday?','Where'],['너는 학교에 어떻게 가니?','How do you go to school?','Why']]},
+
+{t:'at · on · in (시간)',k:'at 7, on Monday, in May',r:'시각(7시)은 <b>at<\/b>, 요일·날짜는 <b>on<\/b>, 달·계절·연도는 <b>in<\/b>!',
+p:[['I get up <b>at<\/b> 7 o\'clock.','나는 7시에 일어나.'],['I have art <b>on<\/b> Friday.','나는 금요일에 미술이 있어.'],['My birthday is <b>in<\/b> May.','내 생일은 5월이야.'],['It\'s hot <b>in<\/b> summer.','여름에는 더워.']],
+f:[['I get up on 7 o\'clock.',3,['at','in','to'],['7시 같은 시각 앞에는 at','아침이라서','get up 다음엔 늘 on']],
+['We have music in Monday.',3,['on','at','to'],['요일 앞에는 on','음악 시간이라서','Monday가 대문자라서']],
+['It snows in winter.',-1,[],['계절 앞에는 in이라서 맞아','눈이 오니까 on','winter는 시각이라서']],
+['My birthday is at May.',3,['in','on','to'],['달(May) 앞에는 in','생일엔 늘 at을 써서','May가 짧은 말이라서']]],
+o:[['나는 9시에 자.','I sleep at nine.','on'],['우리는 금요일에 수영해.','We swim on Friday.','in'],['여름에는 더워.','It is hot in summer.','at']]},
+
+{t:'in · on · under · next to (장소)',k:'The cat is in the box.',r:'안에 <b>in<\/b>, 위에 <b>on<\/b>, 아래에 <b>under<\/b>, 옆에 <b>next to<\/b>, 앞에 <b>in front of<\/b>, 뒤에 <b>behind<\/b>!',
+p:[['The cat is <b>in<\/b> the box.','고양이가 상자 안에 있어.'],['The book is <b>on<\/b> the desk.','책이 책상 위에 있어.'],['The ball is <b>under<\/b> the chair.','공이 의자 아래에 있어.'],['I sit <b>next to<\/b> Mina.','나는 미나 옆에 앉아.']],
+f:[['The cat is on the box.',3,['in','under','at'],['“상자 안에”는 in','고양이가 작아서','box 앞엔 늘 on'],'뜻: 고양이가 상자 안에 있어.'],
+['My shoes are in the bed.',3,['under','on','at'],['“침대 아래에”는 under','신발이 여럿이라서','bed 앞엔 늘 in'],'뜻: 내 신발은 침대 아래에 있어.'],
+['The pen is on the table.',-1,[],['“탁자 위에”는 on이라서 맞아','“위에”는 under','pen 앞엔 in'],'뜻: 펜이 탁자 위에 있어.'],
+['The bank is behind the school.',3,['next to','in','under'],['“옆에”는 next to','은행이 커서','school 앞엔 늘 behind'],'뜻: 은행은 학교 옆에 있어.']],
+o:[['연필이 가방 안에 있어.','The pencil is in the bag.','on'],['개가 탁자 아래에 있어.','The dog is under the table.','on'],['나는 문 옆에 서 있어.','I stand next to the door.','in']]},
+
+{t:'always · sometimes · never (얼마나 자주)',k:'I always get up early.',r:'<b>always<\/b>(항상) > <b>usually<\/b>(보통) > <b>often<\/b>(자주) > <b>sometimes<\/b>(가끔) > <b>never<\/b>(절대 안). be동사 <b>뒤<\/b>, 일반동사 <b>앞<\/b>에 와요!',
+p:[['I <b>always<\/b> get up early.','나는 항상 일찍 일어나.'],['She is <b>never<\/b> late.','그녀는 절대 늦지 않아.'],['We <b>sometimes<\/b> eat pizza.','우리는 가끔 피자를 먹어.']],
+f:[['He always plays games.',1,['sometimes','never','usually'],['“가끔”은 sometimes','게임은 늘 해서','He가 한 명이라서'],'뜻: 그는 가끔 게임을 해.'],
+['I never eat breakfast.',1,['always','often','sometimes'],['“항상”은 always','아침이라서 never','I가 주인공이라서'],'뜻: 나는 항상 아침을 먹어.'],
+['She is never late.',-1,[],['“절대 ~않다”는 never, be동사 뒤에 와서 맞아','never는 be동사 앞에만 와서','“절대”는 always'],'뜻: 그녀는 절대 늦지 않아.'],
+['We never go to the park.',1,['often','always','sometimes'],['“자주”는 often','공원이 가까워서','We가 여럿이라서'],'뜻: 우리는 자주 공원에 가.']],
+o:[['나는 항상 행복해.','I am always happy.','never'],['그는 가끔 늦게 일어나.','He sometimes gets up late.','get'],['우리는 절대 거짓말하지 않아.','We never tell lies.','always']]},
+
+{t:'many · much · some · any',k:'I want some water.',r:'셀 수 있는 것(books)은 <b>many<\/b>, 셀 수 없는 것(water, milk, time)은 <b>much<\/b>, <b>a lot of<\/b>는 둘 다 OK! 그냥 문장엔 <b>some<\/b>, 아니다·묻는 문장엔 <b>any<\/b>.',
+p:[['I have <b>many<\/b> books.','나는 책이 많아.'],['I don\'t have <b>much<\/b> time.','나는 시간이 많지 않아.'],['I want <b>some<\/b> water.','나는 물을 좀 원해.'],['Do you have <b>any<\/b> pets?','너 애완동물 있니?']],
+f:[['I have much books.',2,['many','much of','a'],['책은 셀 수 있어서 many','책이 무거워서','have 다음엔 much']],
+['There is many milk.',2,['much','a','two'],['우유는 셀 수 없어서 much','우유가 하나라서','There is 다음엔 many']],
+['I don\'t have some money.',3,['any','many','a'],['아니라는 문장(don\'t)에는 any','돈이 부족해서','have 뒤엔 some']],
+['She has a lot of friends.',-1,[],['a lot of는 셀 수 있든 없든 다 써서 맞아','친구는 셀 수 없어서','a lot of는 물어볼 때만 써서']]],
+o:[['나는 사과를 좀 원해.','I want some apples.','any'],['너 펜 좀 있니?','Do you have any pens?','some'],['우리는 시간이 많지 않아.','We don\'t have much time.','many']]},
+
+{t:'was · were (~였어요)',k:'I was tired yesterday.',r:'어제나 예전 일은 과거! am·is는 <b>was<\/b>, are는 <b>were<\/b>.',
+p:[['I <b>was<\/b> tired yesterday.','나는 어제 피곤했어.'],['They <b>were<\/b> at home.','그들은 집에 있었어.'],['It <b>was<\/b> sunny last Sunday.','지난 일요일엔 맑았어.'],['<b>Were<\/b> you sick?','너 아팠니?']],
+f:[['She were happy yesterday.',1,['was','is','are'],['She는 한 명이고 어제라서 was','행복해서','yesterday 앞엔 were']],
+['We was in the park.',1,['were','is','are'],['We는 여럿이고 과거라서 were','공원이 넓어서','과거엔 늘 was'],'뜻: 우리는 공원에 있었어.'],
+['I am late yesterday.',1,['was','were','is'],['yesterday(어제)라서 과거 was','I에는 늘 am','늦어서']],
+['Were they at school?',-1,[],['they는 여럿이고 과거라서 Were가 맞아','they에는 was','물어볼 땐 Did']]],
+o:[['나는 어제 아팠어.','I was sick yesterday.','were'],['그들은 교실에 있었어.','They were in the classroom.','was'],['날씨가 추웠니?','Was it cold?','Were']]},
+
+{t:'played · liked (과거 -ed)',k:'I played soccer yesterday.',r:'지난 일은 동사 + <b>-ed<\/b> (play→played). e로 끝나면 <b>-d<\/b>(like→liked), 자음+y는 <b>-ied<\/b>(study→studied)!',
+p:[['I <b>played<\/b> soccer yesterday.','나는 어제 축구를 했어.'],['She <b>watched<\/b> a movie.','그녀는 영화를 봤어.'],['We <b>liked<\/b> the song.','우리는 그 노래가 좋았어.'],['He <b>studied<\/b> math.','그는 수학을 공부했어.']],
+f:[['I play tennis yesterday.',1,['played','plays','playing'],['yesterday라서 과거 played','테니스가 재밌어서','I가 주인공이라서']],
+['She likeed the cake.',1,['liked','likes','like'],['e로 끝나면 -d만 붙여','케이크가 하나라서','She가 한 명이라서'],'뜻: 그녀는 그 케이크를 좋아했어.'],
+['He studyed English.',1,['studied','studies','study'],['자음+y는 y를 i로 바꾸고 -ed','영어가 어려워서','He가 한 명이라서'],'뜻: 그는 영어를 공부했어.'],
+['We visited Grandma last week.',-1,[],['last week(지난주)라서 visited가 맞아','last week엔 visit','We가 여럿이라서 visits']]],
+o:[['나는 어제 숙제를 끝냈어.','I finished my homework yesterday.','finish'],['그는 창문을 열었어.','He opened the window.','opens'],['우리는 함께 춤을 췄어.','We danced together.','dance']]},
+
+{t:'went · ate · saw (모양이 바뀌는 과거)',k:'I went to the zoo.',r:'모양이 확 바뀌는 과거도 있어요. go→<b>went<\/b>, eat→<b>ate<\/b>, see→<b>saw<\/b>, have→<b>had<\/b>, come→<b>came<\/b>, make→<b>made<\/b>!',
+p:[['I <b>went<\/b> to the zoo.','나는 동물원에 갔어.'],['She <b>ate<\/b> a sandwich.','그녀는 샌드위치를 먹었어.'],['We <b>saw<\/b> a rainbow.','우리는 무지개를 봤어.'],['He <b>had<\/b> a cold.','그는 감기에 걸렸었어.']],
+f:[['I goed to the beach.',1,['went','go','going'],['go의 과거는 went','바다가 멀어서','I가 주인공이라서'],'뜻: 나는 해변에 갔어.'],
+['She eated pizza yesterday.',1,['ate','eats','eat'],['eat의 과거는 ate','피자가 맛있어서','She가 한 명이라서']],
+['We seed a big dog.',1,['saw','see','sees'],['see의 과거는 saw','개가 커서','We가 여럿이라서'],'뜻: 우리는 큰 개를 봤어.'],
+['He came home late.',-1,[],['come의 과거는 came이라서 맞아','come의 과거는 comed','He가 한 명이라서 comes']]],
+o:[['나는 공원에 갔어.','I went to the park.','go'],['그녀는 케이크를 만들었어.','She made a cake.','maked'],['우리는 점심을 먹었어.','We ate lunch.','eated']]},
+
+{t:'didn\'t · Did you ~? (과거 아니다·묻기)',k:'Did you see it?',r:'과거에 “안 했다”는 <b>didn\'t<\/b> + 동사 원래 모양. 물어볼 땐 <b>Did<\/b> + 주어 + 동사 원래 모양?',
+p:[['I <b>didn\'t go<\/b> to school.','나는 학교에 안 갔어.'],['She <b>didn\'t eat<\/b> breakfast.','그녀는 아침을 안 먹었어.'],['<b>Did<\/b> you <b>see<\/b> it? Yes, I did.','너 그거 봤니? 응, 봤어.']],
+f:[['I didn\'t went there.',2,['go','goes','going'],['didn\'t 뒤엔 동사 원래 모양','거기가 멀어서','과거라서 went']],
+['Did she played the piano?',2,['play','plays','playing'],['Did 뒤엔 동사 원래 모양','과거라서 played','She가 한 명이라서']],
+['He don\'t come yesterday.',1,['didn\'t','doesn\'t','isn\'t'],['yesterday라서 과거 didn\'t','He는 한 명이라서 doesn\'t','come이 동사라서 isn\'t']],
+['Did you finish your homework?',-1,[],['Did + 주어 + 원래 모양이라 맞아','Did 뒤엔 finished','물어볼 땐 Do']]],
+o:[['나는 TV를 안 봤어.','I didn\'t watch TV.','watched'],['너 어제 수영했니?','Did you swim yesterday?','Do'],['그는 울지 않았어.','He didn\'t cry.','cried']]},
+
+{t:'will · be going to (할 거예요)',k:'I will go to the park.',r:'앞으로 할 일은 <b>will + 동사 원래 모양<\/b>, 또는 <b>be going to + 동사 원래 모양<\/b>!',
+p:[['I <b>will go<\/b> to the park.','나는 공원에 갈 거야.'],['She <b>will be<\/b> ten next year.','그녀는 내년에 열 살이 될 거야.'],['We <b>are going to swim<\/b> tomorrow.','우리는 내일 수영할 거야.']],
+f:[['I will goes to school.',2,['go','went','going'],['will 뒤에는 동사 원래 모양','I가 한 명이라서','학교가 하나라서']],
+['He will plays soccer tomorrow.',2,['play','played','playing'],['will 뒤에는 동사 원래 모양','He가 한 명이라서 -s','tomorrow가 끝에 있어서']],
+['I went to the zoo tomorrow.',1,['will go','go','goes'],['tomorrow(내일)는 앞으로 할 일이라 will','동물원이 멀어서','I가 한 명이라서']],
+['She is going to visit Grandma.',-1,[],['be going to 뒤에 동사 원래 모양이 와서 맞아','She가 한 명이라 visits여야 해서','할머니가 한 명이라서']]],
+o:[['나는 내일 할머니 댁에 갈 거야.','I will visit Grandma tomorrow.','visits'],['비가 올 거야.','It will rain.','rains'],['우리는 수영할 거야.','We are going to swim.','swims']]},
+
+{t:'bigger than (비교하기)',k:'A dog is bigger than a cat.',r:'비교할 땐 <b>-er + than<\/b>. 긴 단어는 <b>more + 단어<\/b>. big·hot은 끝 글자를 한 번 더(bigger, hotter)!',
+p:[['A dog is <b>bigger than<\/b> a cat.','개는 고양이보다 커.'],['I am <b>taller than<\/b> my sister.','나는 여동생보다 키가 커.'],['This flower is <b>more beautiful<\/b>.','이 꽃이 더 아름다워.'],['Summer is <b>hotter than<\/b> spring.','여름은 봄보다 더워.']],
+f:[['An elephant is big than a mouse.',3,['bigger','biggest','more big'],['than으로 비교하니까 bigger','코끼리는 원래 커서 big','쥐가 작아서']],
+['I am taller then my brother.',3,['than','that','and'],['비교할 땐 than','taller가 있으니까 then','형이 한 명이라서']],
+['This flower is beautifuler.',3,['more beautiful','beautifulest','beautifully'],['beautiful은 긴 단어라서 앞에 more','꽃이 예뻐서 -er','This가 하나라서']],
+['Summer is hotter than spring.',-1,[],['hot은 t를 한 번 더 써서 hotter, than도 맞아','여름엔 hot만 써야 해서','spring이 계절이라 in이 필요해서']]],
+o:[['코끼리는 개보다 커.','An elephant is bigger than a dog.','big'],['나는 형보다 키가 커.','I am taller than my brother.','tall'],['기차는 버스보다 빨라.','A train is faster than a bus.','fast']]},
+
+{t:'the tallest (가장 ~한)',k:'You are the best!',r:'“가장 ~한”은 <b>the + -est<\/b> (tall→the tallest). 긴 단어는 <b>the most<\/b> + 단어. good은 <b>the best<\/b>!',
+p:[['He is <b>the tallest<\/b> in my class.','그는 우리 반에서 가장 키가 커.'],['This is <b>the biggest<\/b> box.','이게 가장 큰 상자야.'],['It is <b>the most beautiful<\/b> flower.','그것은 가장 아름다운 꽃이야.'],['You are <b>the best<\/b>!','네가 최고야!']],
+f:[['She is the tall girl in my class.',3,['tallest','taller','talls'],['“가장 큰”은 the tallest','반에 아이가 많아서','She가 한 명이라서'],'뜻: 그녀는 우리 반에서 가장 키가 큰 아이야.'],
+['This is the bigest cake.',3,['biggest','bigger','big'],['big은 g를 한 번 더 써서 biggest','케이크가 맛있어서','This가 하나라서'],'뜻: 이것이 가장 큰 케이크야.'],
+['It is the goodest movie.',3,['best','better','most good'],['good의 “가장”은 best','영화가 재밌어서','It이 하나라서']],
+['Summer is the hottest season.',-1,[],['hot은 t를 한 번 더 써서 the hottest라 맞아','the 뒤엔 -er','여름은 계절이라 in이 필요해서']]],
+o:[['그는 가장 빠른 소년이야.','He is the fastest boy.','faster'],['오늘은 최고의 날이야.','Today is the best day.','good'],['그녀는 가장 유명한 가수야.','She is the most famous singer.','more']]}
+];
+
+</script>
+<script>
+{
+const app=document.getElementById('app');
+/* ---------- 공통 ---------- */
+const STAR='<path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/>';
+const stars=n=>'<span class="stars">'+[0,1,2].map(i=>`<svg viewBox="0 0 24 24" class="${i<n?'on':''}" aria-hidden="true">${STAR}</svg>`).join('')+'</span>';
+const SPK='<span class="spk"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 8.5a5 5 0 0 1 0 7" stroke="#fff" stroke-width="2" fill="none"/></svg></span>';
+const PEN='<svg viewBox="0 0 64 64" aria-hidden="true"><g transform="rotate(-18 32 32)"><rect x="22" y="6" width="20" height="40" rx="4" fill="#ffc23a" stroke="#1d2340" stroke-width="2.5"/><rect x="22" y="6" width="20" height="8" rx="3" fill="#ff4f5a" stroke="#1d2340" stroke-width="2.5"/><path d="M22 46h20l-10 14z" fill="#f6d9b0" stroke="#1d2340" stroke-width="2.5" stroke-linejoin="round"/><path d="M29 55.5h6L32 60z" fill="#1d2340"/><circle cx="28" cy="26" r="2.4" fill="#1d2340"/><circle cx="36" cy="26" r="2.4" fill="#1d2340"/><path d="M28 32q4 4 8 0" stroke="#1d2340" stroke-width="2.2" fill="none" stroke-linecap="round"/></g></svg>';
+const STAMP=d=>`<svg class="stamp" viewBox="0 0 150 150" aria-hidden="true"><g transform="rotate(-12 75 75)"><circle cx="75" cy="75" r="64" fill="none" stroke="#ff4f5a" stroke-width="6"/><circle cx="75" cy="75" r="54" fill="none" stroke="#ff4f5a" stroke-width="2"/><text x="75" y="70" text-anchor="middle" font-family="Fredoka,sans-serif" font-size="30" font-weight="600" fill="#ff4f5a">${d?'Day '+d:'Review'}</text><text x="75" y="100" text-anchor="middle" font-family="Jua,sans-serif" font-size="20" fill="#ff4f5a">참 잘했어요</text></g></svg>`;
+const plain=h=>h.replace(/<[^>]+>/g,'');
+const shuf=n=>{const a=[...Array(n).keys()];for(let i=n-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const mix=a=>shuf(a.length).map(i=>a[i]);
+const today=()=>{const d=new Date();return Math.floor((d-d.getTimezoneOffset()*6e4)/864e5)};
+const INT=[0,1,2,4,7,14,30];
+function say(t,rate){try{const s=window.speechSynthesis;s.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=rate||.85;s.speak(u)}catch(e){}}
+const sayW=t=>say(t,.75);
+function split(s){const w=s.split(' ');const m=w[w.length-1].match(/^(.*?)([.?!]?)$/);w[w.length-1]=m[1];return{w,p:m[2]}}
+function fixed(q){const {w,p}=split(q[0]);if(q[1]>=0)w[q[1]]=q[2][0];return w.join(' ')+p}
+
+/* ---------- 데이터 ---------- */
+const WORDS=WV.map(([w,m,d])=>({k:'v:'+w,w,m,d}));
+const WBYK=Object.fromEntries(WORDS.map(x=>[x.k,x]));
+const NDAY=Math.max(...WORDS.map(x=>x.d));
+const TOTAL=Math.max(NDAY,GU.length*2);
+const dayWords=d=>WORDS.filter(x=>x.d===d);
+const gram=d=>{const u=Math.floor((d-1)/2);return u<GU.length?{u,part:(d-1)%2}:{rev:true}};
+const spell=x=>/^[A-Za-z]+$/.test(x.w);
+const gkey=(u,t,i)=>'g:'+u+':'+t+':'+i;
+const gitem=k=>{const a=k.split(':');return{t:a[2]==='f'?'F':'O',u:+a[1],i:+a[3]}};
+const ikey=it=>it.w?it.w.k:gkey(it.u,it.t==='F'?'f':'o',it.i);
+const wordQ=ws=>[...mix(ws).map(w=>({t:'L',w})),...mix(ws).map(w=>({t:'M',w})),...mix(ws.filter(spell)).map(w=>({t:'S',w}))];
+const unitQ=u=>[...GU[u].f.map((_,i)=>({t:'F',u,i})),...mix(GU[u].o.map((_,i)=>({t:'O',u,i})))];
+
+/* ---------- 학습자 ---------- */
+const MKEY='eng-learners';
+let M={list:[{id:'p1',name:'학생 1'}],cur:'p1'};try{M=JSON.parse(localStorage.getItem(MKEY))||M}catch(e){}
+let ACC=null,ACCNAME='',FB=null;
+const KEY=()=>ACC?'eng-acct-'+ACC:M.cur==='p1'?'jiho-grammar-v1':'eng-'+M.cur;
+const saveM=()=>{try{localStorage.setItem(MKEY,JSON.stringify(M))}catch(e){}};
+const me=()=>ACC?{id:'acct',name:ACCNAME||'나'}:(M.list.find(p=>p.id===M.cur)||M.list[0]);
+let S;
+function loadS(){
+  S=null;try{S=JSON.parse(localStorage.getItem(KEY()))}catch(e){}S=S||{};
+  S.w=S.w||{};
+  for(const k of Object.keys(S.w)){if(/^[se]:/.test(k)){const nk='v:'+k.slice(2);if(WBYK[nk]){const o=S.w[k],n=S.w[nk];if(!n||o[0]>n[0])S.w[nk]=o}delete S.w[k]}}
+  S.g=S.g||{};S.c=S.c||{day:1,last:null,streak:0};S.gs=S.gs||{};S.h=S.h||[];
+  S.t=S.t||{L:[0,0],M:[0,0],S:[0,0],F:[0,0],O:[0,0]};S.t.P=S.t.P||[0,0];S.t.V=S.t.V||[0,0];
+  if(S.wt){for(const k of ['L','M','S']){S.t[k][0]+=S.wt[k][0];S.t[k][1]+=S.wt[k][1]}delete S.wt}
+  delete S.s;delete S.log;delete S.wh;delete S.ws;
+  if(!['c','w','g'].includes(S.tab))S.tab='c';
+}
+loadS();
+const save=()=>{S.updated=Date.now();try{localStorage.setItem(KEY(),JSON.stringify(S))}catch(e){}pushFB()};
+const nm=t=>t.replace(/[<>&"']/g,'').trim().slice(0,12);
+function srs(k,miss){const st=k.startsWith('g:')?S.g:S.w,s=st[k]||[0,0,0];if(miss){s[0]=1;s[2]+=miss}else s[0]=Math.min(s[0]+1,6);s[1]=today()+INT[s[0]];st[k]=s}
+function buildRev(){
+  const T=today();
+  const ws=WORDS.filter(x=>S.w[x.k]&&S.w[x.k][1]<=T).sort((a,b)=>S.w[a.k][1]-S.w[b.k][1]).slice(0,15);
+  const gs=Object.keys(S.g).filter(k=>S.g[k][1]<=T&&GU[gitem(k).u]).sort((a,b)=>S.g[a][1]-S.g[b][1]).slice(0,6);
+  return mix([...ws.map(w=>({t:mix(spell(w)?['L','M','S']:['L','M'])[0],w})),...gs.map(gitem)]);
+}
+const dueN=()=>{const T=today();return WORDS.filter(x=>S.w[x.k]&&S.w[x.k][1]<=T).length+Object.keys(S.g).filter(k=>S.g[k][1]<=T).length};
+
+/* ---------- 화면 틀 ---------- */
+let L=null,R=null,C=null,G=null,SP=null,RT=null;
+const WHO=()=>ACC?`<button class="who" data-a="who">공부하는 사람: <b>${me().name}</b> · 부모님 설정</button>`:`<button class="who" data-a="who">공부하는 사람: <b>${me().name}</b> · 바꾸기</button>`;
+const TABS=t=>`<div class="tabs">${[['c','오늘의 수업'],['w','단어장'],['g','문법']].map(([v,l])=>`<button data-a="tab" data-v="${v}" class="${t===v?'on':''}">${l}</button>`).join('')}</div>`;
+const hdr=(h,sub,right)=>`<header>${PEN}<div><h1>${h}</h1><p class="sub">${sub}</p></div><div class="total">${right}</div></header>${WHO()}`;
+const CAT=k=>k==='rev'?0:k[0]==='w'?1:k==='speak'?3:2;
+function lbar(){
+  if(!L)return '';
+  const have=[...new Set(L.steps.map(s=>CAT(s.k)))],cur=CAT(L.steps[L.si].k),nm4=['복습','단어','문법','말하기'];
+  return `<div class="chips">${have.map(c=>`<span class="${c<cur?'ok':c===cur?'now':''}">${nm4[c]}</span>`).join('')}</div>`;
+}
+const top=t=>`<div class="top"><button class="back" data-a="home" aria-label="처음으로">←</button><h2>${t}</h2></div>${lbar()}`;
+function home(){if(R)R.tk++;try{const T=SP||C;if(T){clearTimeout(T.tm);DICT&&DICT.active()&&DICT.stop()}}catch(e){}L=R=C=G=SP=null;const t=S.tab;if(t==='w')return whome();if(t==='g')return ghome();chome()}
+
+/* ---------- 오늘의 수업 홈 ---------- */
+function chome(){
+  const T=today(),c=S.c,d=c.day,doneT=c.last===T&&!c.extra,fin=d>TOTAL,nd=dueN();
+  const streak=(c.last===T||c.last===T-1)?c.streak:0;
+  let main;
+  if(fin)main=`<div class="card lesson"><p class="sub">${TOTAL}일 과정 완주</p><h2 class="dayt">모든 수업을 끝냈어요!</h2><p>이제 복습으로 오래 기억하게 지켜요.</p>${nd?`<button class="big" data-a="revonly">복습하기 (${nd}개)</button>`:''}</div>`;
+  else if(doneT)main=`<div class="card lesson"><p class="sub">오늘 수업 완료</p><h2 class="dayt">내일 Day ${d}가 열려요</h2><p style="margin-top:0">잊어버릴 때쯤 다시 보는 게 오래 기억하는 비결이에요. 오늘은 여기까지!</p>${nd?`<button class="big" data-a="revonly">남은 복습하기 (${nd}개)</button>`:''}<button class="link" data-a="unlock">부모님: 오늘 한 수업 더 열기</button></div>`;
+  else{
+    const dw=dayWords(d),g=gram(d);
+    const gt=g.rev?'문법 종합 복습 (약한 단원 위주)':`${g.u+1}단원 ${GU[g.u].t}<br>${g.part?'규칙 다시 듣기 + 문장 만들기':'규칙 배우기 + 틀린 곳 고치기'}`;
+    main=`<div class="card lesson"><p class="sub">오늘의 수업</p><h2 class="dayt">Day ${d}</h2>
+    <ol class="steps"><li><b>복습</b><span>${nd?nd+'개, 잊기 전에 다시 봐요':'오늘은 복습할 게 없어요'}</span></li>
+    <li><b>새 단어 ${dw.length}개</b><span class="en">${dw.slice(0,4).map(x=>x.w).join(', ')}${dw.length>4?' …':''}</span></li>
+    <li><b>문법</b><span>${gt}</span></li>
+    <li><b>따라 말하기</b><span>오늘 문장 3개를 소리 내어</span></li></ol>
+    <button class="big" data-a="lstart">Day ${d} 시작하기</button></div>`;
+  }
+  const map=Array.from({length:TOTAL},(_,i)=>{const n=i+1;return `<i class="${n<d?'dn':n===d&&!fin?'cur':''}">${n===1||n%10===0?n:''}</i>`}).join('');
+  app.innerHTML=hdr('영어교실','매일 20분: 복습 → 단어 → 문법 → 말하기',`<b>${streak}</b>일 연속`)+TABS('c')+main+
+  `<h3 class="lvh">${TOTAL}일 여정</h3><div class="daymap" aria-label="진도 ${d-1}일 완료">${map}</div>
+  <button class="big alt" data-a="report" style="margin-top:24px">선생님께 결과 보내기</button>
+  <p class="note"><b>부모님께:</b> 하루 한 수업이 원칙이에요. 맞힌 것은 1·2·4·7·14·30일 뒤에, 틀린 것은 다음 날 다시 나와서 장기기억으로 넘어가요. 단어 카드와 따라 말하기는 꼭 소리 내어 하게 해 주세요.</p>`;
+}
+
+/* ---------- 수업 진행 ---------- */
+function speakSet(g){
+  if(!g||g.rev){const all=GU.flatMap(u=>u.p);return mix(all).slice(0,3)}
+  return GU[g.u].p.slice(0,3);
+}
+function lstart(revOnly){
+  const d=S.c.day,steps=[],rq=buildRev();
+  if(rq.length)steps.push({k:'rev',q:rq});
+  if(!revOnly){
+    const dw=dayWords(d),g=gram(d);
+    if(dw.length)steps.push({k:'wcard',ws:dw},{k:'wquiz',ws:dw});
+    if(g.rev)steps.push({k:'gmix'});
+    else if(g.part===0)steps.push({k:'gintro',u:g.u},{k:'gfix',u:g.u});
+    else steps.push({k:'gintro',u:g.u,again:true},{k:'gorder',u:g.u});
+    steps.push({k:'speak',ss:speakSet(g)});
+  }
+  if(!steps.length)return home();
+  L={d,revOnly,steps,si:-1,ok:0,n:0};
+  nextStep();
+}
+const stepDone=sum=>{if(sum){L.ok+=sum.ok;L.n+=sum.n}nextStep()};
+function nextStep(){
+  L.si++;
+  if(L.si>=L.steps.length)return ldone();
+  const st=L.steps[L.si];
+  if(st.k==='rev')return runStart(st.q,{title:'복습',onDone:stepDone});
+  if(st.k==='wcard'){C={ws:st.ws,i:0,title:'새 단어 카드',onDone:()=>stepDone()};cReset();card();return sayW(C.ws[0].w)}
+  if(st.k==='wquiz')return runStart(wordQ(st.ws),{title:'새 단어 문제',onDone:stepDone});
+  if(st.k==='gintro'){G={u:st.u,again:st.again,onDone:()=>stepDone()};return gintro()}
+  if(st.k==='gfix')return runStart(GU[st.u].f.map((_,i)=>({t:'F',u:st.u,i})),{title:`${st.u+1}단원 · 틀린 곳 고치기`,onDone:stepDone});
+  if(st.k==='gorder')return runStart(mix(GU[st.u].o.map((_,i)=>({t:'O',u:st.u,i}))),{title:`${st.u+1}단원 · 문장 만들기`,onDone:stepDone});
+  if(st.k==='gmix'){
+    const learned=Object.keys(S.g).filter(k=>GU[gitem(k).u]).sort((a,b)=>S.g[b][2]-S.g[a][2]);
+    let pick=learned.slice(0,4).concat(mix(learned.slice(4)).slice(0,2));
+    if(pick.length<6)pick=pick.concat(mix(GU.flatMap((u,ui)=>[...u.f.map((_,i)=>gkey(ui,'f',i)),...u.o.map((_,i)=>gkey(ui,'o',i))])).filter(k=>!pick.includes(k)).slice(0,6-pick.length));
+    return runStart(mix(pick.map(gitem)),{title:'문법 종합 복습',onDone:stepDone});
+  }
+  if(st.k==='speak'){SP={ss:st.ss,i:0};spReset();speak();return say(plain(SP.ss[0][0]))}
+}
+function ldone(){
+  const T=today(),c=S.c,d=L.d;
+  if(!L.revOnly){if(c.last!==T){c.streak=(c.last===T-1)?c.streak+1:1;c.last=T}c.extra=false;c.day=d+1}
+  S.h.push({d:new Date().toLocaleDateString('sv'),day:L.revOnly?0:d,ok:L.ok,n:L.n});save();
+  if(!L.revOnly)autoDone('english');
+  const pct=L.n?Math.round(L.ok/L.n*100):100;
+  app.innerHTML=`<div class="card res">${STAMP(L.revOnly?0:d)}<h2>${L.revOnly?'복습 완료!':'Day '+d+' 완료!'}</h2>
+  <p>한 번에 맞힌 것 <b>${L.ok}</b> / ${L.n} (${pct}%)</p><p class="sub">${c.streak}일 연속 공부 중 · 내일 또 만나요</p>
+  <button class="big" data-a="home" style="margin-top:16px">처음으로</button></div>`;
+  L=null;
+}
+
+/* ---------- 단어 카드 ---------- */
+function card(){
+  const w=C.ws[C.i],n=C.ws.length,can=!!DICT&&!NOMIC,lis=C.st&&C.st!=='idle',ok=micOk(C);
+  const sp=can?`<button class="mic ${lis?'on':''}" data-a="mic" ${C.pass?'disabled':''}>${MIC}<span>${C.pass?'3번 완료!':lis?'듣고 있어요. 말하고 눌러요':'눌러서 단어 말하기 '+C.cnt+'/3'}</span></button>
+    <p class="heard en">${esc((C.heard+' '+(C.part||'')).trim())||'&nbsp;'}</p>`
+    :`<button class="rep ${C.rep>=3?'full':''}" data-a="crep">${C.rep>=3?'따라 말하기 완료!':'소리 내어 따라 말하기 '+C.rep+'/3'}</button>`;
+  app.innerHTML=top(C.title)+`<div class="bar"><i style="width:${C.i/n*100}%"></i></div>
+  <div class="card wcard"><button class="wbig" data-a="csay">${w.w}</button>
+  <p class="mean ${C.show?'':'hid'}">${C.show?w.m:'뜻을 먼저 맞혀 보고 눌러요'}</p>
+  <div class="row2"><button class="sbtn" data-a="csay">${SPK}다시 듣기</button><button class="sbtn" data-a="cshow">뜻 보기</button></div>
+  ${sp}<p class="msg ${C.cls||''}" role="status">${C.msg||''}</p></div>
+  <p class="sub" style="text-align:center;margin:10px 0">${C.i+1} / ${n}</p>
+  <button class="big" data-a="cnext" ${ok?'':'disabled'}>${!ok?(can?`마이크로 3번 말하면 넘어가요 (${C.cnt}/3)`:'3번 따라 말하면 넘어가요'):C.i+1<n?'다음 단어':'문제 풀러 가기'}</button>`;
+}
+
+/* ---------- 문법 규칙 ---------- */
+function gintro(){
+  const u=GU[G.u];
+  app.innerHTML=top(`${G.u+1}단원 · ${u.t}`)+`<p class="ask">${G.again?'지난 시간 규칙, 다시 들어 봐요':'오늘의 규칙'}</p><p class="rule">${u.r}</p>
+  <div class="pats">${u.p.map((p,i)=>`<button class="pat" data-a="psay" data-v="${i}">${SPK}<span><span class="en">${p[0]}</span><small>${p[1]}</small></span></button>`).join('')}</div>
+  <p class="sub" style="margin-bottom:14px">문장을 하나씩 눌러 듣고, 소리 내어 따라 읽어요.</p>
+  <button class="big" data-a="gnext">${G.again?'문장 만들기 시작':'문제 풀기'}</button>`;
+}
+
+/* ---------- 따라 말하기 (음성 인식) ---------- */
+const MIC='<span class="ring"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>';
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let DICT,NOMIC=false,NOLANG=false;
+const micT=()=>SP||C;
+const micText=()=>SP?plain(SP.ss[SP.i][0]):C.ws[C.i].w;
+const micDraw=()=>SP?speak():card();
+try{if(window.claude&&window.claude.use)window.claude.use('dictation').then(d=>{DICT=d;if(!d)return;
+  d.onPartial(({text})=>{const T=micT();if(T){T.part=text;micDraw()}});
+  d.onFinal(({text})=>{const T=micT();if(T){T.heard+=text;T.part='';check()}});
+  d.onState(({state,reason})=>{const T=micT();if(!T)return;T.st=state;
+    if(state==='listening'){clearTimeout(T.tm);T.tm=setTimeout(()=>{try{d.active()&&d.stop()}catch(e){}},SP?10000:6000)}
+    if(state==='idle')finishAttempt(reason);else micDraw()});
+  if(micT())micDraw()},()=>{DICT=null})}catch(e){DICT=null}
+const HOMO=[['two','to','too'],['one','won'],['four','for'],['eight','ate'],['see','sea'],['right','write'],['there','their'],['hour','our'],['know','no'],['buy','by','bye'],['i','eye'],['son','sun'],['meat','meet'],['pair','pear'],['hear','here'],['knew','new'],['blue','blew'],['wood','would'],['week','weak'],['road','rode'],['tail','tale'],['flower','flour'],['dear','deer'],['whole','hole'],['red','read'],['ant','aunt'],['bee','be'],['wear','where'],['sale','sail'],['son','sun'],['grey','gray'],['color','colour'],['favorite','favourite'],['ok','okay'],['a','uh'],['an','and']];
+function lev(a,b){const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]}
+function wgrade(word,heard){
+  const a=toks(word),b=toks(heard);
+  if(a.length>1){const g=grade(word,heard);return{tw:a,hit:g.hit,pass:g.hit.size===a.length}}
+  const t=a[0]||'',same=x=>x===t||HOMO.some(g=>g.includes(t)&&g.includes(x))||(t.length>=5&&lev(x,t)<=1);
+  const ok=b.some(same);return{tw:a,hit:ok?new Set([0]):new Set(),pass:ok};
+}
+const NUM=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'];
+function toks(s){
+  return s.toLowerCase().replace(/[’`]/g,"'").replace(/\bcan't\b/g,'can not').replace(/\bcannot\b/g,'can not').replace(/\bwon't\b/g,'will not')
+  .replace(/n't\b/g,' not').replace(/\b(it|that|what|he|she|there|where|who)'s\b/g,'$1 is').replace(/\blet'?s\b/g,'let us').replace(/'m\b/g,' am').replace(/'re\b/g,' are').replace(/'ll\b/g,' will').replace(/'s\b/g,'')
+  .replace(/'/g,'').replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(Boolean).map(w=>/^\d+$/.test(w)&&NUM[+w]?NUM[+w]:w);
+}
+function grade(target,heard){
+  const a=toks(target),b=toks(heard),n=a.length,m=b.length,D=Array.from({length:n+1},()=>Array(m+1).fill(0));
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)D[i][j]=a[i]===b[j]?D[i+1][j+1]+1:Math.max(D[i+1][j],D[i][j+1]);
+  const hit=new Set();let i=0,j=0;while(i<n&&j<m){if(a[i]===b[j]){hit.add(i);i++;j++}else if(D[i+1][j]>=D[i][j+1])i++;else j++}
+  return{tw:a,hit,score:n?hit.size/n:0,pass:n>0&&n-hit.size<=(n<=4?0:n<=8?1:2)};
+}
+const mgrade=T=>SP?grade(micText(),T.heard):wgrade(micText(),T.heard);
+function check(){
+  const T=micT();if(T.lock)return micDraw();T.res=mgrade(T);
+  if(!T.pass&&T.res.pass){
+    T.lock=true;T.cls='good';
+    if(SP){T.pass=true;S.t.P[0]+=T.tries===0?1:0;T.msg=T.tries?'해냈어요! 아주 잘 따라 했어요.':'한 번에 통과! 발음 최고예요.'}
+    else{T.cnt++;S.t.V[0]++;T.tries=0;if(T.cnt>=3){T.pass=true;T.msg='3번 모두 잘 말했어요!'}else T.msg=`좋아요! ${T.cnt}/3 · 마이크를 다시 누르고 한 번 더!`}
+    save();try{DICT.active()&&DICT.stop()}catch(e){}
+  }
+  micDraw();
+}
+function finishAttempt(reason){
+  const T=micT();clearTimeout(T.tm);
+  if(reason==='not_granted'||reason==='unavailable'){NOMIC=true;T.cls='oops';T.msg=reason==='not_granted'?'마이크 사용이 허락되지 않았어요. 버튼으로 따라 말하기를 할게요.':'이 기기에서는 음성 확인이 안 돼요. 버튼으로 따라 말하기를 할게요.'}
+  else if(!T.lock&&!T.pass&&reason!=='hidden'&&reason!=='rate_limited'){
+    if(!T.heard.trim()){T.cls='oops';T.msg='소리가 잘 안 들렸어요. 마이크를 누르고 크게 말해 봐요.'}
+    else{T.tries++;S.t[SP?'P':'V'][1]++;save();T.res=mgrade(T);T.cls='oops';
+      T.msg=T.tries>=3?'괜찮아요! 다음으로 넘어가고 내일 다시 도전해요.':SP?`조금만 더! 빨간 단어를 또박또박 말해 봐요. (${T.tries}/3)`:`조금만 더! 한 번 더 듣고 또박또박 말해 봐요. (${T.tries}/3)`}
+  }else if(reason==='rate_limited'){T.cls='oops';T.msg='잠깐 뒤에 다시 눌러 주세요.'}
+  micDraw();
+}
+const MRESET={rep:0,heard:'',part:'',tries:0,pass:false,res:null,msg:'',cls:'',st:'idle',cnt:0,lock:false};
+function spReset(){Object.assign(SP,MRESET)}
+function cReset(){Object.assign(C,MRESET,{show:false})}
+const micOk=T=>(!!DICT&&!NOMIC)?(T.pass||T.tries>=3):T.rep>=(SP?2:3);
+function speak(){
+  const s=SP.ss[SP.i],can=!!DICT&&!NOMIC,lis=SP.st&&SP.st!=='idle';
+  let body;
+  if(can){
+    const words=SP.res?SP.res.tw.map((w,i)=>`<span class="${SP.res.hit.has(i)?'hw':'mw'}">${esc(w)}</span>`).join(' '):'';
+    body=`<button class="mic ${lis?'on':''}" data-a="mic" ${SP.pass?'disabled':''}>${MIC}<span>${SP.pass?'통과!':lis?'듣고 있어요. 다 말하면 눌러요':'눌러서 따라 말하기'}</span></button>
+    <p class="heard en">${esc((SP.heard+' '+(SP.part||'')).trim())||'&nbsp;'}</p>${words&&!lis?`<p class="score">${words}</p>`:''}`;
+  }else body=`<button class="rep ${SP.rep>=2?'full':''}" data-a="srep">${SP.rep>=2?'잘했어요!':'듣고 따라 말했어요 '+SP.rep+'/2'}</button>
+    ${DICT===null||NOMIC?'<p class="sub">음성 확인은 크롬 브라우저나 Claude 데스크톱 앱에서 열면 켜져요.</p>':''}`;
+  const ok=micOk(SP);
+  const last=SP.i+1>=SP.ss.length;
+  app.innerHTML=top('따라 말하기')+`<div class="card wcard"><p class="sub">${SP.i+1} / ${SP.ss.length}</p><p class="spk-en en">${s[0]}</p><p class="mean">${s[1]}</p>
+  <div class="row2"><button class="sbtn" data-a="ssay">${SPK}듣기</button><button class="sbtn" data-a="sslow">천천히 듣기</button></div>
+  ${body}<p class="msg ${SP.cls||''}" role="status">${SP.msg||''}</p></div>
+  <button class="big" data-a="snext" style="margin-top:14px" ${ok?'':'disabled'}>${ok?(last?'수업 끝내기':'다음 문장'):(can?'따라 말하면 넘어갈 수 있어요':'두 번 따라 말하면 넘어가요')}</button>`;
+}
+
+/* ---------- 문제 엔진 ---------- */
+function runStart(q,o){R={q:[...q],qi:0,miss:{},keys:new Set(),title:o.title,onDone:o.onDone,noSrs:o.noSrs,tk:0};rq()}
+function rq(){
+  if(R.qi>=R.q.length)return runEnd();
+  const it=R.q[R.qi];R.ans=null;R.typed=[];R.st='w';R.gone=[];R.fmiss=false;R.msg='';R.cls='';R.shake=null;
+  if(it.w){
+    const w=it.w;
+    if(it.t==='S'){const Lt=w.w.split(''),ab='abcdefghijklmnoprstuwy',d=[];while(d.length<2){const c=ab[Math.floor(Math.random()*ab.length)];if(!Lt.includes(c)&&!d.includes(c))d.push(c)}R.tiles=mix([...Lt,...d])}
+    else{const key=it.t==='L'?'m':'w',seen=new Set([w[key]]),o=[w[key]];
+      for(const x of mix(WORDS)){if(o.length>=4)break;if(!seen.has(x[key])&&x.m!==w.m&&x.w.toLowerCase()!==w.w.toLowerCase()){seen.add(x[key]);o.push(x[key])}}
+      R.opts=mix(o);R.right=w[key]}
+  }else if(it.t==='F'){const q=GU[it.u].f[it.i];R.oo=shuf(q[2].length);R.wo=shuf(3)}
+  else{const o=GU[it.u].o[it.i],sp=split(o[1]);R.target=sp.w;R.p=sp.p;R.tiles=mix([...sp.w,o[2]])}
+  rr();
+  if(it.w&&it.t!=='M')sayW(it.w.w);
+}
+function rr(){
+  const it=R.q[R.qi];
+  const b=it.w?rW(it):it.t==='F'?rF(it):rO(it);
+  app.innerHTML=top(R.title)+`<div class="bar"><i style="width:${Math.min(R.qi/R.q.length,1)*100}%"></i></div><div class="card">${b}</div>`;
+  R.shake=null;
+}
+function rW(it){
+  const w=it.w,A=R.ans;let b;
+  if(it.t==='S'){
+    b=`<p class="ask">듣고 철자를 맞춰요</p><div class="srow"><button data-a="rsay" aria-label="다시 듣기">${SPK}</button><span>${w.m}</span></div>
+    <div class="slots">${w.w.split('').map((c,i)=>`<span class="slot">${A&&!A.ok?c:(R.typed[i]!=null?R.tiles[R.typed[i]]:'')}</span>`).join('')}</div>
+    ${A?'':`<div class="tiles">${R.tiles.map((c,i)=>`<button class="tile en" data-a="wtile" data-v="${i}" ${R.typed.includes(i)?'disabled':''}>${c}</button>`).join('')}</div><button class="none" data-a="wdel">한 글자 지우기</button>`}`;
+  }else{
+    b=(it.t==='L'?`<p class="ask">듣고 뜻을 골라요</p><button class="spkbig" data-a="rsay" aria-label="다시 듣기">${SPK}</button>`:`<p class="ask">이 뜻의 영어 단어는?</p><p class="meanbig">${w.m}</p>`)+
+    `<div class="opts">${R.opts.map((o,i)=>`<button class="opt ${it.t==='M'?'en':''} ${A?(o===R.right?'right':(A.v===i?'wrongc':'no')):''}" data-a="wopt" data-v="${i}">${o}</button>`).join('')}</div>`;
+  }
+  if(A)b+=`<p class="msg ${A.ok?'good':'oops'}">${A.ok?'정답!':'정답은 <span class="en">'+w.w+'</span> ('+w.m+'). 이 단어는 뒤에 한 번 더 나와요.'}</p>${A.ok?'':'<button class="big" data-a="radv">다음</button>'}`;
+  return b;
+}
+function rF(it){
+  const q=GU[it.u].f[it.i],{w,p}=split(q[0]),st=R.st;
+  const toks=w.map((t,i)=>{
+    const hit=i===q[1];let c='tok';
+    if(hit&&st==='fix')c+=' bad';if(hit&&(st==='why'||st==='done'))c+=' fix';if(R.shake===i)c+=' shake';
+    const txt=hit&&(st==='why'||st==='done')?q[2][0]:t;
+    return st==='w'?`<button class="${c}" data-a="ftok" data-v="${i}">${txt}</button>`:`<span class="${c}">${txt}</span>`;
+  }).join('')+`<span class="pun">${p}</span>`;
+  const hint=q[4]?`<p class="hint">${q[4]}</p>`:'';
+  let b;
+  if(st==='w')b=`<p class="ask">틀린 단어를 눌러 봐요<small>틀린 곳이 없을 수도 있어요!</small></p><div class="sent">${toks}</div>${hint}<button class="none" data-a="fnone">틀린 곳 없어요</button>`;
+  else if(st==='fix')b=`<p class="ask">맞게 고치면?</p><div class="sent">${toks}</div>${hint}<div class="opts">${R.oo.map(k=>`<button class="opt en ${R.gone.includes('o'+k)?'no':''}" data-a="fopt" data-v="${k}">${q[2][k]}</button>`).join('')}</div>`;
+  else if(st==='why')b=`<p class="ask">왜 그럴까?</p><div class="sent">${toks}</div>${hint}<div class="opts">${R.wo.map(k=>`<button class="opt ${R.gone.includes('w'+k)?'no':''}" data-a="fwhy" data-v="${k}">${q[3][k]}</button>`).join('')}</div>`;
+  else b=`<p class="ask">${R.fmiss?'다시 해서 맞혔어요!':'한 번에 맞혔어요!'}</p><button class="say" data-a="fsay">${SPK}<span class="en">${fixed(q)}</span></button><p class="rule" style="margin:12px 0">${q[3][0]}</p><button class="big" data-a="radv">다음</button>`;
+  return b+(st==='done'?'':`<p class="msg ${R.cls}" role="status">${R.msg}</p>`);
+}
+function rO(it){
+  const o=GU[it.u].o[it.i],A=R.ans,full=R.typed.length===R.target.length;
+  let b=`<p class="ask">우리말에 맞게 영어 문장을 만들어요<small>함정 단어가 하나 숨어 있어요!</small></p><p class="meanbig">${o[0]}</p>
+  <div class="build">${R.typed.map(j=>`<span class="chip en">${R.tiles[j]}</span>`).join('')}${full?`<span class="pun">${R.p}</span>`:''}</div>`;
+  if(!A)b+=`<div class="tiles">${R.tiles.map((c,i)=>`<button class="tile word en" data-a="otile" data-v="${i}" ${R.typed.includes(i)?'disabled':''}>${c}</button>`).join('')}</div><button class="none" data-a="odel">한 칸 지우기</button>`;
+  else b+=`<p class="msg ${A.ok?'good':'oops'}">${A.ok?'완벽해요!':'정답 문장을 보고 소리 내어 읽어 봐요. 뒤에 한 번 더 나와요.'}</p><button class="say" data-a="osay">${SPK}<span class="en">${o[1]}</span></button><button class="big" data-a="radv" style="margin-top:12px">다음</button>`;
+  return b;
+}
+function mark(it,ok){S.t[it.t][ok?0:1]++;const k=ikey(it);R.keys.add(k);if(!ok)R.miss[k]=(R.miss[k]||0)+1}
+function oops(m){R.fmiss=true;R.cls='oops';R.msg=m}
+function good(m){R.cls='good';R.msg=m}
+function wanswer(ok){
+  const it=R.q[R.qi];R.ans.ok=ok;mark(it,ok);if(!ok)R.q.push(it);
+  sayW(it.w.w);rr();
+  if(ok){const t=++R.tk;setTimeout(()=>{if(R&&R.tk===t)radv()},1000)}
+}
+function radv(){R.tk++;R.qi++;rq()}
+function runEnd(){
+  const ks=[...R.keys];if(!R.noSrs)ks.forEach(k=>srs(k,R.miss[k]||0));save();
+  const sum={ok:ks.filter(k=>!R.miss[k]).length,n:ks.length,miss:ks.filter(k=>R.miss[k])},fn=R.onDone;R=null;fn(sum);
+}
+
+/* ---------- 결과 ---------- */
+function missHtml(k){
+  if(!k.startsWith('g:')){const w=WBYK[k];return w?`<button data-a="ksay" data-v="${w.w}">${SPK}<span><b>${w.w}</b> ${w.m}</span></button>`:''}
+  const it=gitem(k),u=GU[it.u];if(!u)return '';
+  if(it.t==='F'){const q=u.f[it.i];return `<div><span>${q[1]<0?`<b class="en">${q[0]}</b> (맞는 문장)`:`<s class="en">${q[0]}</s><br><b>${fixed(q)}</b>`}</span></div>`}
+  const o=u.o[it.i];return `<div><span>${o[0]}<br><b>${o[1]}</b></span></div>`;
+}
+function resScreen(title,sum,retry){
+  const r=sum.n?sum.ok/sum.n:1,st=r===1?3:r>=.8?2:r>=.5?1:0;RT=retry;
+  app.innerHTML=`<div class="card res"><p class="sub">${title}</p><h2>${st===3?'완벽해요!':st===2?'거의 다 왔어요!':'조금만 더 연습해요'}</h2>${stars(st)}
+  <p>한 번에 맞힌 것 <b>${sum.ok}</b> / ${sum.n}</p>
+  ${sum.miss.length?`<div class="wlist"><p class="ask" style="margin:0">다시 볼 것</p>${sum.miss.map(missHtml).join('')}</div>`:''}
+  <div class="row"><button class="big" data-a="retry">다시 하기</button><button class="big alt" data-a="home">목록으로</button></div></div>`;
+  return st;
+}
+
+/* ---------- 단어장 ---------- */
+function whome(){
+  const st=S.w,learned=WORDS.filter(x=>st[x.k]).length,nd=dueN();
+  const packs=Array.from({length:NDAY},(_,i)=>{const d=i+1,ws=dayWords(d);
+    return `<button class="pack ${d===S.c.day?'now':''}" data-a="wpack" data-v="${d}"><span class="pt">Day ${d}${d===S.c.day?' · 오늘':''}</span><span class="dots">${ws.map(x=>`<i class="b${st[x.k]?st[x.k][0]:0}"></i>`).join('')}</span></button>`}).join('');
+  app.innerHTML=hdr('단어장','듣고 → 따라 말하고 → 문제로 확인',`<b>${learned}</b>/ ${WORDS.length} 단어`)+TABS('w')+
+  (nd?`<button class="big" data-a="revonly" style="margin-bottom:16px">복습할 것 ${nd}개 먼저 하기</button>`:'')+
+  `<p class="legend"><span><i></i>아직</span><span><i class="b1"></i>외우는 중</span><span><i class="b4"></i>오래 기억</span></p>
+  <div class="packs">${packs}</div>
+  <p class="note">오늘의 수업에서 하루에 한 묶음씩 자동으로 배워요. 여기서는 지난 묶음을 다시 연습하거나, 부모님이 원하면 미리 해 볼 수 있어요.</p>`;
+}
+function wpack(d){
+  const ws=dayWords(d),title=`Day ${d} 단어`;
+  const go=()=>{C={ws,i:0,title,onDone:()=>runStart(wordQ(ws),{title,onDone:sum=>resScreen(title,sum,go)})};cReset();card();sayW(ws[0].w)};
+  go();
+}
+
+/* ---------- 문법 목록 ---------- */
+function ghome(){
+  const tot=Object.values(S.gs).reduce((a,b)=>a+b,0),g=gram(Math.min(S.c.day,TOTAL));
+  app.innerHTML=hdr('문법','규칙 듣기 → 틀린 곳 고치기 → 문장 만들기',`<b>${tot}</b>/ ${GU.length*3} 별`)+TABS('g')+
+  `<div class="list">${GU.map((u,i)=>`<button class="stage ${!g.rev&&g.u===i?'now':''}" data-a="gunit" data-v="${i}"><span class="num">${i+1}</span><span class="st"><span class="tt">${u.t}</span><span class="ex en">${u.k}</span></span>${stars(S.gs[i]||0)}</button>`).join('')}</div>
+  <p class="note">오늘의 수업에서 이틀에 한 단원씩 배워요. 노란 칸이 지금 수업 중인 단원이에요. 여기서는 아무 단원이나 다시 연습할 수 있어요.</p>`;
+}
+function gunit(u){
+  const title=`${u+1}단원 · ${GU[u].t}`;
+  const go=()=>{G={u,again:false,onDone:()=>runStart(unitQ(u),{title,onDone:sum=>{const st=resScreen(title,sum,go);if(st>(S.gs[u]||0)){S.gs[u]=st;save()}}})};gintro()};
+  go();
+}
+
+/* ---------- 학습자 ---------- */
+function who(msg){
+  if(ACC){app.innerHTML=`<div class="top"><button class="back" data-a="home" aria-label="처음으로">←</button><h2>부모님 설정</h2></div>
+  <div class="card"><p class="ask" style="margin-top:0">${me().name}의 수업 일차</p>
+  <div class="frm"><input id="pd" type="number" inputmode="numeric" min="1" max="${TOTAL}" value="${Math.min(S.c.day,TOTAL)}"><button class="sbtn" data-a="pday">바꾸기</button></div>
+  <p class="sub">쉬운 앞부분을 건너뛸 때 써요. 문법은 이틀에 한 단원씩이라, 예를 들어 13일차는 7단원부터 시작해요.</p>
+  <p class="msg good" role="status">${msg||''}</p></div><p class="note">기록은 ${me().name} 구글 계정에 저장돼서 어느 기기에서 열어도 이어서 할 수 있어요.</p>`;return}
+  app.innerHTML=`<div class="top"><button class="back" data-a="home" aria-label="처음으로">←</button><h2>누가 공부해요?</h2></div>
+  <div class="opts">${M.list.map(p=>`<button class="opt ${p.id===M.cur?'right':''}" data-a="pick" data-v="${p.id}">${p.name}${p.id===M.cur?' (지금)':''}</button>`).join('')}</div>
+  <div class="card" style="margin-top:20px"><p class="ask" style="margin-top:0">새 사람 추가</p>
+  <div class="frm"><input id="nn" maxlength="12" placeholder="이름" autocomplete="off"><button class="sbtn" data-a="padd">추가</button></div>
+  <p class="ask" style="margin-top:18px">지금 사람(${me().name}) 이름 바꾸기</p>
+  <div class="frm"><input id="rn" maxlength="12" value="${me().name}" autocomplete="off"><button class="sbtn" data-a="pren">바꾸기</button></div>
+  <p class="ask" style="margin-top:18px">${me().name}의 수업 일차 (부모님용)</p>
+  <div class="frm"><input id="pd" type="number" inputmode="numeric" min="1" max="${TOTAL}" value="${Math.min(S.c.day,TOTAL)}"><button class="sbtn" data-a="pday">바꾸기</button></div>
+  <p class="sub">쉬운 앞부분을 건너뛸 때 써요. 문법은 이틀에 한 단원씩이라, 예를 들어 13일차는 7단원부터 시작해요.</p>
+  <p class="msg good" role="status">${msg||''}</p></div>
+  <p class="note">사람마다 기록이 따로 저장돼요. 이 기기에서만 저장됩니다.</p>`;
+}
+
+/* ---------- 보고서 ---------- */
+function report(){
+  const c=S.c,T=today(),lw=WORDS.filter(x=>S.w[x.k]);
+  const pc=k=>{const v=S.t[k];return v[0]+v[1]?Math.round(v[0]/(v[0]+v[1])*100)+'% ('+(v[0]+v[1])+'문제)':'기록 없음'};
+  let t=`[${me().name} 영어교실 기록]\n진도: Day ${Math.min(c.day-1,TOTAL)} / ${TOTAL} 완료, ${(c.last===T||c.last===T-1)?c.streak:0}일 연속\n`;
+  t+=`배운 단어 ${lw.length}개 (오래 기억 단계 ${lw.filter(x=>S.w[x.k][0]>=4).length}개)\n`;
+  t+=`정답률: 듣고 뜻 고르기 ${pc('L')}, 뜻 보고 단어 ${pc('M')}, 철자 ${pc('S')}, 틀린 곳 고치기 ${pc('F')}, 문장 만들기 ${pc('O')}\n`;
+  const P=S.t.P,V=S.t.V;if(P[0]+P[1])t+=`문장 따라 말하기(음성 확인): 한 번에 통과 ${P[0]}문장, 다시 말한 횟수 ${P[1]}번\n`;if(V[0]+V[1])t+=`단어 따라 말하기(음성 확인): 한 번에 통과 ${V[0]}개, 다시 말한 횟수 ${V[1]}번\n`;
+  const uw={};Object.entries(S.g).forEach(([k,v])=>{const u=gitem(k).u;if(v[2])uw[u]=(uw[u]||0)+v[2]});
+  const wu=Object.entries(uw).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  if(wu.length)t+='약한 문법 단원: '+wu.map(([u,n])=>`${+u+1}단원 ${GU[u]?GU[u].t:''} (${n}회 틀림)`).join(', ')+'\n';
+  const hard=lw.filter(x=>S.w[x.k][2]>0).sort((a,b)=>S.w[b.k][2]-S.w[a.k][2]).slice(0,20);
+  if(hard.length)t+='자주 틀린 단어: '+hard.map(x=>`${x.w}(${x.m}) ${S.w[x.k][2]}회`).join(', ')+'\n';
+  const gst=Object.entries(S.gs);if(gst.length)t+='문법 연습 별: '+gst.map(([u,s])=>`${+u+1}단원 ${s}개`).join(', ')+'\n';
+  if(S.h.length)t+='\n최근 기록:\n'+S.h.slice(-12).map(h=>` ${h.d} ${h.day?'Day '+h.day:'복습'} ${h.ok}/${h.n}`).join('\n');
+  app.innerHTML=`<div class="top"><button class="back" data-a="home" aria-label="처음으로">←</button><h2>선생님께 결과 보내기</h2></div>
+  <p class="rule">아래 내용을 복사해서 Claude 대화창에 붙여넣어 주세요.</p>
+  <textarea id="rep" readonly>${t}</textarea>
+  <button class="big" data-a="copy" style="margin-top:12px">복사하기</button><p class="msg good" id="cm" role="status"></p>`;
+}
+
+/* ---------- 이벤트 ---------- */
+app.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;
+  const a=b.dataset.a,v=b.dataset.v;
+  switch(a){
+    case 'home':return home();
+    case 'tab':S.tab=v;save();return home();
+    case 'who':return who();
+    case 'pick':M.cur=v;saveM();loadS();return home();
+    case 'padd':{const n=nm(document.getElementById('nn').value);if(!n)return who('이름을 적어 주세요.');const id='p'+Date.now();M.list.push({id,name:n});M.cur=id;saveM();loadS();return home()}
+    case 'pren':{const n=nm(document.getElementById('rn').value);if(!n)return who('이름을 적어 주세요.');me().name=n;saveM();return who('이름을 바꿨어요.')}
+    case 'pday':{const n=Math.max(1,Math.min(TOTAL,parseInt(document.getElementById('pd').value,10)||1));S.c.day=n;S.c.extra=true;save();return who(`${n}일차로 바꿨어요.`)}
+    case 'report':return report();
+    case 'copy':{const ta=document.getElementById('rep'),cm=document.getElementById('cm');const sel=()=>{ta.focus();ta.select();cm.textContent='글자가 모두 선택됐어요. 길게 눌러 복사해 주세요.'};
+      try{navigator.clipboard.writeText(ta.value).then(()=>{cm.textContent='복사됐어요! 대화창에 붙여넣어 주세요.'},sel)}catch(err){sel()}return}
+    case 'lstart':return lstart(false);
+    case 'revonly':return lstart(true);
+    case 'unlock':S.c.extra=true;save();return home();
+    case 'retry':return RT&&RT();
+    case 'wpack':return wpack(+v);
+    case 'gunit':return gunit(+v);
+    case 'ksay':return sayW(v);
+    case 'csay':return sayW(C.ws[C.i].w);
+    case 'cshow':C.show=true;sayW(C.ws[C.i].w);return card();
+    case 'crep':C.rep++;sayW(C.ws[C.i].w);return card();
+    case 'cnext':{if(!micOk(C))return;try{DICT&&DICT.active()&&DICT.stop()}catch(e){}clearTimeout(C.tm);
+      if(C.i+1<C.ws.length){C.i++;cReset();card();return sayW(C.ws[C.i].w)}const f=C.onDone;C=null;return f()}
+    case 'psay':return say(plain(GU[G.u].p[+v][0]));
+    case 'gnext':{const f=G.onDone;G=null;return f()}
+    case 'ssay':return say(plain(SP.ss[SP.i][0]));
+    case 'sslow':return say(plain(SP.ss[SP.i][0]),.55);
+    case 'srep':SP.rep++;say(plain(SP.ss[SP.i][0]));return speak();
+    case 'mic':{const T=micT();if(!DICT||!T||T.pass)return;
+      if(DICT.active()){DICT.stop().catch(()=>{});return}
+      try{speechSynthesis.cancel()}catch(e){}
+      T.heard='';T.part='';T.res=null;T.msg='';T.lock=false;
+      DICT.start(NOLANG?undefined:{language:'en'}).catch(err=>{const T=micT();if(!T)return;const c=err&&err.code;
+        if(c==='unavailable'&&!NOLANG){NOLANG=true;T.msg='한 번 더 눌러 주세요.';T.cls='oops'}
+        else if(c==='not_granted'||c==='unavailable'){NOMIC=true;T.cls='oops';T.msg='음성 확인을 쓸 수 없어서 버튼으로 할게요.'}
+        else if(c==='dismissed'){T.cls='oops';T.msg='마이크를 쓰려면 허락을 눌러 주세요.'}
+        micDraw()});
+      return}
+    case 'snext':{if(!micOk(SP))return;
+      try{DICT&&DICT.active()&&DICT.stop()}catch(e){}clearTimeout(SP.tm);
+      if(SP.i+1<SP.ss.length){SP.i++;spReset();speak();return say(plain(SP.ss[SP.i][0]))}SP=null;return nextStep()}
+  }
+  if(!R)return;
+  const it=R.q[R.qi];
+  switch(a){
+    case 'rsay':return sayW(it.w.w);
+    case 'radv':return radv();
+    case 'wopt':if(R.ans)return;R.ans={v:+v};return wanswer(R.opts[+v]===R.right);
+    case 'wtile':{if(R.ans)return;const i=+v;if(R.typed.includes(i))return;R.typed.push(i);const w=it.w.w;
+      if(R.typed.length===w.length){R.ans={};return wanswer(R.typed.map(j=>R.tiles[j]).join('')===w)}return rr()}
+    case 'wdel':R.typed.pop();return rr();
+    case 'otile':{if(R.ans)return;const i=+v;if(R.typed.includes(i))return;R.typed.push(i);
+      if(R.typed.length===R.target.length){const ok=R.typed.map(j=>R.tiles[j]).join(' ')===R.target.join(' ');R.ans={ok};mark(it,ok);if(!ok)R.q.push(it);say(GU[it.u].o[it.i][1])}return rr()}
+    case 'odel':R.typed.pop();return rr();
+    case 'osay':return say(GU[it.u].o[it.i][1]);
+    case 'fsay':return say(fixed(GU[it.u].f[it.i]));
+  }
+  if(it.t!=='F')return;
+  const q=GU[it.u].f[it.i];
+  if(a==='ftok'){if(+v===q[1]){good('찾았다! 이제 고쳐 볼까?');R.st='fix'}else{oops(q[1]<0?'이 단어는 맞아요. 다른 곳은 어때요?':'거기는 맞아요. 규칙을 떠올려 봐요: '+plain(GU[it.u].r));R.shake=+v}}
+  else if(a==='fnone'){if(q[1]<0){good('맞아요, 틀린 곳이 없는 문장이에요! 그럼 왜 맞을까?');R.st='why'}else oops('틀린 단어가 하나 숨어 있어요. 다시 찾아봐요!')}
+  else if(a==='fopt'){if(+v===0){good('정답! 그런데 왜 그럴까?');R.st='why'}else{oops('음, 그건 아니에요. 다시 골라 봐요!');R.gone.push('o'+v)}}
+  else if(a==='fwhy'){if(+v===0){R.st='done';mark(it,!R.fmiss);say(fixed(q))}else{oops('다시 생각해 봐요!');R.gone.push('w'+v)}}
+  rr();
+});
+/* ---------- 우리가족 계정 연결: 기록 저장 + 끝내면 오늘 약속 자동 체크 ---------- */
+let writing=false,again=false,pushT=null;
+function pushFB(){if(!FB||!FB.user||!FB.ref)return;clearTimeout(pushT);pushT=setTimeout(async()=>{if(writing){again=true;return}writing=true;try{await FB.FS.setDoc(FB.ref,{state:JSON.parse(JSON.stringify(S)),by:FB.user.email||'',at:Date.now()})}catch(e){}writing=false;if(again){again=false;pushFB()}},800)}
+const kday=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
+function autoDone(key){try{if(!FB||!FB.user)return;const em=(FB.user.email||'').toLowerCase(),t=kday();FB.FS.setDoc(FB.FS.doc(FB.db,'done',em,'days',t),{auto:{[key]:Date.now()},date:t,who:em},{merge:true}).catch(()=>{})}catch(e){}}
+const gateEl=document.createElement('div');document.body.appendChild(gateEl);
+function gate(msg,loading){gateEl.innerHTML=`<div style="position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:50;padding:20px"><div class="card" style="max-width:420px;width:100%;text-align:center"><h1 style="margin-bottom:8px">영어교실</h1>${loading?'<p class="sub">로그인 확인 중…</p>':`<p class="sub">기록을 저장하려면 구글 계정으로 로그인해요.</p>${msg?`<p class="msg oops">${msg}</p>`:''}<button class="big" id="gLogin">Google로 로그인</button>`}</div></div>`;const b=document.getElementById('gLogin');if(b)b.onclick=login}
+async function login(){try{await FB.AU.signInWithPopup(FB.auth,new FB.AU.GoogleAuthProvider())}catch(e){gate(e&&e.code==='auth/popup-blocked'?'로그인 창이 막혔어요. 한 번 더 눌러 주세요.':e&&e.code==='auth/popup-closed-by-user'?'':'로그인이 안 됐어요 ('+((e&&e.code)||'')+')')}}
+(async()=>{const cfg=window.firebaseConfig;if(!cfg||!cfg.apiKey)return;gate('',true);
+  try{const V='https://www.gstatic.com/firebasejs/10.12.2/';const A=await import(V+'firebase-app.js'),AU=await import(V+'firebase-auth.js'),FS=await import(V+'firebase-firestore.js');
+    const fa=A.initializeApp(cfg),auth=AU.getAuth(fa),db=FS.getFirestore(fa);FB={AU,FS,auth,db,user:null,ref:null};let unsub=null;
+    AU.onAuthStateChanged(auth,async u=>{FB.user=u;if(unsub){unsub();unsub=null}if(!u){ACC=null;gate('');return}gateEl.innerHTML='';
+      const em=u.email.toLowerCase();ACC=em;ACCNAME=(u.displayName||'').split(' ')[0]||'';try{const m=await FS.getDoc(FS.doc(db,'members',em));if(m.exists()&&m.data().name)ACCNAME=m.data().name}catch(e){}
+      loadS();home();FB.ref=FS.doc(db,'progress','eng_'+em);let first=true;
+      unsub=FS.onSnapshot(FB.ref,snap=>{const d=snap.exists()?snap.data():null;
+        if(d&&d.state&&(d.state.updated||0)>(S.updated||0)){S=JSON.parse(JSON.stringify(d.state));try{localStorage.setItem(KEY(),JSON.stringify(S))}catch(e){}loadFix();if(!L&&!R&&!C&&!G&&!SP)home()}
+        else if(first&&S.updated&&(!d||!d.state||(d.state.updated||0)<S.updated))pushFB();first=false},
+        e=>{if(e&&e.code==='permission-denied')gate(u.email+' 계정은 가족 목록에 없어요.')})})
+  }catch(e){gateEl.innerHTML=''}})();
+function loadFix(){S.w=S.w||{};S.g=S.g||{};S.c=S.c||{day:1,last:null,streak:0};S.gs=S.gs||{};S.h=S.h||[];S.t=S.t||{L:[0,0],M:[0,0],S:[0,0],F:[0,0],O:[0,0]};S.t.P=S.t.P||[0,0];S.t.V=S.t.V||[0,0];if(!['c','w','g'].includes(S.tab))S.tab='c'}
+home();
+}
+</script>
+</body>
+</html>

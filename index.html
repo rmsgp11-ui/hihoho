@@ -226,7 +226,7 @@ const countItems=(K,date)=>{const d=doneDoc(K,date);return itemsFor(K,date).filt
 const hmOf=ts=>{const x=new Date(ts);return pad(x.getHours())+':'+pad(x.getMinutes())};
 const nowMin=()=>{const x=new Date();return x.getHours()*60+x.getMinutes()};
 const sg=g=>Array.isArray(g)?{s:g[0],e:g[1]}:(g||{s:0,e:0});const runMs=r=>((r&&r.segs)||[]).map(sg).reduce((a,g)=>a+(g.e-g.s),0)+(r&&r.cur?Date.now()-r.cur:0);
-const AUTO={dohyung:'도형교실 수업 1개 끝내면',gugudan:'구구단 오늘의 미션 끝내면',korean:'국어 훈련 끝내면',kbook:'국어 문제집 한 문장 끝내면'};
+const AUTO={dohyung:'도형교실 수업 1개 끝내면',gugudan:'구구단 오늘의 미션 끝내면',korean:'국어 훈련 끝내면',kbook:'국어 문제집 한 문장 끝내면',english:'영어교실 오늘 수업 끝내면'};
 const autoOn=(d,i)=>!!(i.auto&&d.auto&&d.auto[i.auto]);
 const isDone=(d,i)=>!!((d.p&&d.p[i.id])||autoOn(d,i));
 function dayCount(K,date){const d=doneDoc(K,date);const items=countItems(K,date);const pd=items.filter(i=>isDone(d,i)).length;const od=(d.own||[]).filter(o=>o.done).length;return{pd,pt:items.length,od,all:pd+od}}
@@ -266,7 +266,7 @@ window.famShop={ledger:async a=>{if(!isAdmin())return'not-admin';await ledAdd((A
   report:async o=>{if(!isAdmin())return'not-admin';const clean=a=>(Array.isArray(a)?a:[]).slice(0,40).map(x=>({n:String(x.n||'').slice(0,40),product:String(x.product||'').slice(0,80),price:+x.price||0,ok:!!x.ok}));
     await save('',D('fam','cart'),{shop:{at:Date.now(),coupang:clean(o&&o.coupang),kurly:clean(o&&o.kurly),total:+(o&&o.total)||0,notes:String((o&&o.notes)||'').slice(0,300)},req:null},true);return'saved'}};
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='92';
+const APPV='93';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -383,7 +383,7 @@ function tplEditModal(id){const K=ST.selKid,i=((ST.tpl[K]&&ST.tpl[K].items)||[])
    <label class="small mute">확인 방법<select id="edMode">${autoOpts(modeOf(i))}</select></label><label class="small mute">누르면 열 링크<select id="edLu">${linkOpts(K,i.lu)}</select></label>
    <div class="row"><button class="btn" data-a="edSave" data-id="${esc(id)}">저장</button><button class="btn ghost" data-a="closeM">닫기</button></div>
    <div class="row">${inToday?`${ck&&ck.st==='wait'?(ck.kind==='timer'?`<button class="btn sm ok" data-a="chkOk" data-k="${esc(K)}" data-d="${t}" data-id="${esc(id)}">✓ 오답까지 완료</button>`:`<button class="btn sm" data-a="chkView" data-k="${esc(K)}" data-d="${t}" data-id="${esc(id)}">📷 인증 사진 보기</button>`):''}<button class="btn sm ghost" data-a="tick" data-k="${esc(K)}" data-id="${esc(id)}">${on?'오늘 체크 풀기':'오늘 했어요로 체크'}</button>`:''}<button class="btn sm ghost" style="color:var(--p)" data-a="edDel" data-id="${esc(id)}">약속 지우기</button></div>`)}
-function linkFor(K,i){if(i.lu)return i.lu;const m={dohyung:'/dohyung/',gugudan:'/gugudan/',korean:'/korean/',kbook:'/korean/'}[i.auto];if(!m)return'';const l=allLinks(K).find(x=>String(x.u).includes(m));return l?l.u:''}
+function linkFor(K,i){if(i.lu)return i.lu;const m={dohyung:'/dohyung/',gugudan:'/gugudan/',korean:'/korean/',kbook:'/korean/',english:'/english/'}[i.auto];if(!m)return'';const l=allLinks(K).find(x=>String(x.u).includes(m));return l?l.u:''}
 function startItem(K,id,noPic){const t=today(),it=itemsFor(K,t).find(x=>x.id===id);if(!it)return;if(it.proof&&!noPic)return startProofModal(id);const url=it.proof?'':linkFor(K,it);
   if(url){try{window.open(url,'_blank','noopener')}catch(e){}try{localStorage.setItem('fam-pending',JSON.stringify({K,id,d:t,at:Date.now()}))}catch(e){}}
   return writeDone(K,t,d=>{d.run=d.run||{};const r=d.run[id]=d.run[id]||{segs:[]};r.segs=r.segs||[];if(!r.cur)r.cur=Date.now()}).then(()=>toast(url?`시작! 「${it.t}」 끝나고 돌아오면 자동으로 멈춰요`:'시작! 끝나면 ■ 끝을 눌러 줘'))}
@@ -549,7 +549,7 @@ function vToday(){const K=ST.me,t=today(),items=itemsFor(K,t),d=doneDoc(K,t),c=d
   ${(()=>{const un=items.filter(i=>!tmOf(d,i));return un.length?`<section class="card"><div class="sec">${LOCK} 시간 안 정한 약속</div><div class="list">${un.map(i=>taskRow(K,i,d,t,true)).join('')}</div></section>`:(items.length?'':'<section class="card"><div class="empty">오늘은 정한 약속이 없어요</div></section>')})()}
 
   ${linkBtns(K)}`}
-const BUILTIN={'7ec7b9f4de41bc54dca769f62327a55d27927fcc47b6e44b24e4b5aad5117e4d':[{id:'b3',n:'도형교실',u:'https://rmsgp11-ui.github.io/hihoho/dohyung/',fixed:1},{id:'b5',n:'국어 훈련장',u:'https://rmsgp11-ui.github.io/hihoho/korean/',fixed:1},{id:'b1',n:'알림장',u:'https://sites.google.com/view/maean35/',fixed:1}],'8d9479376ec9cd02ae3d2e09886d032530078fc34346173d96177f1177ae7b33':[{id:'b3',n:'도형교실',u:'https://rmsgp11-ui.github.io/hihoho/dohyung/',fixed:1},{id:'b2',n:'구구단 마스터',u:'https://rmsgp11-ui.github.io/hihoho/gugudan/',fixed:1}]};
+const BUILTIN={'7ec7b9f4de41bc54dca769f62327a55d27927fcc47b6e44b24e4b5aad5117e4d':[{id:'b3',n:'도형교실',u:'https://rmsgp11-ui.github.io/hihoho/dohyung/',fixed:1},{id:'b6',n:'영어교실',u:'https://rmsgp11-ui.github.io/hihoho/english/',fixed:1},{id:'b5',n:'국어 훈련장',u:'https://rmsgp11-ui.github.io/hihoho/korean/',fixed:1},{id:'b1',n:'알림장',u:'https://sites.google.com/view/maean35/',fixed:1}],'8d9479376ec9cd02ae3d2e09886d032530078fc34346173d96177f1177ae7b33':[{id:'b3',n:'도형교실',u:'https://rmsgp11-ui.github.io/hihoho/dohyung/',fixed:1},{id:'b6',n:'영어교실',u:'https://rmsgp11-ui.github.io/hihoho/english/',fixed:1},{id:'b2',n:'구구단 마스터',u:'https://rmsgp11-ui.github.io/hihoho/gugudan/',fixed:1}]};
 const HASH={};function hashOf(e){if(HASH[e]===undefined){HASH[e]=null;try{crypto.subtle.digest('SHA-256',new TextEncoder().encode(e)).then(b=>{HASH[e]=[...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('');sched();if(ST.members[e]&&ST.members[e].role==='kid')seedLinks(e)}).catch(()=>{})}catch(er){}}return HASH[e]}
 const linksOf=K=>((ST.tpl[K]&&ST.tpl[K].links)||[]);
 const unseeded=K=>{const sd=(ST.tpl[K]&&ST.tpl[K].seeded)||[];return(BUILTIN[hashOf(K)]||[]).filter(b=>!sd.includes(b.id))};
@@ -601,26 +601,27 @@ function seedCards(){if(!isAdmin())return'';const done=ST.cfg.seeds||{};return S
    ${rep.length?`<label class="small row" style="gap:6px;flex-wrap:nowrap"><input type="checkbox" id="seedRep" checked style="width:auto;min-height:0"> 지금 있는 같은 약속 ${rep.length}개(${esc([...new Set(rep.map(o=>o.t))].join(', '))})는 지우고 이걸로 바꾸기</label>`:''}
    <div class="row"><button class="btn" data-a="seedGo" data-id="${S.id}">${esc(S.kid)}에게 ${S.items.length}개 넣기</button><button class="btn ghost" data-a="seedNo" data-id="${S.id}">안 넣기</button></div></section>`}).join('')}
 /* ---------- 학습 링크 약속을 빈 시간(저녁 9시 전)에 매일 자동 배치: 엄마가 확인하고 넣기 ---------- */
+const LINKPLAN2={id:'links-eng-2611',title:'📚 영어교실 매일 약속',kids:{'지호':[{n:'영어교실',auto:'english',dur:20,pt:5}],'은호':[{n:'영어교실',auto:'english',dur:20,pt:5}]}};
 const LINKPLAN={id:'links-2611',kids:{'지호':[{n:'국어 훈련장',auto:'korean',dur:20,pt:5},{n:'도형교실',auto:'dohyung',dur:20,pt:5}],'은호':[{n:'구구단 마스터',auto:'gugudan',dur:15,pt:5},{n:'도형교실',auto:'dohyung',dur:20,pt:5}]}};
-function freeSlots(K,wd){const t=today();let dt=t;for(let i=0;i<7&&wdOf(dt)!==wd;i++)dt=addDays(dt,1);
+function freeSlots(K,wd,PL){PL=PL||LINKPLAN;const t=today();let dt=t;for(let i=0;i<7&&wdOf(dt)!==wd;i++)dt=addDays(dt,1);
   const busy=[];if(wd>0&&wd<6)busy.push([0,schoolEnd(K,wd)+20]);else busy.push([0,9*60]);busy.push([12*60,13*60],[18*60,19*60]);
-  ((ST.tpl[K]&&ST.tpl[K].items)||[]).filter(i=>i.at&&(i.days||[]).includes(wd)&&!Object.values(LINKPLAN.kids).flat().some(l=>l.auto===i.auto)).forEach(i=>busy.push([toMin(i.at),toMin(i.at)+(+i.dur||30)]));
+  ((ST.tpl[K]&&ST.tpl[K].items)||[]).filter(i=>i.at&&(i.days||[]).includes(wd)&&!Object.values(PL.kids).flat().some(l=>l.auto===i.auto)).forEach(i=>busy.push([toMin(i.at),toMin(i.at)+(+i.dur||30)]));
   ((ST.sched[K]&&ST.sched[K].items)||[]).filter(x=>!x.date&&(x.days||[]).includes(wd)&&(!x.to||x.to>=t)).forEach(x=>busy.push([toMin(x.s),toMin(x.e||addMin(x.s,60))]));
   return busy.sort((a,b)=>a[0]-b[0])}
-function placeLinks(K,wd,list){const busy=freeSlots(K,wd),END=21*60,out=[];let cur=wd>0&&wd<6?schoolEnd(K,wd)+20:9*60;
+function placeLinks(K,wd,list,PL){const busy=freeSlots(K,wd,PL),END=21*60,out=[];let cur=wd>0&&wd<6?schoolEnd(K,wd)+20:9*60;
   for(const L of list){let at=null;cur=Math.ceil(cur/10)*10;while(cur+L.dur<=END){const hit=busy.find(b=>cur<b[1]+10&&cur+L.dur+10>b[0]);if(!hit){at=cur;break}cur=Math.ceil((hit[1]+10)/10)*10}
     if(at==null)continue;out.push({...L,at:pad(Math.floor(at/60))+':'+pad(at%60)});busy.push([at,at+L.dur]);busy.sort((a,b)=>a[0]-b[0]);cur=at+L.dur+40}
   return out}
-function linkPlanRows(K,list){const by={};for(let wd=0;wd<7;wd++)placeLinks(K,wd,list).forEach(x=>{const k=x.n+'|'+x.at;(by[k]=by[k]||{...x,days:[]}).days.push(wd)});return Object.values(by).sort((a,b)=>a.n.localeCompare(b.n)||Math.min(...a.days)-Math.min(...b.days))}
-function linkPlanCard(){if(!isAdmin()||(ST.cfg.seeds||{})[LINKPLAN.id])return'';const parts=Object.entries(LINKPLAN.kids).map(([nm,list])=>{const K=kids().find(k=>name(k)===nm);if(!K)return'';const rows=linkPlanRows(K,list);
+function linkPlanRows(K,list,PL){const by={};for(let wd=0;wd<7;wd++)placeLinks(K,wd,list,PL).forEach(x=>{const k=x.n+'|'+x.at;(by[k]=by[k]||{...x,days:[]}).days.push(wd)});return Object.values(by).sort((a,b)=>a.n.localeCompare(b.n)||Math.min(...a.days)-Math.min(...b.days))}
+function linkPlanCard(PL){PL=PL||LINKPLAN;if(!isAdmin()||(ST.cfg.seeds||{})[PL.id])return'';const parts=Object.entries(PL.kids).map(([nm,list])=>{const K=kids().find(k=>name(k)===nm);if(!K)return'';const rows=linkPlanRows(K,list,PL);
   return`<b style="margin-top:4px">${esc(nm)}</b><div style="display:grid;grid-template-columns:auto 1fr auto auto;gap:6px 10px;font-size:14px;align-items:center">${rows.map(r=>`<span>${[1,2,3,4,5,6,0].filter(d=>r.days.includes(d)).map(d=>WD[d]).join('')}</span><span>${esc(r.n)}</span><span class="small" style="white-space:nowrap">${r.at}~${addMin(r.at,r.dur)}</span><b class="small" style="text-align:right">${r.pt}</b>`).join('')}</div>`}).join('');
-  if(!parts)return'';return`<section class="card" style="border-color:var(--p);gap:8px"><h3>📚 학습 링크 매일 약속</h3><span class="small mute">Claude가 학교·학원·다른 약속을 피해서 저녁 9시 전 빈 시간에 넣었어요. 앱에서 끝내면 자동으로 체크돼요. 점심(12~1시)과 저녁(6~7시)은 비워 뒀어요.</span>${parts}
-   <div class="row"><button class="btn" data-a="linkPlanGo">넣기</button><button class="btn ghost" data-a="linkPlanNo">안 넣기</button></div></section>`}
+  if(!parts)return'';return`<section class="card" style="border-color:var(--p);gap:8px"><h3>${PL.title||'📚 학습 링크 매일 약속'}</h3><span class="small mute">Claude가 학교·학원·다른 약속을 피해서 저녁 9시 전 빈 시간에 넣었어요. 앱에서 끝내면 자동으로 체크돼요. 점심(12~1시)과 저녁(6~7시)은 비워 뒀어요.</span>${parts}
+   <div class="row"><button class="btn" data-a="linkPlanGo" data-id="${PL.id}">넣기</button><button class="btn ghost" data-a="linkPlanNo" data-id="${PL.id}">안 넣기</button></div></section>`}
 function vTasks(){const ks=kids();if(ST.ready&&Object.keys(ST.tpl).length){setTimeout(migrateTimer,300);setTimeout(migMath,600);setTimeout(migSum,900)}if(!ks.length)return'<div class="card"><p style="margin:0">아이가 아직 등록되지 않았어요.</p></div>';
   if(!ks.includes(ST.selKid))ST.selKid=ks[0];const K=ST.selKid,date=ST.selDate||today();subPlan(K,date);
   const tpl=(ST.tpl[K]&&ST.tpl[K].items)||[],plan=(ST.plan[K]&&ST.plan[K][date]&&ST.plan[K][date].items)||[],t=today(),ti=itemsFor(K,t),d=doneDoc(K,t);
   const dayChips=(sel,act,id)=>MON.map(wd=>`<button class="chip ${sel.includes(wd)?'on':''}" data-a="${act}" data-wd="${wd}" ${id?`data-id="${esc(id)}"`:''}>${WD[wd]}</button>`).join('');
-  return`${seedCards()}${linkPlanCard()}<div class="chips">${ks.map(k=>`<button class="chip ${k===K?'on':''}" data-a="selKid" data-k="${esc(k)}"><span class="dot" style="background:${color(k)}"></span>${esc(name(k))}</button>`).join('')}</div>
+  return`${seedCards()}${linkPlanCard()}${linkPlanCard(LINKPLAN2)}<div class="chips">${ks.map(k=>`<button class="chip ${k===K?'on':''}" data-a="selKid" data-k="${esc(k)}"><span class="dot" style="background:${color(k)}"></span>${esc(name(k))}</button>`).join('')}</div>
   <section class="card"><h3>${esc(name(K))}의 오늘 약속 (${dayCount(K,t).pd}/${dayCount(K,t).pt})</h3><p class="small mute" style="margin:0">약속을 누르면 포인트·요일·시간을 고치거나 지울 수 있어요.</p><div class="list">${sortItems(d,ti).map(i=>admRow(K,i,d,t)).join('')||'<div class="empty">오늘 약속이 없어요</div>'}</div>
    ${(()=>{const other=tpl.filter(i=>!ti.some(x=>x.id===i.id));return other.length?`<div class="sec">오늘은 없는 반복 약속</div><div class="chips">${other.map(i=>`<button class="chip" data-a="tplEdit" data-id="${esc(i.id)}">${esc(i.t)} <span class="small mute">${(i.days||[]).length?MON.filter(w=>(i.days||[]).includes(w)).map(w=>WD[w]).join('·'):'요일 없음'}</span></button>`).join('')}</div>`:''})()}
    ${(d.own||[]).length?`<div class="sec">스스로 정한 도전</div><div class="chips">${d.own.map(o=>`<span class="chip ${o.done?'on':''}">${o.done?'완료 · ':''}${esc(o.t)}</span>`).join('')}</div>`:''}<button class="btn sm ghost" data-a="resetDay" data-k="${esc(K)}">오늘 기록 초기화</button></section>
@@ -901,9 +902,9 @@ const pc=(a,b)=>b?Math.round(a/b*100):null;
 async function loadLearn(K,force){if(!force&&ST.learn[K]&&!ST.learn[K].err)return;const L=ST.learn[K]={loading:1,errs:[]};sched();
   const pre='kor~'+K+'~',g=async(ref,tag)=>{try{const s=await F.FS.getDoc(ref);return s.exists()?s.data():null}catch(e){L.errs.push(e&&e.code);L.src[tag]=(e&&e.code)||'error';return null}};L.src={};
   let ses=[];try{const s=await F.FS.getDocs(Q(C('progress'),['_k','==',pre+'sessions']));ses=s.docs.map(d=>d.data())}catch(e){L.errs.push(e&&e.code);L.src.ko=(e&&e.code)||'error'}
-  const [quest,doh,gug,hist]=await Promise.all([g(D('progress',pre+'quest~state'),'ko'),g(D('progress','dohyung_'+K),'doh'),g(D('progress','gugu_'+K),'gug'),g(D('progress','fb_'+K),'fb')]);
+  const [quest,doh,gug,hist,eng]=await Promise.all([g(D('progress',pre+'quest~state'),'ko'),g(D('progress','dohyung_'+K),'doh'),g(D('progress','gugu_'+K),'gug'),g(D('progress','fb_'+K),'fb'),g(D('progress','eng_'+K),'eng')]);
   Object.assign(L,{loading:0,ses:ses.filter(r=>r&&r.day).sort((a,b)=>a.day-b.day),kb:Object.entries((quest&&quest.days)||{}).map(([d,v])=>({d,k:v&&v.manual&&v.manual.kb})).filter(x=>x.k&&typeof x.k.sum==='string').sort((a,b)=>a.d<b.d?1:-1),
-    doh:doh&&doh.state,gug:gug&&gug.state,hist:(hist&&hist.items)||[],err:''});sched()}
+    doh:doh&&doh.state,gug:gug&&gug.state,eng:eng&&eng.state,hist:(hist&&hist.items)||[],err:''});sched()}
 function learnFacts(K){const L=ST.learn[K]||{},o={};
   const s=L.ses||[];if(s.length){const r=s.slice(-7),av=f=>{const v=r.map(f).filter(x=>x!==null&&!isNaN(x));return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):null};
     o.ko={n:s.length,last:s[s.length-1],rows:r.slice().reverse(),voc:av(x=>pc(x.voc,x.vocN)),detail:av(x=>pc(x.detail,x.detailN)),clue:av(x=>pc(x.clue,x.clueN)),keys:av(x=>pc(x.keys,x.keysN)),copy:av(x=>x.copyPct),
@@ -916,6 +917,9 @@ function learnFacts(K){const L=ST.learn[K]||{},o={};
       first:pc(ok,tot),tot,spatial:pc(sp[0],sp[1]),quick:pc(qw[0],qw[1]),tg:d.tgc||0,tgh:d.tgh||0,warm:Object.values(d.daily||{}).filter(x=>x&&x.warm).length,log:(d.log||[]).slice(0,10),wkNow,nextW,nextT:DLES[nextId-1]||'',behind:wkNow>0?wkNow-nextW:0}}
   const gg=L.gug;if(gg&&gg.days&&Object.keys(gg.days).length){const t=today();let w=0,dd=0;for(let i=0;i<7;i++){const c=gg.days[addDays(t,-i)]||0;w+=c;if(c)dd++}
     o.gug={week:w,days:dd,best:gg.best||0,weak:Object.entries(gg.wr||{}).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,n])=>k.replace('x','×')+` (${n}번)`)}}
+  const en=L.eng;if(en&&en.c){const P=k=>{const v=(en.t||{})[k];return v&&v[0]+v[1]?pc(v[0],v[0]+v[1]):null},T=Math.floor((Date.now()+9*3600e3)/864e5),uw={};Object.entries(en.g||{}).forEach(([k,v])=>{const u=+k.split(':')[1];if(v[2])uw[u]=(uw[u]||0)+v[2]});
+    o.eng={day:Math.max(0,(en.c.day||1)-1),streak:(en.c.last===T||en.c.last===T-1)?en.c.streak||0:0,words:Object.keys(en.w||{}).length,lis:P('L'),mean:P('M'),spell:P('S'),fix:P('F'),order:P('O'),
+      weakU:Object.entries(uw).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([u,n])=>`${+u+1}단원(${n}번)`),hard:Object.entries(en.w||{}).filter(([,v])=>v[2]>0).sort((a,b)=>b[1][2]-a[1][2]).slice(0,8).map(([k])=>k.slice(2)),last:(en.h||[]).slice(-1)[0]||null}}
   const wk=weekData(K);o.fam={ts:wk.ts,ls:wk.ls};return o}
 function learnPrompt(K){const f=learnFacts(K),L=[];
   L.push(`아이: ${name(K)} · ${GRADE[hashOf(K)]||'초등학생'}`);
@@ -923,6 +927,7 @@ function learnPrompt(K){const f=learnFacts(K),L=[];
     f.ko.rows.slice(0,4).forEach(r=>L.push(`- ${r.day}일 「${r.title||''}」 요약: ${(r.summary2||r.summary1||'').slice(0,120)}`));if(f.ko.miss.length)L.push(`최근 틀린 낱말: ${f.ko.miss.join(', ')}`)}
   if(f.kb)f.kb.forEach(x=>L.push(`[국어 문제집 한 문장] ${x.d} 「${x.k.title||''}」 별 ${x.k.stars||'-'}: ${x.k.sum.slice(0,120)}`));
   if(f.doh)L.push(`[수학 도형교실] 수업 ${f.doh.done}/24개 완료, 별 ${f.doh.stars}/72. 한 번에 맞힌 비율 ${f.doh.first??'-'}%, 공간(이동) 문제 ${f.doh.spatial??'-'}%, 틀린 문제 중 3초 안에 찍은 비율 ${f.doh.quick??'-'}%. ${f.doh.wkNow?`지금 ${f.doh.wkNow}주차, 진도 ${f.doh.nextW}주차.`:''} 약한 유형: ${f.doh.weak.map(x=>x.k+' '+x.p+'%').join(', ')||'없음'}. 잘하는 유형: ${f.doh.strong.map(x=>x.k+' '+x.p+'%').join(', ')||'-'}.`);
+  if(f.eng)L.push(`[영어교실] ${f.eng.day}일차 완료, ${f.eng.streak}일 연속, 배운 단어 ${f.eng.words}개. 정답률: 듣고 뜻 ${f.eng.lis??'-'}%, 뜻 보고 단어 ${f.eng.mean??'-'}%, 철자 ${f.eng.spell??'-'}%, 문법 고치기 ${f.eng.fix??'-'}%, 문장 만들기 ${f.eng.order??'-'}%. 약한 문법: ${f.eng.weakU.join(', ')||'없음'}. 자주 틀린 단어: ${f.eng.hard.join(', ')||'없음'}.`);
   if(f.gug)L.push(`[수학 구구단] 최근 7일 중 ${f.gug.days}일, 문제 ${f.gug.week}개. 60초 스피드 최고 ${f.gug.best}개. 자주 틀린 곱셈: ${f.gug.weak.join(', ')||'없음'}.`);
   {const h=habitFacts(K,monday(today()));L.push(`[생활 약속] 이번 주 약속 지킴 ${h.pd}/${h.pt}, 제시간 시작 ${h.ontime}/${h.timed}${h.lateN?`(늦을 때 평균 ${h.lateAvg}분)`:''}, 미룬 약속 ${h.moves}번, 실행 시간 ${h.mins}분.${h.missed.length?' 자주 놓친 약속: '+h.missed.map(x=>x.t+' '+x.done+'/'+x.n).join(', ')+'.':''}${h.late.length?' 늦게 시작한 약속: '+h.late.map(x=>x.t+' 평균 '+x.avg+'분').join(', ')+'.':''} 이번 주 한 일 ${f.fam.ts}개 (지난주 ${f.fam.ls}개).`)}
   return`너는 초등학생의 국어·영어·수학 학습을 보는 따뜻하고 전문적인 학습 코치다. 아래는 가족 학습 앱에 쌓인 아이의 최근 기록이다. 보호자에게 줄 학습 피드백을 써라.
@@ -942,14 +947,15 @@ async function askLearnAI(K){const L=ST.learn[K];if(!L||L.ai)return;if(!window.A
 function fbCard(x,open){return`<div class="env" style="cursor:default"><div class="row sp"><b class="jua" style="font-size:19px">${esc(x.headline)}</b><span class="small mute">${fmtD(ds(new Date(x.at)))}</span></div>
   ${open?`${(x.subjects||[]).map(s=>`<div style="display:grid;gap:4px;border-left:4px solid var(--p);padding-left:10px"><span class="jua" style="font-size:18px">${esc(s.name)}</span><span>👍 ${esc(s.good)}</span><span>🔎 ${esc(s.worry)}</span><span>🏠 ${esc(s.todo)}</span></div>`).join('')}
   ${x.habit?`<span>📅 ${esc(x.habit)}</span>`:''}${x.toKid?`<div class="done-msg" style="text-align:left"><b>아이에게 전할 말</b><br>${esc(x.toKid)}</div>`:''}`:`<button class="btn sm ghost" data-a="fbOpen" data-id="${esc(x.id)}">자세히 보기</button>`}</div>`}
-function appKind(u){u=String(u||'');return/\/korean\//.test(u)?'ko':/\/dohyung\//.test(u)?'doh':/\/gugudan\//.test(u)?'gug':''}
+function appKind(u){u=String(u||'');return/\/english\//.test(u)?'eng':/\/korean\//.test(u)?'ko':/\/dohyung\//.test(u)?'doh':/\/gugudan\//.test(u)?'gug':''}
 function appSections(K,f,L){const row=(t,v,goal,low)=>v===null||v===undefined?'':`<div class="rw" style="min-height:40px"><span class="nm" style="font-size:16px;font-family:'Gowun Dodum'">${t}</span><b class="jua" style="color:${goal===undefined?'var(--ink)':(low?v<=goal:v>=goal)?'var(--ok)':'var(--p)'}">${v}%</b>${goal!==undefined?`<span class="small mute">목표 ${low?goal+'% 이하':goal+'%'}</span>`:''}</div>`;
   const links=allLinks(K),seen={},out=[],other=[];
   const empty=(t,n,code)=>`<section class="card"><h3>${esc(t)}</h3><p class="small mute" style="margin:0">${code?`기록을 불러오지 못했어요 (${esc(code)}). 아래 「다시 불러오기」를 눌러 주세요.`:`아직 ${esc(name(K))}의 기록이 없어요. ${esc(name(K))} 계정으로 「${esc(n)}」을 하면 여기에 모여요.`}</p></section>`;
   links.forEach(l=>{const k=appKind(l.u);if(!k){other.push(l.n);return}if(seen[k])return;seen[k]=1;
     if(k==='ko')out.push(f.ko||f.kb?SEC_KO(f,row):empty('국어 훈련장',l.n,L.src&&L.src.ko));
     if(k==='doh')out.push(f.doh?SEC_DOH(f):empty('수학 · 도형교실',l.n,L.src&&L.src.doh));
-    if(k==='gug')out.push(f.gug?SEC_GUG(f):empty('수학 · 구구단',l.n,L.src&&L.src.gug));});
+    if(k==='gug')out.push(f.gug?SEC_GUG(f):empty('수학 · 구구단',l.n,L.src&&L.src.gug));
+    if(k==='eng')out.push(f.eng?SEC_ENG(f,row):empty('영어교실',l.n,L.src&&L.src.eng));});
   if(!links.length)out.push(`<div class="card"><p style="margin:0">${esc(name(K))}에게 연결된 학습 링크가 없어요. 할 일 탭 → 바로가기 링크에서 추가해 주세요.</p></div>`);
   if(other.length)out.push(`<p class="small mute" style="margin:0 4px">${other.map(esc).join(', ')}: 우리 앱이 아니라 기록을 가져올 수 없는 링크예요.</p>`);
   out.push(`<button class="btn sm ghost" data-a="learnReload">기록 다시 불러오기</button>`);
@@ -962,6 +968,7 @@ const SEC_DOH=f=>{const d=f.doh,st=(v,l)=>`<div class="rw" style="min-height:40p
  <span class="small">${d.wkNow===0?'12월 1일에 1주차가 시작돼요.':d.behind>0?`지금 ${d.wkNow}주차인데 진도는 ${d.nextW}주차예요. <b>${d.behind}주 늦어요.</b> 하루 2개로 따라잡아요.`:`일정대로 가고 있어요. 다음 수업은 「${esc(d.nextT)}」.`} · 칠교 워밍업 ${d.tg}개 완성, 힌트 ${d.tgh}번, ${d.warm}일</span>
  ${d.all.length?`<div class="sec">약한 부분 (낮은 순)</div><div class="list">${d.all.map(x=>`<div class="rw" style="min-height:38px"><span class="nm" style="font-size:15px;font-family:'Gowun Dodum'">${esc(x.k)}</span><span style="flex:1;min-width:60px;height:10px;border-radius:5px;background:var(--line);overflow:hidden"><i style="display:block;height:100%;width:${x.p}%;background:${x.p<60?'var(--p)':x.p<80?'var(--y)':'var(--ok)'}"></i></span><b class="jua" style="font-size:16px">${x.p}%</b></div>`).join('')}</div><span class="small mute">2문제 이상 푼 영역만 보여요. 60% 아래는 실험실에서 다시 해 보게 해 주세요.</span>`:''}
  ${d.log.length?`<div class="sec">최근에 틀린 문제</div><div class="list">${d.log.map(r=>`<div class="env" style="cursor:default"><span class="small mute">${esc((r.d||'').slice(5).replace('-','/'))} · ${r.l}강 · ${esc(KNAME[r.k]||r.k||'')}${r.quick?' · <b style="color:var(--p)">3초 안에 찍음</b>':''}</span><span style="font-size:16px">${esc(String(r.q||'').replace(/<[^>]*>/g,''))}</span></div>`).join('')}</div>`:''}</section>`};
+const SEC_ENG=(f,row)=>`<section class="card"><h3>영어교실</h3><span><b>${f.eng.day}일차</b> 완료 · <b>${f.eng.streak}일</b> 연속 · 배운 단어 <b>${f.eng.words}개</b></span>${row('듣고 뜻 고르기',f.eng.lis,80)}${row('뜻 보고 단어',f.eng.mean,80)}${row('철자',f.eng.spell,70)}${row('문법 틀린 곳 고치기',f.eng.fix,70)}${row('문장 만들기',f.eng.order,70)}${f.eng.weakU.length?`<span class="small">약한 문법: ${f.eng.weakU.map(esc).join(', ')}</span>`:''}${f.eng.hard.length?`<span class="small">자주 틀린 단어: <span lang="en">${f.eng.hard.map(esc).join(', ')}</span></span>`:''}</section>`;
 const SEC_GUG=f=>`${f.gug?`<section class="card"><h3>수학 · 구구단</h3><span>최근 7일 중 <b>${f.gug.days}일</b> · 문제 <b>${f.gug.week}개</b> · 스피드 최고 <b>${f.gug.best}개</b></span>${f.gug.weak.length?`<span class="small">자주 틀린 곱셈: ${f.gug.weak.map(esc).join(', ')}</span>`:''}</section>`:''}`;
 /* ---------- 생활 습관 (보호자용 주간 요약) ---------- */
 function habitFacts(K,ws){const t=today(),o={pd:0,pt:0,timed:0,ontime:0,lateSum:0,lateN:0,moves:0,mins:0,days:[],items:{}};
@@ -993,7 +1000,7 @@ function vLearn(){const ks=kids();if(!ks.length)return'<div class="card"><p styl
   const chips=`<div class="chips">${ks.map(k=>`<button class="chip ${k===K?'on':''}" data-a="selKid" data-k="${esc(k)}"><span class="dot" style="background:${color(k)}"></span>${esc(name(k))}</button>`).join('')}</div>`;
   if(L.loading)return chips+'<div class="card"><p style="margin:0">학습 기록을 불러오는 중…</p></div>';
   if(false)return chips+`<div class="card"><h3>학습 기록을 읽을 수 없어요</h3><p class="small" style="margin:0">Firestore 규칙에서 보호자가 아이의 학습 기록(progress)을 읽도록 허용해야 해요. Claude에게 "학습 기록 규칙"이라고 말해 주세요.</p><button class="btn sm ghost" data-a="learnReload">다시 불러오기</button></div>`;
-  const f=learnFacts(K),h=L.hist||[],any=f.ko||f.kb||f.doh||f.gug;const _row=(t,v,goal,low)=>v===null||v===undefined?'':`<div class="rw" style="min-height:40px"><span class="nm" style="font-size:16px;font-family:'Gowun Dodum'">${t}</span><b class="jua" style="color:${goal===undefined?'var(--ink)':(low?v<=goal:v>=goal)?'var(--ok)':'var(--p)'}">${v}%</b>${goal!==undefined?`<span class="small mute">목표 ${low?goal+'% 이하':goal+'%'}</span>`:''}</div>`;
+  const f=learnFacts(K),h=L.hist||[],any=f.ko||f.kb||f.doh||f.gug||f.eng;const _row=(t,v,goal,low)=>v===null||v===undefined?'':`<div class="rw" style="min-height:40px"><span class="nm" style="font-size:16px;font-family:'Gowun Dodum'">${t}</span><b class="jua" style="color:${goal===undefined?'var(--ink)':(low?v<=goal:v>=goal)?'var(--ok)':'var(--p)'}">${v}%</b>${goal!==undefined?`<span class="small mute">목표 ${low?goal+'% 이하':goal+'%'}</span>`:''}</div>`;
   return chips+`<section class="card"><div class="row sp"><h3>Claude 선생님 학습 피드백</h3>${h[0]?`<span class="small mute">최근 ${fmtD(ds(new Date(h[0].at)))}</span>`:''}</div>
    <p class="small mute" style="margin:0">${esc(name(K))}의 국어·수학 기록을 모아 Claude가 보호자용 피드백을 써요. 받은 피드백은 아래에 쌓여요.</p>
    <button class="btn" data-a="learnAI" ${L.ai||!any?'disabled':''}>${L.ai?'Claude 선생님이 기록을 읽는 중…':'새 피드백 받기'}</button>${L.aiErr?`<span class="small" style="color:var(--p)">피드백을 못 받았어요 (${esc(L.aiErr)}). 잠시 뒤 다시 눌러 주세요.</span>`:''}
@@ -1107,9 +1114,9 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='remSet'||a==='remLead'){const R={on:true,lead:5,...(ST.cfg.remind||{})};if(a==='remSet')R.on=b.dataset.v==='on';else R.lead=+b.dataset.v;await save('',D('fam','cfg'),{remind:R},true);ST.cfg.remind=R;remindSync.last='';toast(R.on?`약속 ${R.lead?R.lead+'분 전에':'시작 시각에'} 알림을 보내요`:'약속 알림을 껐어요');return render(true)}
   if(a==='reviewSet'){await save('',D('fam','cfg'),{reviewOff:b.dataset.v==='1'},true);ST.cfg.reviewOff=b.dataset.v==='1';return render(true)}
   if(a==='ttDay'){ST.ttTmr=b.dataset.v==='1';return render(true)}
-  if(a==='linkPlanGo'||a==='linkPlanNo'){if(a==='linkPlanGo'){let n=0;for(const[nm,list]of Object.entries(LINKPLAN.kids)){const K=kids().find(k=>name(k)===nm);if(!K)continue;const rows=linkPlanRows(K,list),autos=list.map(l=>l.auto);
+  if(a==='linkPlanGo'||a==='linkPlanNo'){const PL=id===LINKPLAN2.id?LINKPLAN2:LINKPLAN;if(a==='linkPlanGo'){let n=0;for(const[nm,list]of Object.entries(PL.kids)){const K=kids().find(k=>name(k)===nm);if(!K)continue;const rows=linkPlanRows(K,list,PL),autos=list.map(l=>l.auto);
       let items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[])).filter(i=>!autos.includes(i.auto));rows.forEach(r=>{const nw={id:'t'+uid(),t:r.n,pt:r.pt,days:r.days.slice().sort(),lu:'',at:r.at,dur:r.dur};applyMode(nw,r.auto);items.push(nw);n++});await save('',D('tpl',K),{items},true)}
-      toast(`학습 링크 약속 ${n}개를 넣었어요`)}else toast('넣지 않았어요');await save('',D('fam','cfg'),{seeds:{...(ST.cfg.seeds||{}),[LINKPLAN.id]:Date.now()}},true);return render(true)}
+      toast(`${PL===LINKPLAN2?'영어교실':'학습 링크'} 약속 ${n}개를 넣었어요`)}else toast('넣지 않았어요');await save('',D('fam','cfg'),{seeds:{...(ST.cfg.seeds||{}),[PL.id]:Date.now()}},true);return render(true)}
   if(a==='seedGo'||a==='seedNo'){const S=SEEDS.find(x=>x.id===id);if(!S)return;if(a==='seedGo'){const K=kids().find(k=>name(k)===S.kid);if(!K)return toast(S.kid+'를 찾지 못했어요');const rep=$('#seedRep')&&$('#seedRep').checked,bases=new Set(S.items.map(x=>seedBase(x[0])));let items=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[]));if(rep)items=items.filter(o=>!bases.has(seedBase(o.t)));
     S.items.forEach(([t,ds,at,du,pt])=>{if(items.some(o=>o.t===t&&o.at===at&&String(o.days)===String(ds)))return;const nw={id:'t'+uid(),t,pt,days:ds.slice(),lu:'',at,dur:du};applyMode(nw,/고전시가/.test(t)?'sum':'timer');items.push(nw)});await save('',D('tpl',K),{items},true)}
     await save('',D('fam','cfg'),{seeds:{...(ST.cfg.seeds||{}),[id]:Date.now()}},true);toast(a==='seedGo'?`${S.kid}의 계획표를 넣었어요`:'넣지 않았어요');return render(true)}
