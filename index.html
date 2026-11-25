@@ -266,7 +266,7 @@ window.famShop={ledger:async a=>{if(!isAdmin())return'not-admin';await ledAdd((A
   report:async o=>{if(!isAdmin())return'not-admin';const clean=a=>(Array.isArray(a)?a:[]).slice(0,40).map(x=>({n:String(x.n||'').slice(0,40),product:String(x.product||'').slice(0,80),price:+x.price||0,ok:!!x.ok}));
     await save('',D('fam','cart'),{shop:{at:Date.now(),coupang:clean(o&&o.coupang),kurly:clean(o&&o.kurly),total:+(o&&o.total)||0,notes:String((o&&o.notes)||'').slice(0,300)},req:null},true);return'saved'}};
 /* ---------- 새 버전 자동 받기 ---------- */
-const APPV='99';
+const APPV='100';
 window.addEventListener('error',e=>{try{toast('오류: '+String(e.message||e).slice(0,80))}catch(x){}});window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;toast('오류: '+String((r&&(r.code||r.message))||r).slice(0,80))}catch(x){}});
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?ck='+Date.now(),{cache:'no-store'});const t=await r.text(),m=t.match(/const APPV='(\d+)'/);if(m&&m[1]!==APPV&&!sessionStorage.getItem('upd'+m[1])){sessionStorage.setItem('upd'+m[1],'1');location.reload()}}catch(e){}}
 setTimeout(checkUpdate,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
@@ -424,7 +424,9 @@ setInterval(()=>{document.querySelectorAll('.stopw[data-s]').forEach(el=>{el.tex
 const SCHOOL_END={'지호':{1:880,2:880,3:880,4:880,5:820},'은호':{1:780,2:810,3:810,4:810,5:780}};
 const schoolEnd=(K,wd)=>((SCHOOL_END[name(K)]||{})[wd])||780;
 // 집에 와서 공부를 시작할 수 있는 시각(분). 은호: 월수목금 태권도 뒤 4:40, 화 6:00
-const HOME_AT={'은호':{1:1000,2:1080,3:1000,4:1000,5:1000}};
+const HOME_AT={'은호':{1:1000,2:1070,3:1000,4:1000,5:1000}};
+// 문제집은 저녁 6:30까지 끝내고, 7~8시는 모바일 학습(학습 링크) 시간
+const WORK_END=18*60+30,MOB_START=19*60,MOB_END=21*60;
 const availFrom=(K,wd)=>{const h=(HOME_AT[name(K)]||{})[wd];return wd>0&&wd<6?Math.max(schoolEnd(K,wd)+20,h?h+10:0):9*60};
 function timetable(K,t,sch,ro){const pb=promiseBlocks(K,wdOf(t),t),mine=K===ST.me,me=mine&&!ro,wd=wdOf(t),PPM=1.15;
   const SE=schoolEnd(K,wd);let rg=wd===0||wd===6?[[420,1320]]:[[420,490],[SE,1320]];
@@ -592,23 +594,23 @@ async function migMath(){if(ST.migMathDone||ST.cfg.migMath)return;ST.migMathDone
   items.forEach(it=>{if(it.auto||!RE.test(it.t||''))return;if(it.proof||!it.timer){applyMode(it,'timer');ch=true;n++}});if(ch)await save('',D('tpl',K),{items},true)}
   await save('',D('fam','cfg'),{migMath:true},true);toast(n?`디딤돌·최상위·왕수학·연산왕·수해력 약속 ${n}개를 스톱워치(타이머) 방식으로 바꿨어요`:'수학 문제집 약속은 이미 모두 스톱워치(타이머) 방식이에요')}
 /* ---------- Claude가 정리해 둔 계획표 (엄마가 「넣기」를 눌러야 들어감) ---------- */
-const SEEDS=[{id:'jiho-2611',kid:'지호',title:'지호 공부 계획표',items:[
+const SEEDS=[{id:'jiho-2611',kid:'지호',title:'지호 공부 계획표',adapt:1,items:[
  ['고전시가활용정점',[1,3,5],'15:40',30,8],['추론비판독해의 힘',[2,4],'15:40',30,8],['추론비판독해의 힘',[6],'10:00',30,8],
  ['연산왕',[2,4],'16:30',30,8],['연산왕',[6],'11:20',30,8],['왕수학 (6문제)',[1,3,5],'15:00',40,15],
  ['최상위',[2,4],'15:00',40,15],['최상위',[6],'10:30',40,15],['디딤돌 (응용)',[1,3,5],'19:00',30,10],['디딤돌 (응용)',[2,4],'17:00',30,10]]},
- {id:'eunho-2611d',kid:'은호',title:'은호 공부 계획표 (아침 요약독해 · 태권도 뒤)',replaceAll:1,reflow:1,adapt:1,items:[
+ {id:'eunho-2611e',kid:'은호',title:'은호 공부 계획표 (문제집 6:30까지 · 7~8시 모바일)',replaceAll:1,reflow:1,adapt:1,items:[
  ['요약독해의 힘',[1,2,3,4,5],'07:30',20,8,'sum'],['요약독해의 힘',[0,6],'09:00',20,8,'sum'],
  ['디딤돌 (개념+유형)',[1,3,5],'16:50',40,15],['뿌리깊은 독해',[1,3,5],'17:30',30,8],
- ['최상위수학',[4],'16:50',40,15],['빠작',[4],'17:30',30,8],['연산왕',[2,4],'19:00',30,8],
+ ['최상위수학',[4],'16:50',40,15],['빠작',[4],'17:30',30,8],['연산왕',[4],'18:00',30,8],['연산왕',[2],'17:50',30,8],
  ['뿌리깊은 독해',[6],'10:00',30,8],['최상위수학',[6],'10:30',40,15],['연산왕',[6],'11:20',30,8],['빠작',[6],'13:00',30,8]]}];
 const seedBase=t=>String(t||'').replace(/\(.*?\)/g,'').replace(/\s+/g,'');
 // 학원 등 일정을 피해서 요일마다 시간을 다시 잡음(원하는 시각부터 찾고, 없으면 하교 뒤부터)
 function seedRows(S,K){if(!S.adapt||!K)return S.items;const t=today(),out={};
-  for(let wd=0;wd<7;wd++){const busy=[[0,availFrom(K,wd),0]];busy.push([12*60,13*60,0],[18*60,19*60,0]);
+  for(let wd=0;wd<7;wd++){const busy=[[0,availFrom(K,wd),0]];busy.push([12*60,13*60,0],[WORK_END,MOB_START,0]);
     ((ST.sched[K]&&ST.sched[K].items)||[]).filter(x=>!x.date&&(x.days||[]).includes(wd)&&(!x.to||x.to>=t)).forEach(x=>busy.push([toMin(x.s),toMin(x.e||addMin(x.s,60)),10]));
-    S.items.filter(x=>x[1].includes(wd)).sort((a,b)=>toMin(a[2])-toMin(b[2])).forEach(x=>{const du=x[3],free=c=>c+du<=21*60&&!busy.some(b=>c<b[1]+b[2]&&c+du+b[2]>b[0]);
-      let c=toMin(x[2]);if(c<9*60&&wd>0&&wd<6){busy.push([c,c+du,0]);const at=x[2],k=x[0]+'|'+at;(out[k]=out[k]||[x[0],[],at,du,x[4],x[5]])[1].push(wd);return}while(c+du<=21*60&&!free(c))c+=10;if(c+du>21*60){c=busy[0][1];while(c+du<=21*60&&!free(c))c+=10}if(c+du>21*60)return;
-      busy.push([c,c+du,0]);const at=pad(Math.floor(c/60))+':'+pad(c%60),k=x[0]+'|'+at;(out[k]=out[k]||[x[0],[],at,du,x[4],x[5]])[1].push(wd)})}
+    S.items.filter(x=>x[1].includes(wd)).sort((a,b)=>toMin(a[2])-toMin(b[2])).forEach(x=>{const du=x[3];let LIM=WORK_END;const free=c=>c+du<=LIM&&!busy.some(b=>c<b[1]+b[2]&&c+du+b[2]>b[0]);
+      let c=toMin(x[2]);if(c<9*60&&wd>0&&wd<6){busy.push([c,c+du,0]);const at=x[2],k=x[0]+'|'+at;(out[k]=out[k]||[x[0],[],at,du,x[4],x[5]])[1].push(wd);return}while(c+du<=LIM&&!free(c))c+=10;if(c+du>LIM){const own=busy.filter(b=>b.own&&b[0]>=busy[0][1]).map(b=>b[1]);c=own.length?Math.max(...own):busy[0][1];while(c+du<=LIM&&!free(c))c+=10;if(c+du>LIM){c=busy[0][1];while(c+du<=LIM&&!free(c))c+=10}}if(c+du>LIM){LIM=MOB_END;c=MOB_START;while(c+du<=LIM&&!free(c))c+=10}if(c+du>LIM)return;
+      {const e=[c,c+du,0];e.own=1;busy.push(e)}const at=pad(Math.floor(c/60))+':'+pad(c%60),k=x[0]+'|'+at;(out[k]=out[k]||[x[0],[],at,du,x[4],x[5]])[1].push(wd)})}
   return Object.values(out)}
 function seedCards(){if(!isAdmin())return'';const done=ST.cfg.seeds||{};return SEEDS.filter(S=>!done[S.id]).map(S=>{const K=kids().find(k=>name(k)===S.kid);if(!K)return'';const old=((ST.tpl[K]&&ST.tpl[K].items)||[]),bases=new Set(S.items.map(x=>seedBase(x[0]))),rep=old.filter(o=>S.replaceAll?!o.auto:bases.has(seedBase(o.t)));
   const rows=[...seedRows(S,K)].sort((a,b)=>Math.min(...a[1])-Math.min(...b[1])||a[2].localeCompare(b[2]));
@@ -620,13 +622,13 @@ function seedCards(){if(!isAdmin())return'';const done=ST.cfg.seeds||{};return S
 const LINKPLAN2={id:'links-eng-2611',title:'📚 영어교실 매일 약속',kids:{'지호':[{n:'영어교실',auto:'english',dur:20,pt:5}],'은호':[{n:'영어교실',auto:'english',dur:20,pt:5}]}};
 const LINKPLAN={id:'links-2611',kids:{'지호':[{n:'국어 훈련장',auto:'korean',dur:20,pt:5},{n:'도형교실',auto:'dohyung',dur:20,pt:5}],'은호':[{n:'구구단 마스터',auto:'gugudan',dur:15,pt:5},{n:'도형교실',auto:'dohyung',dur:20,pt:5}]}};
 function freeSlots(K,wd,PL){PL=PL||LINKPLAN;const t=today();let dt=t;for(let i=0;i<7&&wdOf(dt)!==wd;i++)dt=addDays(dt,1);
-  const busy=[[0,availFrom(K,wd)]];busy.push([12*60,13*60],[18*60,19*60]);
-  ((ST.tpl[K]&&ST.tpl[K].items)||[]).filter(i=>i.at&&(i.days||[]).includes(wd)&&!Object.values(PL.kids).flat().some(l=>l.auto===i.auto)).forEach(i=>busy.push([toMin(i.at),toMin(i.at)+(+i.dur||30)]));
-  ((ST.sched[K]&&ST.sched[K].items)||[]).filter(x=>!x.date&&(x.days||[]).includes(wd)&&(!x.to||x.to>=t)).forEach(x=>busy.push([toMin(x.s),toMin(x.e||addMin(x.s,60))]));
+  const busy=[[0,availFrom(K,wd),0]];busy.push([12*60,13*60,0],[WORK_END,MOB_START,0]);
+  ((ST.tpl[K]&&ST.tpl[K].items)||[]).filter(i=>i.at&&(i.days||[]).includes(wd)&&!Object.values(PL.kids).flat().some(l=>l.auto===i.auto)).forEach(i=>busy.push([toMin(i.at),toMin(i.at)+(+i.dur||30),0]));
+  ((ST.sched[K]&&ST.sched[K].items)||[]).filter(x=>!x.date&&(x.days||[]).includes(wd)&&(!x.to||x.to>=t)).forEach(x=>busy.push([toMin(x.s),toMin(x.e||addMin(x.s,60)),10]));
   return busy.sort((a,b)=>a[0]-b[0])}
-function placeLinks(K,wd,list,PL){const busy=freeSlots(K,wd,PL),END=21*60,out=[];let cur=availFrom(K,wd);
-  for(const L of list){let at=null;cur=Math.ceil(cur/10)*10;while(cur+L.dur<=END){const hit=busy.find(b=>cur<b[1]+10&&cur+L.dur+10>b[0]);if(!hit){at=cur;break}cur=Math.ceil((hit[1]+10)/10)*10}
-    if(at==null)continue;out.push({...L,at:pad(Math.floor(at/60))+':'+pad(at%60)});busy.push([at,at+L.dur]);busy.sort((a,b)=>a[0]-b[0]);cur=at+L.dur+10}
+function placeLinks(K,wd,list,PL){const busy=freeSlots(K,wd,PL),END=MOB_END,out=[];let cur=Math.max(availFrom(K,wd),MOB_START);
+  for(const L of list){let at=null;cur=Math.ceil(cur/5)*5;while(cur+L.dur<=END){const hit=busy.find(b=>cur<b[1]+(b[2]||0)&&cur+L.dur+(b[2]||0)>b[0]);if(!hit){at=cur;break}cur=Math.ceil((hit[1]+(hit[2]||0))/5)*5}
+    if(at==null)continue;out.push({...L,at:pad(Math.floor(at/60))+':'+pad(at%60)});busy.push([at,at+L.dur,0]);busy.sort((a,b)=>a[0]-b[0]);cur=at+L.dur}
   return out}
 function linkPlanRows(K,list,PL){const by={};for(let wd=0;wd<7;wd++)placeLinks(K,wd,list,PL).forEach(x=>{const k=x.n+'|'+x.at;(by[k]=by[k]||{...x,days:[]}).days.push(wd)});return Object.values(by).sort((a,b)=>a.n.localeCompare(b.n)||Math.min(...a.days)-Math.min(...b.days))}
 function linkPlanCard(PL){PL=PL||LINKPLAN;if(!isAdmin()||(ST.cfg.seeds||{})[PL.id])return'';const parts=Object.entries(PL.kids).map(([nm,list])=>{const K=kids().find(k=>name(k)===nm);if(!K)return'';const rows=linkPlanRows(K,list,PL);
@@ -636,12 +638,12 @@ function linkPlanCard(PL){PL=PL||LINKPLAN;if(!isAdmin()||(ST.cfg.seeds||{})[PL.i
 /* ---------- 학원 일정에 맞춰 약속 시간 다시 맞추기 ---------- */
 function refitPlan(K){const t=today(),src=JSON.parse(JSON.stringify((ST.tpl[K]&&ST.tpl[K].items)||[])),fixed=src.filter(i=>i.auto||!i.at||!(i.days||[]).length),work=src.filter(i=>!i.auto&&i.at&&(i.days||[]).length);
   const res={};work.forEach(i=>res[i.id]={});
-  for(let wd=0;wd<7;wd++){const busy=[[0,availFrom(K,wd),0],[12*60,13*60,0],[18*60,19*60,0]];
+  for(let wd=0;wd<7;wd++){const busy=[[0,availFrom(K,wd),0],[12*60,13*60,0],[WORK_END,MOB_START,0]];
     ((ST.sched[K]&&ST.sched[K].items)||[]).filter(x=>!x.date&&(x.days||[]).includes(wd)&&(!x.to||x.to>=t)).forEach(x=>busy.push([toMin(x.s),toMin(x.e||addMin(x.s,60)),10]));
-    work.filter(i=>i.days.includes(wd)).sort((a,b)=>toMin(a.at)-toMin(b.at)).forEach(i=>{const du=+i.dur||30,free=c=>c+du<=21*60&&!busy.some(b=>c<b[1]+b[2]&&c+du+b[2]>b[0]);let c=toMin(i.at);
+    work.filter(i=>i.days.includes(wd)).sort((a,b)=>toMin(a.at)-toMin(b.at)).forEach(i=>{const du=+i.dur||30;let LIM=WORK_END;const free=c=>c+du<=LIM&&!busy.some(b=>c<b[1]+b[2]&&c+du+b[2]>b[0]);let c=toMin(i.at);
       if(c<9*60&&wd>0&&wd<6&&!busy.slice(3).some(b=>c<b[1]+b[2]&&c+du+b[2]>b[0])){busy.push([c,c+du,0]);res[i.id][wd]=i.at;return}
-      while(c+du<=21*60&&!free(c))c+=10;if(c+du>21*60){c=busy[0][1];while(c+du<=21*60&&!free(c))c+=10}if(c+du>21*60){res[i.id][wd]=null;return}
-      busy.push([c,c+du,0]);res[i.id][wd]=pad(Math.floor(c/60))+':'+pad(c%60)})}
+      while(c+du<=LIM&&!free(c))c+=10;if(c+du>LIM){const own=busy.filter(b=>b.own&&b[0]>=busy[0][1]).map(b=>b[1]);c=own.length?Math.max(...own):busy[0][1];while(c+du<=LIM&&!free(c))c+=10;if(c+du>LIM){c=busy[0][1];while(c+du<=LIM&&!free(c))c+=10}}if(c+du>LIM){LIM=MOB_END;c=MOB_START;while(c+du<=LIM&&!free(c))c+=10}if(c+du>LIM){res[i.id][wd]=null;return}
+      {const e=[c,c+du,0];e.own=1;busy.push(e)}res[i.id][wd]=pad(Math.floor(c/60))+':'+pad(c%60)})}
   const out=[...fixed.filter(i=>!i.auto)],changes=[];
   work.forEach(i=>{const by={};Object.entries(res[i.id]).forEach(([wd,at])=>{const k=at||'x';(by[k]=by[k]||[]).push(+wd)});const groups=Object.entries(by).sort((a,b)=>b[1].length-a[1].length);
     groups.forEach(([at,ds],gi)=>{if(at==='x'){changes.push({t:i.t,ds,from:i.at,to:null});return}const n=gi===0?{...i}:{...JSON.parse(JSON.stringify(i)),id:'t'+uid()};n.days=ds.sort();n.at=at;out.push(n);if(at!==i.at)changes.push({t:i.t,ds,from:i.at,to:at})})});
