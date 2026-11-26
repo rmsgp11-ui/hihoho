@@ -231,7 +231,7 @@ function fbPrompt(it,r,K){const A=Array.isArray(it.ans)?it.ans.join(' 또는 '):
 {"think":"아이가 어떻게 생각했을지 1~2문장","stuck":"어디서 막혔는지 1문장","concept":"헷갈린 개념 이름 (10자 안팎)","talk":["아이에게 건넬 질문이나 말 1","2"]}`}
 async function aiFb(id){const A=ST.adm,K=A.kid,w=A.wk,set=A.sets[w+'|'+K],res=A.ress[w+'|'+K];const it=set&&(set.items||[]).find(x=>x.id===id),r=res&&res.res&&res.res[id];
   if(!it||!r||!window.AI_URL)return toast(window.AI_URL?'풀이 기록이 없어요':'AI 서버 주소(config.js)가 없어요');const ak=w+'|'+K+'|'+id;if(A.ai[ak])return;A.ai[ak]=1;render();
-  try{const pen=A.pens[w+'|'+id+'|'+K]||'';const body={tier:'quick',prompt:fbPrompt(it,{...r,pen:!!pen},K)};if(pen&&safeImg(pen))body.image={media_type:'image/jpeg',data:pen.split(',')[1]};
+  try{const pen=A.pens[w+'|'+id+'|'+K]||'';const body={tier:'think',prompt:fbPrompt(it,{...r,pen:!!pen},K)};if(pen&&safeImg(pen))body.image={media_type:'image/jpeg',data:pen.split(',')[1]};
     const tk=await F.auth.currentUser.getIdToken();const x=await fetch(window.AI_URL,{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tk},body:JSON.stringify(body)});
     if(!x.ok){let ec='';try{ec=(await x.json()).error||''}catch(e){}throw{code:'ai_'+x.status+(ec?'_'+ec:'')}}
     const t=((await x.json()).text)||'',a=t.indexOf('{'),b=t.lastIndexOf('}');const j=JSON.parse(t.slice(a,b+1));if(j.error)throw{code:j.error};

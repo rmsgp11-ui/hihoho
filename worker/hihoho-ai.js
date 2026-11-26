@@ -9,6 +9,7 @@
 const ORIGIN = "https://rmsgp11-ui.github.io";
 const PROJECT = "study-ho";
 const MODEL = "claude-haiku-5-5";
+const MODEL_THINK = "claude-sonnet-5-5"; // 오답 복습 「생각 흐름 분석」(아이 손글씨 풀이 읽기)만 사용
 const DAILY_LIMIT = 150;
 // 가족 메일의 SHA-256 (메일 원문은 코드에 두지 않음)
 const FAMILY = [
@@ -165,7 +166,7 @@ export default {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-      body: JSON.stringify({ model: MODEL, max_tokens: b.tier === "quick" ? 1000 : 6000, system: SYSTEM, messages: [{ role: "user", content }] }),
+      body: JSON.stringify({ model: b.tier === "think" ? MODEL_THINK : MODEL, max_tokens: b.tier === "quick" || b.tier === "think" ? 1000 : 6000, system: SYSTEM, messages: [{ role: "user", content }] }),
     });
     if (!r.ok) return J({ error: "upstream", status: r.status, detail: (await r.text()).slice(0, 300) }, 502);
     const d = await r.json();
