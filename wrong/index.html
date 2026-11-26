@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7f3e8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="오답 복습">
+<link rel="icon" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../icon-192.png">
+<link rel="manifest" href="manifest.json">
+<script src="../config.js"></script>
+<title>오답 복습</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+/* VOICE: 옆에 앉아 같이 봐 주는 선생님 — 틀려도 괜찮다고, 다시 해 보자고
+   IDEA: 모눈 공책과 빨간 색연필 채점, 노란 포인트 별
+   COLOUR and TYPE: 크림 종이, 파란 모눈, 빨강은 채점·틀림, 초록은 맞음, 노랑은 포인트 / Jua + Gowun Dodum
+   LAYOUT: 위에 문제, 가운데 펜으로 쓰는 풀이 칸, 아래 숫자판. 태블릿 세로·가로 모두 */
+:root{color-scheme:light;--bg:#f7f3e8;--paper:#fffdf7;--grid:#dfe8f3;--ink:#23324a;--mute:#6f7c8f;--line:#d9d2bf;
+--red:#d9483b;--red2:#fde7e3;--ok:#1f8a5b;--ok2:#e2f4ea;--y:#ffc93c;--blue:#3a6fd8;--blue2:#e7efff}
+*{box-sizing:border-box;min-width:0}
+html,body{overscroll-behavior:none}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.6 "Gowun Dodum",system-ui,sans-serif;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+h1,h2,h3,button,.jua{font-family:Jua,"Gowun Dodum",sans-serif;font-weight:400}
+h1{font-size:clamp(30px,6vw,42px);margin:0;line-height:1.1}
+h2{font-size:24px;margin:0 0 8px}
+h3{font-size:20px;margin:0 0 6px}
+.wrap{max-width:900px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) max(3vw,14px) calc(40px + env(safe-area-inset-bottom))}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:18px;margin-top:14px;box-shadow:0 2px 0 #0000000a}
+.mute{color:var(--mute)}.small{font-size:15px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:54px;padding:0 22px;border:0;border-radius:16px;background:var(--blue);color:#fff;font-size:21px;cursor:pointer}
+.btn.full{width:100%}.btn.ghost{background:var(--blue2);color:var(--ink)}.btn.red{background:var(--red)}.btn.sm{min-height:42px;font-size:17px;padding:0 14px}
+.btn:disabled{opacity:.45;cursor:default}
+button:focus-visible,textarea:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grow{flex:1}
+.bar{height:14px;border-radius:9px;background:#ece6d4;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--y),#ff9f43)}
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 12px;background:var(--blue2);font-size:15px;white-space:nowrap}
+.pill.y{background:#fff1c7}.pill.r{background:var(--red2);color:var(--red)}.pill.g{background:var(--ok2);color:var(--ok)}
+.hdr{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+/* 문제 화면 */
+.q{font-size:clamp(20px,3.2vw,26px);line-height:1.7;white-space:pre-wrap}
+.qimg{display:block;max-width:100%;max-height:38vh;margin-top:10px;border-radius:12px;border:1px solid var(--line)}
+.kind{font-family:Jua,sans-serif;font-size:17px}
+.padwrap{display:grid;gap:12px}
+@media (min-width:1000px) and (orientation:landscape){.solve{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;align-items:start}}
+.cv{position:relative;border:2px solid var(--line);border-radius:18px;overflow:hidden;background:var(--paper);
+ background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:28px 28px}
+.cv canvas{display:block;width:100%;height:min(46vh,520px);touch-action:none;cursor:crosshair}
+.cv .tools{position:absolute;right:8px;top:8px;display:flex;gap:6px}
+.cv .tools button{min-height:40px;border:1px solid var(--line);background:#fffdf7e6;border-radius:12px;padding:0 12px;font-size:16px;cursor:pointer;color:var(--ink)}
+.cv .tag{position:absolute;left:12px;top:10px;font-size:14px;color:var(--mute);pointer-events:none}
+.ansbox{display:flex;align-items:center;gap:10px;min-height:64px;border:2px solid var(--blue);border-radius:16px;background:#fff;padding:6px 16px;font:32px Jua,sans-serif}
+.ansbox .v{flex:1;letter-spacing:2px}.ansbox .ph{color:#b4bccb;font-size:22px}.ansbox .u{font-size:22px;color:var(--mute)}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.keys button{min-height:58px;border:1px solid var(--line);border-radius:14px;background:#fff;font-size:26px;cursor:pointer;color:var(--ink)}
+.keys button.op{background:var(--blue2);font-size:20px}
+.keys button.go{background:var(--blue);color:#fff;font-size:22px;grid-column:span 2}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.choices button{min-height:58px;border:2px solid var(--line);border-radius:14px;background:#fff;font-size:20px;cursor:pointer;color:var(--ink);padding:6px 10px}
+.choices button.on{border-color:var(--blue);background:var(--blue2)}
+.fb{border-radius:18px;padding:16px;margin-top:12px}
+.fb.ok{background:var(--ok2);border:2px solid var(--ok)}.fb.no{background:var(--red2);border:2px solid var(--red)}.fb.hint{background:#fff6dc;border:2px solid var(--y)}
+.fb h3{font-size:24px}
+.sol{white-space:pre-wrap;line-height:1.7}
+.done-star{font-size:64px;text-align:center}
+/* 부모 화면 */
+.kidtabs{display:flex;gap:8px;flex-wrap:wrap}
+.kidtabs button{min-height:46px;border-radius:14px;border:2px solid var(--line);background:#fff;padding:0 18px;font-size:19px;cursor:pointer;color:var(--ink)}
+.kidtabs button.on{border-color:var(--blue);background:var(--blue2)}
+.it{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;padding:10px 0;border-top:1px solid var(--line)}
+.it:first-child{border-top:0}
+.it .st{font-size:22px;line-height:1.2}
+.it .qq{white-space:pre-wrap;font-size:16px}
+.pen{display:block;max-width:100%;border:1px solid var(--line);border-radius:12px;margin-top:6px;background:#fff}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stats div{background:var(--bg);border-radius:14px;padding:10px 12px;text-align:center}
+.stats b{display:block;font:28px Jua,sans-serif}
+textarea{width:100%;min-height:140px;border:1px solid var(--line);border-radius:14px;padding:10px;font:14px/1.5 ui-monospace,monospace;background:#fff;color:var(--ink)}
+.gate{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:50;padding:20px}
+.gate .card{max-width:420px;width:100%;text-align:center}
+.pdots{display:flex;gap:12px;justify-content:center;margin:14px 0}.pdots i{width:16px;height:16px;border-radius:50%;border:2px solid var(--blue)}.pdots i.f{background:var(--blue)}
+.pkeys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.pkeys button{min-height:56px;border-radius:14px;border:1px solid var(--line);background:#fff;font-size:24px;cursor:pointer;color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:14px;font-size:16px;z-index:60;max-width:90vw}
+.empty{text-align:center;color:var(--mute);padding:20px 0}
+@media (prefers-reduced-motion:no-preference){.pop{animation:pop .35s ease-out}@keyframes pop{0%{transform:scale(.9);opacity:.3}100%{transform:none;opacity:1}}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div id="gate"></div>
+<script>
+/* =========================================================
+   오답 복습 (우리가족 hihoho 하위 앱)
+   - 문제 세트: progress/wrong_<주 월요일>_<아이메일>  (부모·Claude가 넣음)
+   - 아이 결과: progress/wres_<주 월요일>_<아이메일>   (아이가 씀)
+   - 펜 풀이:   progress/wpen_<주 월요일>_<문제id>_<아이메일> (해설까지 본 문제만)
+   - 포인트:    done/<아이메일>/days/<날짜> 의 wrong.pt (우리가족 포인트에 합산)
+   ========================================================= */
+const PT_FIRST=2,PT_SET=3,PT_PERFECT=2;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const ds=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>ds(new Date());
+const addDays=(s,n)=>{const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return ds(d)};
+const monday=s=>{const d=new Date(s+'T12:00:00');const o=(d.getDay()+6)%7;d.setDate(d.getDate()-o);return ds(d)};
+const wkLabel=w=>{const d=new Date(w+'T12:00:00');return `${d.getMonth()+1}월 ${d.getDate()}일 주`};
+let tt=0;function toast(m){clearTimeout(tt);let e=$('#toast');if(!e){e=document.createElement('div');e.id='toast';e.className='toast';e.setAttribute('role','status');e.setAttribute('aria-live','polite');document.body.appendChild(e)}e.textContent=m;e.style.display='block';tt=setTimeout(()=>e.style.display='none',2600)}
+const safeImg=u=>typeof u==='string'&&/^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/.test(u)?u:'';
+
+/* ---------- 정답 비교 ---------- */
+function norm(s){return String(s??'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)).replace(/[,\s]+/g,' ').trim().replace(/ /g,'')}
+function ansList(it){return(Array.isArray(it.ans)?it.ans:[it.ans]).map(norm).filter(x=>x!=='')}
+function isRight(it,v){const a=norm(v);if(!a)return false;const L=ansList(it);if(L.includes(a))return true;
+  const n=x=>/^-?\d+(\.\d+)?$/.test(x)?parseFloat(x):NaN;const av=n(a);return!isNaN(av)&&L.some(x=>n(x)===av)}
+
+/* ---------- 상태 ---------- */
+const ST={me:'',role:'',members:{},cfg:{pin:''},view:'home',kid:'',wk:'',set:null,res:null,i:0,ans:'',stage:'',sel:'',adm:{kid:'',wk:'',sets:{},ress:{},pens:{}},busy:false};
+let F=null;
+const D=(...p)=>F.FS.doc(F.db,...p);
+const name=e=>(ST.members[e]&&ST.members[e].name)||String(e).split('@')[0];
+const kids=()=>Object.keys(ST.members).filter(e=>ST.members[e].role==='kid').sort((a,b)=>name(a).localeCompare(name(b)));
+const isAdmin=()=>ST.role==='admin';
+const setKey=(w,k)=>`wrong_${w}_${k}`,resKey=(w,k)=>`wres_${w}_${k}`,penKey=(w,id,k)=>`wpen_${w}_${id}_${k}`;
+async function getD(key){try{const s=await F.FS.getDoc(D('progress',key));return s.exists()?s.data():null}catch(e){console.warn(key,e&&e.code);return null}}
+
+/* ---------- 이번 주 세트 찾기: 이번 주 → 없으면 지난주(아직 안 끝낸 것) ---------- */
+async function loadKid(K){const w0=monday(today());
+  for(const w of [w0,addDays(w0,-7)]){const s=await getD(setKey(w,K));if(s&&Array.isArray(s.items)&&s.items.length){const r=await getD(resKey(w,K))||{res:{},pts:0};if(w===w0||!r.done){ST.wk=w;ST.set=s;ST.res=Object.assign({res:{},pts:0},r);return}}}
+  ST.wk=w0;ST.set=null;ST.res={res:{},pts:0}}
+const items=()=>(ST.set&&ST.set.items)||[];
+const resOf=id=>(ST.res&&ST.res.res&&ST.res.res[id])||null;
+const doneCount=()=>items().filter(it=>resOf(it.id)&&resOf(it.id).st).length;
+const firstCount=()=>items().filter(it=>resOf(it.id)&&resOf(it.id).st==='first').length;
+const nextIdx=()=>items().findIndex(it=>!(resOf(it.id)&&resOf(it.id).st));
+
+/* ---------- 저장 ---------- */
+async function saveRes(id,r,addPt){const K=ST.me,w=ST.wk;ST.res.res[id]=r;ST.res.pts=(ST.res.pts||0)+(addPt||0);
+  const all=doneCount()===items().length;let bonus=0;
+  if(all&&!ST.res.done){ST.res.done=true;bonus=PT_SET+(firstCount()===items().length?PT_PERFECT:0);ST.res.pts+=bonus;ST.res.bonus=bonus}
+  const tot=(addPt||0)+bonus;
+  try{await F.FS.setDoc(D('progress',resKey(w,K)),{kid:K,week:w,res:{[id]:r},pts:ST.res.pts,done:!!ST.res.done,...(bonus?{bonus}:{}),at:Date.now()},{merge:true})}catch(e){toast('저장이 안 됐어요 ('+(e&&e.code)+')')}
+  if(tot>0||all){const t=today(),data={date:t,who:K,wrong:{pt:F.FS.increment(tot),at:Date.now(),wk:w}};if(all&&bonus)data.auto={wrong:Date.now()};
+    try{await F.FS.setDoc(D('done',K,'days',t),data,{merge:true})}catch(e){toast('포인트 저장이 안 됐어요 ('+(e&&e.code)+')')}}
+  return bonus}
+function penShot(){const c=$('#cv');if(!c)return'';try{const W=Math.min(900,c.width),H=Math.round(c.height*W/c.width),o=document.createElement('canvas');o.width=W;o.height=H;const x=o.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);x.drawImage(c,0,0,W,H);return o.toDataURL('image/jpeg',.6)}catch(e){return''}}
+async function savePen(id){if(!PEN.dirty)return;const img=penShot();if(!img||img.length>900000)return;try{await F.FS.setDoc(D('progress',penKey(ST.wk,id,ST.me)),{img,kid:ST.me,week:ST.wk,id,at:Date.now()})}catch(e){}}
+
+/* ---------- 펜 풀이 칸 ---------- */
+const PEN={dirty:false,penSeen:false,strokes:0};
+function setupCanvas(){const c=$('#cv');if(!c)return;const r=c.getBoundingClientRect(),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);const x=c.getContext('2d');x.scale(dpr,dpr);x.lineCap='round';x.lineJoin='round';x.strokeStyle='#23324a';x.lineWidth=2.6;
+  PEN.dirty=false;let down=false,last=null,erase=false;
+  const pos=e=>{const b=c.getBoundingClientRect();return[e.clientX-b.left,e.clientY-b.top]};
+  c.onpointerdown=e=>{if(e.pointerType==='pen')PEN.penSeen=true;if(PEN.penSeen&&e.pointerType==='touch')return;erase=e.button===5||(e.buttons&32)>0||PEN.eraser;c.setPointerCapture(e.pointerId);down=true;last=pos(e);e.preventDefault()};
+  c.onpointermove=e=>{if(!down)return;if(PEN.penSeen&&e.pointerType==='touch')return;const p=pos(e);
+    if(erase){x.save();x.globalCompositeOperation='destination-out';x.lineWidth=22;x.beginPath();x.moveTo(last[0],last[1]);x.lineTo(p[0],p[1]);x.stroke();x.restore()}
+    else{x.lineWidth=e.pressure&&e.pointerType==='pen'?1.4+e.pressure*2.6:2.6;x.beginPath();x.moveTo(last[0],last[1]);x.lineTo(p[0],p[1]);x.stroke()}
+    last=p;PEN.dirty=true;e.preventDefault()};
+  c.onpointerup=c.onpointercancel=()=>{down=false}}
+function clearCanvas(){const c=$('#cv');if(!c)return;const x=c.getContext('2d');x.save();x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,c.width,c.height);x.restore();PEN.dirty=false}
+
+/* ---------- 아이 화면 ---------- */
+function vKidHome(){const N=items().length,n=doneCount(),p=ST.res.pts||0;
+  if(!ST.set)return`<div class="hdr"><h1>오답 복습</h1><span class="pill">${esc(name(ST.me))}</span></div>
+   <div class="card empty"><div class="done-star">📒</div><h2>이번 주 문제가 아직 없어요</h2><p class="mute">부모님이 넣어 주면 여기에 나타나요.</p><a class="btn ghost" href="../">우리가족으로 돌아가기</a></div>`;
+  const fin=n>=N;
+  return`<div class="hdr"><div><h1>오답 복습</h1><div class="mute">${wkLabel(ST.wk)} · ${esc(name(ST.me))}</div></div><span class="pill y">⭐ ${p} 포인트</span></div>
+  <div class="card"><div class="row"><h2 class="grow">${fin?'이번 주 복습을 다 끝냈어요!':'이번 주 복습'}</h2><b class="jua" style="font-size:22px">${n}/${N}</b></div>
+   <div class="bar" role="img" aria-label="${N}문제 중 ${n}문제 끝냄"><i style="width:${N?n/N*100:0}%"></i></div>
+   <p class="mute small" style="margin:10px 0 0">틀렸던 문제를 다시 풀고, 쌍둥이 문제도 풀어 봐요. 한 번에 맞히면 ${PT_FIRST}포인트, 다 끝내면 ${PT_SET}포인트 더!</p>
+   ${fin?`<div class="done-star pop">🌟</div><p style="text-align:center;margin:0">한 번에 맞힌 문제 <b>${firstCount()}</b>개${ST.res.bonus?` · 끝내기 보너스 <b>+${ST.res.bonus}</b>`:''}</p><a class="btn full ghost" style="margin-top:12px" href="../">우리가족으로 돌아가기</a>`
+   :`<button class="btn full" style="margin-top:14px" data-a="start">${n?'이어서 풀기':'시작하기'}</button>`}</div>`}
+
+function vSolve(){const L=items(),it=L[ST.i];if(!it)return vKidHome();const r=resOf(it.id)||{};
+  const kindT=it.kind==='twin'?'👯 쌍둥이 문제':'🔁 다시 풀기';
+  const img=safeImg(it.img);
+  const answer=it.choices&&it.choices.length
+   ?`<div class="choices" role="group" aria-label="답 고르기">${it.choices.map(c=>`<button data-a="pick" data-v="${esc(c)}" class="${ST.sel===String(c)?'on':''}" ${ST.stage==='solved'||ST.stage==='sol'?'disabled':''}>${esc(c)}</button>`).join('')}</div>
+     <button class="btn full" data-a="check" ${ST.sel&&!(ST.stage==='solved'||ST.stage==='sol')?'':'disabled'}>확인</button>`
+   :`<div class="ansbox" aria-live="polite"><span class="v">${ST.ans?esc(ST.ans):'<span class="ph">답을 눌러요</span>'}</span>${it.unit?`<span class="u">${esc(it.unit)}</span>`:''}</div>
+     ${ST.stage==='solved'||ST.stage==='sol'?'':`<div class="keys">${['7','8','9','⌫','4','5','6','/','1','2','3','.','0','띄움'].map(k=>`<button data-a="key" data-k="${k}" class="${/[0-9]/.test(k)?'':'op'}" ${ST.stage==='solved'||ST.stage==='sol'?'disabled':''} aria-label="${k==='⌫'?'지우기':k==='/'?'분수 막대':k==='띄움'?'띄어쓰기 (대분수)':k}">${k}</button>`).join('')}<button class="go" data-a="check" ${ST.ans?'':'disabled'}>확인</button></div>`}`;
+  let fb='';
+  if(ST.stage==='solved')fb=`<div class="fb ok pop"><h3>맞았어요! ${r.st==='first'?`⭐ +${PT_FIRST}`:''}</h3><p style="margin:0">${r.st==='first'?'한 번에 맞혔어요. 멋져요!':'힌트를 보고 해냈어요. 다음 주에 한 번 더 만나요.'}</p><button class="btn full" style="margin-top:12px" data-a="next">다음 문제</button></div>`;
+  else if(ST.stage==='hint')fb=`<div class="fb hint pop"><h3>💡 힌트</h3><p style="margin:0" class="sol">${esc(it.hint||'문제를 천천히 한 번 더 읽어 봐요. 무엇을 구하는지 동그라미 쳐 봐요.')}</p><p class="small mute" style="margin:8px 0 0">답을 고쳐서 다시 확인해 봐요.</p></div>`;
+  else if(ST.stage==='sol')fb=`<div class="fb no pop"><h3>같이 풀어 봐요</h3><p style="margin:0 0 6px">정답은 <b>${esc(Array.isArray(it.ans)?it.ans[0]:it.ans)}${esc(it.unit||'')}</b> 예요.</p>${it.sol?`<div class="sol">${esc(it.sol)}</div>`:''}<p class="small mute" style="margin:8px 0 0">괜찮아요. 이 문제는 부모님이랑 한 번 더 볼 거예요.</p><button class="btn full" style="margin-top:12px" data-a="next">다음 문제</button></div>`;
+  return`<div class="hdr"><button class="btn sm ghost" data-a="home">‹ 목록</button><span class="kind">${kindT}</span><b class="jua">${ST.i+1}/${L.length}</b></div>
+  <div class="solve"><div><div class="card"><div class="q">${esc(it.q)}</div>${img?`<img class="qimg" src="${img}" alt="문제 그림">`:''}</div>
+   <div class="cv" style="margin-top:12px"><span class="tag">✏️ 여기에 풀어요</span><canvas id="cv" aria-label="풀이 쓰는 곳"></canvas><div class="tools"><button data-a="eraser" aria-pressed="${!!PEN.eraser}">${PEN.eraser?'✏️ 펜':'🧽 지우개'}</button><button data-a="clear">모두 지우기</button></div></div></div>
+   <div class="card padwrap">${answer}${fb}</div></div>`}
+
+function press(k){if(ST.stage==='solved'||ST.stage==='sol')return;let v=ST.ans;
+  if(k==='⌫')v=v.slice(0,-1);else if(k==='띄움'){if(v&&!v.endsWith(' '))v+=' '}else if(v.length<14)v+=k;ST.ans=v;render(true)}
+async function check(){if(ST.busy)return;const it=items()[ST.i];if(!it)return;const v=it.choices&&it.choices.length?ST.sel:ST.ans;if(!norm(v))return;ST.busy=true;
+  const ok=isRight(it,v);const prev=ST.stage;
+  if(ok){const first=prev!=='hint';const r={st:first?'first':'hint',a1:first?v:(ST.a1||''),a2:first?'':v,at:Date.now()};ST.res.res[it.id]=r;ST.stage='solved';render(true);await saveRes(it.id,r,first?PT_FIRST:0)}
+  else if(prev!=='hint'){ST.a1=v;ST.stage='hint';ST.ans='';ST.sel='';render(true)}
+  else{const r={st:'miss',a1:ST.a1||'',a2:v,at:Date.now(),pen:PEN.dirty};ST.res.res[it.id]=r;ST.stage='sol';render(true);await savePen(it.id);await saveRes(it.id,r,0)}
+  ST.busy=false}
+function goNext(){const n=nextIdx();ST.ans='';ST.sel='';ST.a1='';ST.stage='';PEN.eraser=false;if(n<0){ST.view='home';render()}else{ST.i=n;render();window.scrollTo(0,0)}}
+
+/* ---------- 부모 화면 ---------- */
+let unlocked=false;const PIN={buf:'',msg:''};
+async function hashPin(x){const t='family:'+x;try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return[...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('')}catch(e){let h=0;for(const c of t)h=(h*31+c.charCodeAt(0))|0;return'h'+h}}
+const TKEY=()=>'fam-trust-'+ST.me;
+function trusted(){try{return!!ST.cfg.pin&&localStorage.getItem(TKEY())===ST.cfg.pin}catch(e){return false}}
+function pinGate(){if(!isAdmin()||unlocked||!ST.cfg.pin){$('#gate').innerHTML='';return false}if(trusted()){unlocked=true;$('#gate').innerHTML='';return false}
+  $('#gate').innerHTML=`<div class="gate"><div class="card"><h2>관리자 비밀번호</h2><p class="mute" style="margin:0">부모님만 들어갈 수 있어요.</p><div class="pdots">${[0,1,2,3].map(i=>`<i class="${i<PIN.buf.length?'f':''}"></i>`).join('')}</div><div style="min-height:24px;color:var(--red)">${esc(PIN.msg)}</div><div class="pkeys">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-a="pk" data-k="${n}">${n}</button>`).join('')}<span></span><button data-a="pk" data-k="0">0</button><button data-a="pkdel" aria-label="지우기">⌫</button></div><a class="btn ghost full sm" style="margin-top:12px" href="../">우리가족으로</a></div></div>`;return true}
+async function pinKey(k){if(PIN.buf.length>=4)return;PIN.buf+=k;PIN.msg='';pinGate();if(PIN.buf.length<4)return;const v=PIN.buf;PIN.buf='';
+  if(await hashPin(v)===ST.cfg.pin){unlocked=true;try{localStorage.setItem(TKEY(),ST.cfg.pin)}catch(e){}$('#gate').innerHTML='';await admLoad();render()}else{PIN.msg='번호가 틀렸어요';pinGate()}}
+
+async function admLoad(){const A=ST.adm;if(!A.kid)A.kid=kids()[0]||'';if(!A.wk)A.wk=monday(today());const K=A.kid;if(!K)return;
+  for(const w of [A.wk,addDays(A.wk,-7)]){const k=w+'|'+K;if(!(k in A.sets)){A.sets[k]=await getD(setKey(w,K));A.ress[k]=await getD(resKey(w,K))}}
+  const cur=A.sets[A.wk+'|'+K],rr=A.ress[A.wk+'|'+K];
+  if(cur&&rr&&rr.res)for(const it of cur.items||[]){const r=rr.res[it.id];const pk=A.wk+'|'+it.id+'|'+K;if(r&&r.st==='miss'&&r.pen&&!(pk in A.pens)){const p=await getD(penKey(A.wk,it.id,K));A.pens[pk]=p&&p.img||''}}}
+function statsOf(set,res){const L=(set&&set.items)||[],R=(res&&res.res)||{};const s={n:L.length,done:0,first:0,hint:0,miss:0};for(const it of L){const r=R[it.id];if(r&&r.st){s.done++;s[r.st]=(s[r.st]||0)+1}}return s}
+function vAdmin(){const A=ST.adm,K=A.kid,ks=kids();
+  if(!ks.length)return`<h1>오답 복습 관리</h1><div class="card empty">가족 목록에 아이가 없어요.</div>`;
+  const set=A.sets[A.wk+'|'+K],res=A.ress[A.wk+'|'+K],pw=addDays(A.wk,-7),ps=A.sets[pw+'|'+K],pr=A.ress[pw+'|'+K];
+  const s=statsOf(set,res),l=statsOf(ps,pr),rate=x=>x.done?Math.round(x.first/x.done*100):null;
+  const tags={};for(const it of (set&&set.items)||[]){const r=res&&res.res&&res.res[it.id];if(r&&r.st&&r.st!=='first'){const t=it.tag||'기타';tags[t]=(tags[t]||0)+1}}
+  const R=(res&&res.res)||{};
+  const rows=((set&&set.items)||[]).map(it=>{const r=R[it.id];const ic=!r||!r.st?'⬜':r.st==='first'?'✅':r.st==='hint'?'🟡':'❌';const pen=A.pens[A.wk+'|'+it.id+'|'+K];
+    return`<div class="it"><span class="st" aria-label="${!r||!r.st?'안 풀었음':r.st==='first'?'한 번에 맞힘':r.st==='hint'?'힌트 보고 맞힘':'틀림, 같이 보기'}">${ic}</span><div><div class="small mute">${it.kind==='twin'?'쌍둥이':'다시 풀기'}${it.tag?' · '+esc(it.tag):''}</div><div class="qq">${esc(it.q)}</div>
+     <div class="small">정답 <b>${esc(Array.isArray(it.ans)?it.ans.join(' 또는 '):it.ans)}${esc(it.unit||'')}</b>${r&&r.a1&&r.st!=='first'?` · 처음 답 <b style="color:var(--red)">${esc(r.a1)}</b>`:''}${r&&r.a2?` · 다시 낸 답 <b>${esc(r.a2)}</b>`:''}</div>
+     ${pen?`<img class="pen" src="${safeImg(pen)}" alt="아이가 쓴 풀이">`:''}</div>${r&&r.st==='miss'?'<span class="pill r">같이 보기</span>':''}</div>`}).join('');
+  const miss=((set&&set.items)||[]).filter(it=>R[it.id]&&R[it.id].st==='miss');
+  return`<div class="hdr"><div><h1>오답 복습 관리</h1><div class="mute">부모님만 보는 화면이에요</div></div><a class="btn sm ghost" href="../">‹ 우리가족</a></div>
+  <div class="card"><div class="kidtabs">${ks.map(k=>`<button data-a="akid" data-k="${esc(k)}" class="${k===K?'on':''}">${esc(name(k))}</button>`).join('')}</div>
+   <div class="row" style="margin-top:12px"><button class="btn sm ghost" data-a="awk" data-d="-7" aria-label="지난주">‹</button><b class="jua grow" style="text-align:center;font-size:20px">${wkLabel(A.wk)}</b><button class="btn sm ghost" data-a="awk" data-d="7" aria-label="다음 주">›</button></div></div>
+  ${set?`<div class="card"><h2>이번 주 결과</h2><div class="stats"><div><b>${s.done}/${s.n}</b>푼 문제</div><div><b style="color:var(--ok)">${s.first}</b>한 번에 맞힘</div><div><b style="color:#b98900">${s.hint}</b>힌트 보고 맞힘</div><div><b style="color:var(--red)">${s.miss}</b>같이 보기</div><div><b>${(res&&res.pts)||0}</b>받은 포인트</div></div>
+    <p class="small" style="margin:12px 0 0">한 번에 맞힌 비율 <b>${rate(s)??'-'}%</b>${rate(l)!==null?` · 지난주 <b>${rate(l)}%</b> ${rate(s)!==null?(rate(s)>rate(l)?'📈 늘었어요':rate(s)<rate(l)?'📉 줄었어요':'그대로예요'):''}`:''}</p>
+    ${Object.keys(tags).length?`<p class="small" style="margin:6px 0 0">아직 헷갈리는 유형: ${Object.entries(tags).sort((a,b)=>b[1]-a[1]).map(([t,c])=>`<span class="pill r">${esc(t)} ${c}</span>`).join(' ')}</p>`:''}</div>
+   ${miss.length?`<div class="card"><h2>🧡 같이 보기 (${miss.length})</h2><p class="small mute" style="margin:0">힌트를 보고도 틀린 문제예요. 아이가 쓴 풀이와 함께 봐 주세요.</p></div>`:''}
+   <div class="card"><h2>문제별</h2>${rows}</div>`
+  :`<div class="card empty">이 주에는 넣은 문제가 없어요.</div>`}
+  <div class="card"><h2>문제 세트 넣기</h2><p class="small mute" style="margin:0 0 8px">Claude가 만든 세트(JSON)를 붙여 넣고 「넣기」를 눌러요. 같은 아이·같은 주에 이미 있으면 바꿔 넣어요.</p>
+   <textarea id="imp" placeholder='{"kid":"지호","week":"2026-11-30","items":[...]}' aria-label="문제 세트 JSON"></textarea>
+   <button class="btn full" style="margin-top:10px" data-a="import">넣기</button></div>`}
+
+/* 세트 검사 + 넣기 (Claude가 크롬에서 window.WRONG_IMPORT로도 부름) */
+function validateSet(o){const err=[];if(!o||typeof o!=='object')return['JSON이 아니에요'];
+  const K=Object.keys(ST.members).find(e=>e===o.kid||name(e)===o.kid);if(!K||ST.members[K].role!=='kid')err.push(`아이 이름 「${o.kid}」를 가족 목록에서 못 찾았어요`);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(o.week||''))err.push('week는 2026-11-30 같은 날짜여야 해요');else if(monday(o.week)!==o.week)err.push('week는 월요일 날짜여야 해요');
+  if(!Array.isArray(o.items)||!o.items.length)err.push('items가 비어 있어요');
+  const ids=new Set();(o.items||[]).forEach((it,i)=>{const n=i+1;if(!it||typeof it!=='object'){err.push(n+'번이 비었어요');return}
+    if(!/^[A-Za-z0-9-]{1,20}$/.test(it.id||''))err.push(n+'번 id는 영문·숫자로');if(ids.has(it.id))err.push(n+'번 id가 겹쳐요');ids.add(it.id);
+    if(!['re','twin'].includes(it.kind))err.push(n+'번 kind는 re 또는 twin');if(!it.q)err.push(n+'번 문제(q)가 없어요');
+    if(!ansList(it).length)err.push(n+'번 정답(ans)이 없어요');if(it.img&&!safeImg(it.img))err.push(n+'번 그림은 data:image 형식이어야 해요')});
+  const size=JSON.stringify(o).length;if(size>950000)err.push('세트가 너무 커요 (그림을 줄여 주세요)');
+  return err.length?err:{K,set:{kid:K,week:o.week,items:o.items.map(it=>({id:it.id,kind:it.kind,src:it.src||'',tag:it.tag||'',q:String(it.q),img:it.img||'',ans:Array.isArray(it.ans)?it.ans.map(String):[String(it.ans)],unit:it.unit||'',choices:Array.isArray(it.choices)?it.choices.map(String):[],hint:it.hint||'',sol:it.sol||''})),by:ST.me,at:Date.now()}}}
+async function importSet(o,force){if(!isAdmin()||!unlocked)return{ok:false,err:['관리자 화면에서만 넣을 수 있어요']};
+  const v=validateSet(o);if(Array.isArray(v))return{ok:false,err:v};
+  const old=await getD(resKey(o.week,v.K));if(old&&old.res&&Object.keys(old.res).length&&!force)return{ok:false,err:[`${name(v.K)}가 이 주 문제를 이미 ${Object.keys(old.res).length}개 풀었어요. 바꾸려면 force로 다시 넣어 주세요`],needForce:true};
+  try{await F.FS.setDoc(D('progress',setKey(o.week,v.K)),v.set);if(old&&force)await F.FS.setDoc(D('progress',resKey(o.week,v.K)),{kid:v.K,week:o.week,res:{},pts:old.pts||0,done:false,reset:Date.now()})}catch(e){return{ok:false,err:['저장이 안 됐어요 ('+(e&&e.code)+')']}}
+  const A=ST.adm;delete A.sets[o.week+'|'+v.K];delete A.ress[o.week+'|'+v.K];A.kid=v.K;A.wk=o.week;await admLoad();render();return{ok:true,kid:name(v.K),week:o.week,n:v.set.items.length}}
+/* 다음 주에 다시 낼 문제 (힌트 보고 맞힘·같이 보기): window.WRONG_EXPORT */
+async function exportMiss(wk){wk=wk||monday(today());const out=[];for(const K of kids()){const s=await getD(setKey(wk,K)),r=await getD(resKey(wk,K));if(!s)continue;const R=(r&&r.res)||{};
+  out.push({kid:name(K),week:wk,solved:Object.keys(R).length,total:(s.items||[]).length,again:(s.items||[]).filter(it=>R[it.id]&&R[it.id].st!=='first').map(it=>({id:it.id,kind:it.kind,tag:it.tag,q:it.q,ans:it.ans,unit:it.unit,st:R[it.id].st,a1:R[it.id].a1||'',a2:R[it.id].a2||''})),unsolved:(s.items||[]).filter(it=>!R[it.id]).map(it=>it.id)})}return out}
+
+/* ---------- 그리기 ---------- */
+function render(keepCanvas){const app=$('#app');
+  if(!ST.me){app.innerHTML='';return}
+  if(isAdmin()){if(pinGate())return;app.innerHTML=vAdmin();return}
+  if(ST.role!=='kid'){app.innerHTML='<div class="card empty">가족 목록에 없는 계정이에요.</div>';return}
+  if(ST.view==='solve'){
+    if(keepCanvas&&$('#cv')){const pane=$('.padwrap');if(pane){const tmp=document.createElement('div');tmp.innerHTML=vSolve();const np=tmp.querySelector('.padwrap');if(np){pane.innerHTML=np.innerHTML;return}}}
+    app.innerHTML=vSolve();setupCanvas();return}
+  app.innerHTML=vKidHome()}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;
+  if(a==='login')return login();
+  if(a==='start'){const n=nextIdx();if(n<0)return;ST.i=n;ST.view='solve';ST.stage='';ST.ans='';ST.sel='';render();return}
+  if(a==='home'){ST.view='home';render();return}
+  if(a==='key')return press(b.dataset.k);
+  if(a==='pick'){ST.sel=b.dataset.v;render(true);return}
+  if(a==='check')return check();
+  if(a==='next')return goNext();
+  if(a==='clear')return clearCanvas();
+  if(a==='eraser'){PEN.eraser=!PEN.eraser;b.textContent=PEN.eraser?'✏️ 펜':'🧽 지우개';b.setAttribute('aria-pressed',PEN.eraser);return}
+  if(a==='pk')return pinKey(b.dataset.k);
+  if(a==='pkdel'){PIN.buf=PIN.buf.slice(0,-1);pinGate();return}
+  if(a==='akid'){ST.adm.kid=b.dataset.k;await admLoad();render();return}
+  if(a==='awk'){ST.adm.wk=addDays(ST.adm.wk,+b.dataset.d);await admLoad();render();return}
+  if(a==='import'){let o;try{o=JSON.parse($('#imp').value)}catch(er){toast('JSON 형식이 아니에요');return}
+    let r=await importSet(o,false);if(!r.ok&&r.needForce&&confirm(r.err[0]+'\n\n그래도 바꿔 넣을까요?'))r=await importSet(o,true);
+    toast(r.ok?`${r.kid}에게 ${r.n}문제를 넣었어요`:r.err.slice(0,3).join(' / '));return}
+});
+document.addEventListener('keydown',e=>{if(ST.view!=='solve'||isAdmin()||e.target.tagName==='TEXTAREA')return;if(/^[0-9./]$/.test(e.key))press(e.key);else if(e.key===' '){e.preventDefault();press('띄움')}else if(e.key==='Backspace')press('⌫');else if(e.key==='Enter'){if(ST.stage==='solved'||ST.stage==='sol')goNext();else check()}});
+window.WRONG_IMPORT=(o,force)=>importSet(typeof o==='string'?JSON.parse(o):o,!!force);
+window.WRONG_EXPORT=exportMiss;
+let rsT=0;window.addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(()=>{if(ST.view==='solve'&&!isAdmin()&&!PEN.dirty)setupCanvas()},200)});
+
+/* ---------- Firebase ---------- */
+function gate(msg,loading){$('#gate').innerHTML=`<div class="gate"><div class="card"><h1>오답 복습</h1>${loading?'<p class="mute">로그인 확인 중…</p>':`<p class="mute">우리가족 구글 계정으로 로그인해요.</p>${msg?`<p style="color:var(--red)">${msg}</p>`:''}<button class="btn full" data-a="login">Google로 로그인</button><p class="small mute">카카오톡 안 브라우저에서는 로그인이 안 돼요. Chrome으로 열어 주세요.</p>`}</div></div>`}
+async function login(){try{await F.AU.signInWithPopup(F.auth,new F.AU.GoogleAuthProvider())}catch(e){gate(e&&e.code==='auth/popup-blocked'?'로그인 창이 막혔어요. 한 번 더 눌러 주세요.':e&&e.code==='auth/popup-closed-by-user'?'':'로그인이 안 됐어요 ('+esc((e&&e.code)||'')+')')}}
+(async()=>{const cfg=window.firebaseConfig;if(!window.__MOCK_FB&&(!cfg||!cfg.apiKey)){$('#app').innerHTML='<div class="card">Firebase 설정이 없어요.</div>';return}gate('',true);
+  try{let A,AU,FS;if(window.__MOCK_FB)({A,AU,FS}=window.__MOCK_FB);else{const V='https://www.gstatic.com/firebasejs/10.12.2/';A=await import(V+'firebase-app.js');AU=await import(V+'firebase-auth.js');FS=await import(V+'firebase-firestore.js')}
+    const app=A.initializeApp(cfg||{});F={AU,FS,auth:AU.getAuth(app),db:FS.getFirestore(app)};
+    AU.onAuthStateChanged(F.auth,async u=>{Object.assign(ST,{me:'',role:'',view:'home',set:null,res:null});unlocked=false;
+      if(!u){gate('');render();return}
+      ST.me=(u.email||'').toLowerCase();
+      try{const ms=await FS.getDocs(FS.collection(F.db,'members'));ST.members={};ms.forEach(d=>ST.members[d.id]=d.data())}catch(e){gate(esc(ST.me)+' 계정은 가족 목록에 없어요. 다른 구글 계정으로 로그인해 주세요.');return}
+      const m=ST.members[ST.me];if(!m){gate(esc(ST.me)+' 계정은 가족 목록에 없어요.');return}ST.role=m.role;
+      try{const c=await FS.getDoc(FS.doc(F.db,'fam','cfg'));ST.cfg=Object.assign({pin:''},c.exists()?c.data():{})}catch(e){}
+      $('#gate').innerHTML='';
+      if(isAdmin()){if(!ST.cfg.pin||trusted())unlocked=true;if(unlocked)await admLoad()}else await loadKid(ST.me);
+      render()})
+  }catch(e){$('#gate').innerHTML='';$('#app').innerHTML='<div class="card">연결이 안 됐어요. 인터넷을 확인하고 새로고침해 주세요.</div>'}})();
+</script>
+</body>
+</html>
