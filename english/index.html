@@ -525,13 +525,32 @@ let DICT,NOMIC=false,NOLANG=false;
 const micT=()=>SP||C;
 const micText=()=>SP?plain(SP.ss[SP.i][0]):C.ws[C.i].w;
 const micDraw=()=>SP?speak():card();
-try{if(window.claude&&window.claude.use)window.claude.use('dictation').then(d=>{DICT=d;if(!d)return;
+/* 휴대폰 크롬 등: Claude 받아쓰기가 없으면 브라우저 음성인식으로 같은 방식 제공 */
+function webDict(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;
+  const h={p:[],f:[],s:[]};let rec=null,on=false,why='';
+  const emit=(k,v)=>h[k].forEach(f=>{try{f(v)}catch(e){}});
+  return{onPartial:f=>h.p.push(f),onFinal:f=>h.f.push(f),onState:f=>h.s.push(f),active:()=>on,
+    stop(){try{rec&&rec.stop()}catch(e){}return Promise.resolve()},
+    start(){
+      try{rec=new SR()}catch(e){return Promise.reject({code:'unavailable'})}
+      rec.lang='en-US';rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;on=true;why='';
+      rec.onstart=()=>emit('s',{state:'listening'});
+      rec.onresult=e=>{let part='';for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i],t=r[0].transcript;if(r.isFinal)emit('f',{text:t+' '});else part+=t}emit('p',{text:part})};
+      rec.onerror=e=>{const c=e.error;why=(c==='not-allowed'||c==='service-not-allowed')?'not_granted':c==='audio-capture'?'unavailable':c==='aborted'?'hidden':''};
+      rec.onend=()=>{on=false;rec=null;emit('s',{state:'idle',reason:why})};
+      try{rec.start()}catch(e){on=false;rec=null;return Promise.reject({code:'unavailable'})}
+      return Promise.resolve()}};
+}
+function wireDict(d){DICT=d;if(!d)return;
   d.onPartial(({text})=>{const T=micT();if(T){T.part=text;micDraw()}});
   d.onFinal(({text})=>{const T=micT();if(T){T.heard+=text;T.part='';check()}});
   d.onState(({state,reason})=>{const T=micT();if(!T)return;T.st=state;
     if(state==='listening'){clearTimeout(T.tm);T.tm=setTimeout(()=>{try{d.active()&&d.stop()}catch(e){}},SP?10000:6000)}
     if(state==='idle')finishAttempt(reason);else micDraw()});
-  if(micT())micDraw()},()=>{DICT=null})}catch(e){DICT=null}
+  if(micT())micDraw()}
+const useWeb=()=>{if(!DICT)wireDict(webDict())};
+try{if(window.claude&&window.claude.use)window.claude.use('dictation').then(d=>d?wireDict(d):useWeb(),useWeb);else useWeb()}catch(e){useWeb()}
 const HOMO=[['two','to','too'],['one','won'],['four','for'],['eight','ate'],['see','sea'],['right','write'],['there','their'],['hour','our'],['know','no'],['buy','by','bye'],['i','eye'],['son','sun'],['meat','meet'],['pair','pear'],['hear','here'],['knew','new'],['blue','blew'],['wood','would'],['week','weak'],['road','rode'],['tail','tale'],['flower','flour'],['dear','deer'],['whole','hole'],['red','read'],['ant','aunt'],['bee','be'],['wear','where'],['sale','sail'],['son','sun'],['grey','gray'],['color','colour'],['favorite','favourite'],['ok','okay'],['a','uh'],['an','and']];
 function lev(a,b){const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]}
 function wgrade(word,heard){
